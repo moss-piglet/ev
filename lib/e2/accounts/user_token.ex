@@ -1,7 +1,7 @@
-defmodule E2.Accounts.UserToken do
+defmodule Metamorphic.Accounts.UserToken do
   use Ecto.Schema
   import Ecto.Query
-  alias E2.Accounts.UserToken
+  alias Metamorphic.Accounts.UserToken
 
   @hash_algorithm :sha256
   @rand_size 32
@@ -17,7 +17,7 @@ defmodule E2.Accounts.UserToken do
     field :token, :binary
     field :context, :string
     field :sent_to, :string
-    belongs_to :user, E2.Accounts.User
+    belongs_to :user, Metamorphic.Accounts.User
 
     timestamps(updated_at: false)
   end

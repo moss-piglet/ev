@@ -1,8 +1,8 @@
-defmodule E2Web.UserLoginLiveTest do
-  use E2Web.ConnCase
+defmodule MetamorphicWeb.UserLoginLiveTest do
+  use MetamorphicWeb.ConnCase
 
   import Phoenix.LiveViewTest
-  import E2.AccountsFixtures
+  import Metamorphic.AccountsFixtures
 
   describe "Log in page" do
     test "renders log in page", %{conn: conn} do

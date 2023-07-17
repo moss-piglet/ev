@@ -1,5 +1,5 @@
-defmodule E2.Repo do
+defmodule Metamorphic.Repo do
   use Ecto.Repo,
-    otp_app: :e2,
+    otp_app: :Metamorphic,
     adapter: Ecto.Adapters.Postgres
 end

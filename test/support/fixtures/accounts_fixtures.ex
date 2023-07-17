@@ -1,7 +1,7 @@
-defmodule E2.AccountsFixtures do
+defmodule Metamorphic.AccountsFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `E2.Accounts` context.
+  entities via the `Metamorphic.Accounts` context.
   """
 
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
@@ -18,7 +18,7 @@ defmodule E2.AccountsFixtures do
     {:ok, user} =
       attrs
       |> valid_user_attributes()
-      |> E2.Accounts.register_user()
+      |> Metamorphic.Accounts.register_user()
 
     user
   end

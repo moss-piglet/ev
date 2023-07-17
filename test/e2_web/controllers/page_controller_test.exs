@@ -1,5 +1,5 @@
-defmodule E2Web.PageControllerTest do
-  use E2Web.ConnCase
+defmodule MetamorphicWeb.PageControllerTest do
+  use MetamorphicWeb.ConnCase
 
   test "GET /", %{conn: conn} do
     conn = get(conn, ~p"/")

@@ -1,11 +1,11 @@
-defmodule E2Web.UserConfirmationLiveTest do
-  use E2Web.ConnCase
+defmodule MetamorphicWeb.UserConfirmationLiveTest do
+  use MetamorphicWeb.ConnCase
 
   import Phoenix.LiveViewTest
-  import E2.AccountsFixtures
+  import Metamorphic.AccountsFixtures
 
-  alias E2.Accounts
-  alias E2.Repo
+  alias Metamorphic.Accounts
+  alias Metamorphic.Repo
 
   setup do
     %{user: user_fixture()}

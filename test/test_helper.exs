@@ -1,2 +1,2 @@
 ExUnit.start()
-Ecto.Adapters.SQL.Sandbox.mode(E2.Repo, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(Metamorphic.Repo, :manual)

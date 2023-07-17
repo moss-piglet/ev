@@ -1,9 +1,9 @@
-defmodule E2Web.UserSettingsLiveTest do
-  use E2Web.ConnCase
+defmodule MetamorphicWeb.UserSettingsLiveTest do
+  use MetamorphicWeb.ConnCase
 
-  alias E2.Accounts
+  alias Metamorphic.Accounts
   import Phoenix.LiveViewTest
-  import E2.AccountsFixtures
+  import Metamorphic.AccountsFixtures
 
   describe "Settings page" do
     test "renders settings page", %{conn: conn} do

@@ -1,5 +1,5 @@
-defmodule E2Web.Layouts do
-  use E2Web, :html
+defmodule MetamorphicWeb.Layouts do
+  use MetamorphicWeb, :html
 
   embed_templates "layouts/*"
 end

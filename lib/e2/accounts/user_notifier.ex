@@ -1,14 +1,14 @@
-defmodule E2.Accounts.UserNotifier do
+defmodule Metamorphic.Accounts.UserNotifier do
   import Swoosh.Email
 
-  alias E2.Mailer
+  alias Metamorphic.Mailer
 
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do
     email =
       new()
       |> to(recipient)
-      |> from({"E2", "contact@example.com"})
+      |> from({"Metamorphic", "contact@example.com"})
       |> subject(subject)
       |> text_body(body)
 

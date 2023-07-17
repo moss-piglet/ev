@@ -1,6 +1,6 @@
-defmodule E2 do
+defmodule Metamorphic do
   @moduledoc """
-  E2 keeps the contexts that define your domain
+  Metamorphic keeps the contexts that define your domain
   and business logic.
 
   Contexts are also responsible for managing your data, regardless

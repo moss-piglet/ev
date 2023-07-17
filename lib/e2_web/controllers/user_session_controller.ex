@@ -1,8 +1,8 @@
-defmodule E2Web.UserSessionController do
-  use E2Web, :controller
+defmodule MetamorphicWeb.UserSessionController do
+  use MetamorphicWeb, :controller
 
-  alias E2.Accounts
-  alias E2Web.UserAuth
+  alias Metamorphic.Accounts
+  alias MetamorphicWeb.UserAuth
 
   def create(conn, %{"_action" => "registered"} = params) do
     create(conn, params, "Account created successfully!")

@@ -1,5 +1,5 @@
-defmodule E2Web.PageController do
-  use E2Web, :controller
+defmodule MetamorphicWeb.PageController do
+  use MetamorphicWeb, :controller
 
   def home(conn, _params) do
     # The home page is often custom made,

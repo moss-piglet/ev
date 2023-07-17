@@ -1,5 +1,5 @@
-defmodule E2Web.UserLoginLive do
-  use E2Web, :live_view
+defmodule MetamorphicWeb.UserLoginLive do
+  use MetamorphicWeb, :live_view
 
   def render(assigns) do
     ~H"""

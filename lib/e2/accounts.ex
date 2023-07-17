@@ -1,12 +1,12 @@
-defmodule E2.Accounts do
+defmodule Metamorphic.Accounts do
   @moduledoc """
   The Accounts context.
   """
 
   import Ecto.Query, warn: false
-  alias E2.Repo
+  alias Metamorphic.Repo
 
-  alias E2.Accounts.{User, UserToken, UserNotifier}
+  alias Metamorphic.Accounts.{User, UserToken, UserNotifier}
 
   ## Database getters
 

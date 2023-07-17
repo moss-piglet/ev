@@ -1,8 +1,8 @@
-defmodule E2Web.UserRegistrationLiveTest do
-  use E2Web.ConnCase
+defmodule MetamorphicWeb.UserRegistrationLiveTest do
+  use MetamorphicWeb.ConnCase
 
   import Phoenix.LiveViewTest
-  import E2.AccountsFixtures
+  import Metamorphic.AccountsFixtures
 
   describe "Registration page" do
     test "renders registration page", %{conn: conn} do

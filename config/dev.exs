@@ -1,11 +1,11 @@
 import Config
 
 # Configure your database
-config :e2, E2.Repo,
+config :Metamorphic, Metamorphic.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
-  database: "e2_dev",
+  database: "Metamorphic_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
@@ -16,7 +16,7 @@ config :e2, E2.Repo,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-config :e2, E2Web.Endpoint,
+config :Metamorphic, MetamorphicWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
   http: [ip: {127, 0, 0, 1}, port: 4000],
@@ -53,17 +53,17 @@ config :e2, E2Web.Endpoint,
 # different ports.
 
 # Watch static and templates for browser reloading.
-config :e2, E2Web.Endpoint,
+config :Metamorphic, MetamorphicWeb.Endpoint,
   live_reload: [
     patterns: [
       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/e2_web/(controllers|live|components)/.*(ex|heex)$"
+      ~r"lib/Metamorphic_web/(controllers|live|components)/.*(ex|heex)$"
     ]
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :e2, dev_routes: true
+config :Metamorphic, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"

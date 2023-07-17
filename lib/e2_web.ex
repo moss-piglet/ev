@@ -1,12 +1,12 @@
-defmodule E2Web do
+defmodule MetamorphicWeb do
   @moduledoc """
   The entrypoint for defining your web interface, such
   as controllers, components, channels, and so on.
 
   This can be used in your application as:
 
-      use E2Web, :controller
-      use E2Web, :html
+      use MetamorphicWeb, :controller
+      use MetamorphicWeb, :html
 
   The definitions below will be executed for every controller,
   component, etc, so keep them short and clean, focused
@@ -40,10 +40,10 @@ defmodule E2Web do
     quote do
       use Phoenix.Controller,
         formats: [:html, :json],
-        layouts: [html: E2Web.Layouts]
+        layouts: [html: MetamorphicWeb.Layouts]
 
       import Plug.Conn
-      import E2Web.Gettext
+      import MetamorphicWeb.Gettext
 
       unquote(verified_routes())
     end
@@ -52,7 +52,7 @@ defmodule E2Web do
   def live_view do
     quote do
       use Phoenix.LiveView,
-        layout: {E2Web.Layouts, :app}
+        layout: {MetamorphicWeb.Layouts, :app}
 
       unquote(html_helpers())
     end
@@ -84,8 +84,8 @@ defmodule E2Web do
       # HTML escaping functionality
       import Phoenix.HTML
       # Core UI components and translation
-      import E2Web.CoreComponents
-      import E2Web.Gettext
+      import MetamorphicWeb.CoreComponents
+      import MetamorphicWeb.Gettext
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
@@ -98,9 +98,9 @@ defmodule E2Web do
   def verified_routes do
     quote do
       use Phoenix.VerifiedRoutes,
-        endpoint: E2Web.Endpoint,
-        router: E2Web.Router,
-        statics: E2Web.static_paths()
+        endpoint: MetamorphicWeb.Endpoint,
+        router: MetamorphicWeb.Router,
+        statics: MetamorphicWeb.static_paths()
     end
   end
 

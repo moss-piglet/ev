@@ -1,8 +1,8 @@
-defmodule E2Web.UserRegistrationLive do
-  use E2Web, :live_view
+defmodule MetamorphicWeb.UserRegistrationLive do
+  use MetamorphicWeb, :live_view
 
-  alias E2.Accounts
-  alias E2.Accounts.User
+  alias Metamorphic.Accounts
+  alias Metamorphic.Accounts.User
 
   def render(assigns) do
     ~H"""

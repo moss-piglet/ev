@@ -1,7 +1,7 @@
-defmodule E2Web.UserSessionControllerTest do
-  use E2Web.ConnCase, async: true
+defmodule MetamorphicWeb.UserSessionControllerTest do
+  use MetamorphicWeb.ConnCase, async: true
 
-  import E2.AccountsFixtures
+  import Metamorphic.AccountsFixtures
 
   setup do
     %{user: user_fixture()}
@@ -35,7 +35,7 @@ defmodule E2Web.UserSessionControllerTest do
           }
         })
 
-      assert conn.resp_cookies["_e2_web_user_remember_me"]
+      assert conn.resp_cookies["_Metamorphic_web_user_remember_me"]
       assert redirected_to(conn) == ~p"/"
     end
 

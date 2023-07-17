@@ -1,10 +1,10 @@
-defmodule E2.AccountsTest do
-  use E2.DataCase
+defmodule Metamorphic.AccountsTest do
+  use Metamorphic.DataCase
 
-  alias E2.Accounts
+  alias Metamorphic.Accounts
 
-  import E2.AccountsFixtures
-  alias E2.Accounts.{User, UserToken}
+  import Metamorphic.AccountsFixtures
+  alias Metamorphic.Accounts.{User, UserToken}
 
   describe "get_user_by_email/1" do
     test "does not return the user if the email does not exist" do

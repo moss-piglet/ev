@@ -1,4 +1,4 @@
-defmodule E2.Repo.Migrations.CreateUsersAuthTables do
+defmodule Metamorphic.Repo.Migrations.CreateUsersAuthTables do
   use Ecto.Migration
 
   def change do

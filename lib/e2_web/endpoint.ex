@@ -1,12 +1,12 @@
-defmodule E2Web.Endpoint do
-  use Phoenix.Endpoint, otp_app: :e2
+defmodule MetamorphicWeb.Endpoint do
+  use Phoenix.Endpoint, otp_app: :Metamorphic
 
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
   @session_options [
     store: :cookie,
-    key: "_e2_key",
+    key: "_Metamorphic_key",
     signing_salt: "m76UIfNp",
     same_site: "Lax"
   ]
@@ -19,9 +19,9 @@ defmodule E2Web.Endpoint do
   # when deploying your static files in production.
   plug Plug.Static,
     at: "/",
-    from: :e2,
+    from: :Metamorphic,
     gzip: false,
-    only: E2Web.static_paths()
+    only: MetamorphicWeb.static_paths()
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
@@ -29,7 +29,7 @@ defmodule E2Web.Endpoint do
     socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
     plug Phoenix.LiveReloader
     plug Phoenix.CodeReloader
-    plug Phoenix.Ecto.CheckRepoStatus, otp_app: :e2
+    plug Phoenix.Ecto.CheckRepoStatus, otp_app: :Metamorphic
   end
 
   plug Phoenix.LiveDashboard.RequestLogger,
@@ -47,5 +47,5 @@ defmodule E2Web.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
-  plug E2Web.Router
+  plug MetamorphicWeb.Router
 end

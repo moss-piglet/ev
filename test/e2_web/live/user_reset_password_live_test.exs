@@ -1,10 +1,10 @@
-defmodule E2Web.UserResetPasswordLiveTest do
-  use E2Web.ConnCase
+defmodule MetamorphicWeb.UserResetPasswordLiveTest do
+  use MetamorphicWeb.ConnCase
 
   import Phoenix.LiveViewTest
-  import E2.AccountsFixtures
+  import Metamorphic.AccountsFixtures
 
-  alias E2.Accounts
+  alias Metamorphic.Accounts
 
   setup do
     user = user_fixture()

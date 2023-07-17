@@ -1,7 +1,7 @@
-defmodule E2Web.UserConfirmationLive do
-  use E2Web, :live_view
+defmodule MetamorphicWeb.UserConfirmationLive do
+  use MetamorphicWeb, :live_view
 
-  alias E2.Accounts
+  alias Metamorphic.Accounts
 
   def render(%{live_action: :edit} = assigns) do
     ~H"""

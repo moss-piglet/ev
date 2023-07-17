@@ -1,17 +1,17 @@
-defmodule E2Web.UserAuthTest do
-  use E2Web.ConnCase, async: true
+defmodule MetamorphicWeb.UserAuthTest do
+  use MetamorphicWeb.ConnCase, async: true
 
   alias Phoenix.LiveView
-  alias E2.Accounts
-  alias E2Web.UserAuth
-  import E2.AccountsFixtures
+  alias Metamorphic.Accounts
+  alias MetamorphicWeb.UserAuth
+  import Metamorphic.AccountsFixtures
 
-  @remember_me_cookie "_e2_web_user_remember_me"
+  @remember_me_cookie "_Metamorphic_web_user_remember_me"
 
   setup %{conn: conn} do
     conn =
       conn
-      |> Map.replace!(:secret_key_base, E2Web.Endpoint.config(:secret_key_base))
+      |> Map.replace!(:secret_key_base, MetamorphicWeb.Endpoint.config(:secret_key_base))
       |> init_test_session(%{})
 
     %{user: user_fixture(), conn: conn}
@@ -66,7 +66,7 @@ defmodule E2Web.UserAuthTest do
 
     test "broadcasts to the given live_socket_id", %{conn: conn} do
       live_socket_id = "users_sessions:abcdef-token"
-      E2Web.Endpoint.subscribe(live_socket_id)
+      MetamorphicWeb.Endpoint.subscribe(live_socket_id)
 
       conn
       |> put_session(:live_socket_id, live_socket_id)
@@ -164,7 +164,7 @@ defmodule E2Web.UserAuthTest do
       session = conn |> put_session(:user_token, user_token) |> get_session()
 
       socket = %LiveView.Socket{
-        endpoint: E2Web.Endpoint,
+        endpoint: MetamorphicWeb.Endpoint,
         assigns: %{__changed__: %{}, flash: %{}}
       }
 
@@ -176,7 +176,7 @@ defmodule E2Web.UserAuthTest do
       session = conn |> get_session()
 
       socket = %LiveView.Socket{
-        endpoint: E2Web.Endpoint,
+        endpoint: MetamorphicWeb.Endpoint,
         assigns: %{__changed__: %{}, flash: %{}}
       }
 

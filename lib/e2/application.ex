@@ -1,4 +1,4 @@
-defmodule E2.Application do
+defmodule Metamorphic.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   @moduledoc false
@@ -9,22 +9,22 @@ defmodule E2.Application do
   def start(_type, _args) do
     children = [
       # Start the Telemetry supervisor
-      E2Web.Telemetry,
+      MetamorphicWeb.Telemetry,
       # Start the Ecto repository
-      E2.Repo,
+      Metamorphic.Repo,
       # Start the PubSub system
-      {Phoenix.PubSub, name: E2.PubSub},
+      {Phoenix.PubSub, name: Metamorphic.PubSub},
       # Start Finch
-      {Finch, name: E2.Finch},
+      {Finch, name: Metamorphic.Finch},
       # Start the Endpoint (http/https)
-      E2Web.Endpoint
-      # Start a worker by calling: E2.Worker.start_link(arg)
-      # {E2.Worker, arg}
+      MetamorphicWeb.Endpoint
+      # Start a worker by calling: Metamorphic.Worker.start_link(arg)
+      # {Metamorphic.Worker, arg}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
-    opts = [strategy: :one_for_one, name: E2.Supervisor]
+    opts = [strategy: :one_for_one, name: Metamorphic.Supervisor]
     Supervisor.start_link(children, opts)
   end
 
@@ -32,7 +32,7 @@ defmodule E2.Application do
   # whenever the application is updated.
   @impl true
   def config_change(changed, _new, removed) do
-    E2Web.Endpoint.config_change(changed, removed)
+    MetamorphicWeb.Endpoint.config_change(changed, removed)
     :ok
   end
 end

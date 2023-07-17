@@ -7,17 +7,17 @@
 # General application configuration
 import Config
 
-config :e2,
-  ecto_repos: [E2.Repo]
+config :Metamorphic,
+  ecto_repos: [Metamorphic.Repo]
 
 # Configures the endpoint
-config :e2, E2Web.Endpoint,
+config :Metamorphic, MetamorphicWeb.Endpoint,
   url: [host: "localhost"],
   render_errors: [
-    formats: [html: E2Web.ErrorHTML, json: E2Web.ErrorJSON],
+    formats: [html: MetamorphicWeb.ErrorHTML, json: MetamorphicWeb.ErrorJSON],
     layout: false
   ],
-  pubsub_server: E2.PubSub,
+  pubsub_server: Metamorphic.PubSub,
   live_view: [signing_salt: "QZW2G8XF"]
 
 # Configures the mailer
@@ -27,7 +27,7 @@ config :e2, E2Web.Endpoint,
 #
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
-config :e2, E2.Mailer, adapter: Swoosh.Adapters.Local
+config :Metamorphic, Metamorphic.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)
 config :esbuild,

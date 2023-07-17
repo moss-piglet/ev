@@ -1,3 +1,3 @@
-defmodule E2.Mailer do
-  use Swoosh.Mailer, otp_app: :e2
+defmodule Metamorphic.Mailer do
+  use Swoosh.Mailer, otp_app: :Metamorphic
 end

@@ -1,4 +1,4 @@
-defmodule E2Web.CoreComponents do
+defmodule MetamorphicWeb.CoreComponents do
   @moduledoc """
   Provides core UI components.
 
@@ -17,7 +17,7 @@ defmodule E2Web.CoreComponents do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
-  import E2Web.Gettext
+  import MetamorphicWeb.Gettext
 
   @doc """
   Renders a modal.
@@ -650,9 +650,9 @@ defmodule E2Web.CoreComponents do
     # with our gettext backend as first argument. Translations are
     # available in the errors.po file (as we use the "errors" domain).
     if count = opts[:count] do
-      Gettext.dngettext(E2Web.Gettext, "errors", msg, msg, count, opts)
+      Gettext.dngettext(MetamorphicWeb.Gettext, "errors", msg, msg, count, opts)
     else
-      Gettext.dgettext(E2Web.Gettext, "errors", msg, opts)
+      Gettext.dgettext(MetamorphicWeb.Gettext, "errors", msg, opts)
     end
   end
 
