@@ -36,6 +36,7 @@ defmodule Metamorphic.MixProject do
       {:cloak, "~> 1.1"},
       {:cloak_ecto, "~> 1.2"},
       {:ecto_sql, "~> 3.10"},
+      {:enacl, "~> 1.2"},
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
       {:finch, "~> 0.13"},
       {:floki, ">= 0.30.0", only: :test},
