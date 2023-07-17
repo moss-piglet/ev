@@ -11,7 +11,7 @@ defmodule Metamorphic.Application do
       # Start the Telemetry supervisor
       MetamorphicWeb.Telemetry,
       # Start the Ecto repository
-      Metamorphic.Repo,
+      Metamorphic.Repo.Local,
       # Start the PubSub system
       {Phoenix.PubSub, name: Metamorphic.PubSub},
       # Start Finch

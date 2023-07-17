@@ -40,8 +40,10 @@ defmodule Metamorphic.MixProject do
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
       {:finch, "~> 0.13"},
       {:floki, ">= 0.30.0", only: :test},
+      {:fly_postgres, "~> 0.3.2"},
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
+      {:libcluster, "~> 3.3"},
       {:phoenix, "~> 1.7.7"},
       {:phoenix_ecto, "~> 4.4"},
       {:phoenix_html, "~> 3.3"},
@@ -53,7 +55,8 @@ defmodule Metamorphic.MixProject do
       {:swoosh, "~> 1.3"},
       {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},
       {:telemetry_metrics, "~> 0.6"},
-      {:telemetry_poller, "~> 1.0"}
+      {:telemetry_poller, "~> 1.0"},
+      {:zxcvbn, "~> 0.1.3"}
     ]
   end
 

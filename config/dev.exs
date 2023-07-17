@@ -1,7 +1,7 @@
 import Config
 
 # Configure your database
-config :metamorphic, Metamorphic.Repo,
+config :metamorphic, Metamorphic.Repo.Local,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",

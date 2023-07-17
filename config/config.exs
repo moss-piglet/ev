@@ -8,7 +8,10 @@
 import Config
 
 config :metamorphic,
-  ecto_repos: [Metamorphic.Repo]
+  ecto_repos: [Metamorphic.Repo.Local],
+  generators: [binary_id: true]
+
+config :metamorphic, Metamorphic.Repo.Local, priv: "priv/repo"
 
 # Configures the endpoint
 config :metamorphic, MetamorphicWeb.Endpoint,

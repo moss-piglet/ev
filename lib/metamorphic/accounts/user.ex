@@ -2,10 +2,27 @@ defmodule Metamorphic.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  import ZXCVBN
+
+  alias Metamorphic.Encrypted
+
   schema "users" do
-    field :email, :string
+    field :email, Encrypted.Binary
+    field :email_hash, Encrypted.HMAC
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
+    field :is_admin, :boolean, default: false
+    field :is_suspended, :boolean, default: false
+    field :is_deleted, :boolean, default: false
+    field :is_onboarded, :boolean, default: false
+    field :key_hash, Encrypted.Binary
+    field :key_pair, {:map, Encrypted.Binary}
+    field :name, Encrypted.Binary
+    field :name_hash, Encrypted.HMAC
+    field :username, Encrypted.Binary
+    field :username_hash, Encrypted.HMAC
+    field :user_key, Encrypted.Binary, redact: true
+    field :visibility, Ecto.Enum, values: [:public, :private, :relations]
     field :confirmed_at, :naive_datetime
 
     timestamps()
@@ -42,22 +59,97 @@ defmodule Metamorphic.Accounts.User do
   end
 
   defp validate_email(changeset, opts) do
-    changeset
-    |> validate_required([:email])
-    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
-    |> validate_length(:email, max: 160)
-    |> maybe_validate_unique_email(opts)
+    # use the current_user_session_key to encrypt email change data
+    # for making updates to the email when a user is signed into their
+    # settings page
+    if opts[:current_user_session_key] && !is_nil(get_field(changeset, :email)) do
+      encrypted_email =
+        Encrypted.Users.Utils.encrypt_user_data(
+          get_field(changeset, :email),
+          opts[:user].user_key,
+          opts[:user],
+          opts[:current_user_session_key]
+        )
+
+      changeset
+      |> validate_required([:email])
+      |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/,
+        message: "must have the @ sign and no spaces"
+      )
+      |> validate_length(:email, max: 160)
+      |> add_email_hash()
+      |> maybe_validate_unique_email_hash(opts)
+      |> put_change(:email, encrypted_email)
+    else
+      changeset
+      |> validate_required([:email])
+      |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/,
+        message: "must have the @ sign and no spaces"
+      )
+      |> validate_length(:email, max: 160)
+      |> add_email_hash()
+      |> maybe_validate_unique_email_hash(opts)
+    end
+  end
+
+  defp add_email_hash(changeset) do
+    if Map.has_key?(changeset.changes, :email) do
+      changeset
+      |> put_change(:email_hash, String.downcase(get_field(changeset, :email)))
+    else
+      changeset
+    end
+  end
+
+  defp maybe_validate_unique_email_hash(changeset, opts) do
+    if Keyword.get(opts, :validate_email, true) do
+      changeset
+      |> unsafe_validate_unique(:email_hash, Metamorphic.Repo)
+      |> unique_constraint(:email_hash)
+    else
+      changeset
+    end
   end
 
   defp validate_password(changeset, opts) do
     changeset
     |> validate_required([:password])
     |> validate_length(:password, min: 12, max: 72)
-    # Examples of additional password validation:
-    # |> validate_format(:password, ~r/[a-z]/, message: "at least one lower case character")
-    # |> validate_format(:password, ~r/[A-Z]/, message: "at least one upper case character")
-    # |> validate_format(:password, ~r/[!?@#$%^&*_0-9]/, message: "at least one digit or punctuation character")
+    |> check_zxcvbn_strength()
     |> maybe_hash_password(opts)
+  end
+
+  defp check_zxcvbn_strength(changeset) do
+    password = get_change(changeset, :password)
+
+    if password != nil do
+      password_strength =
+        zxcvbn(password, [
+          get_change(changeset, :name),
+          get_change(changeset, :username),
+          get_change(changeset, :email)
+        ])
+
+      offline_fast_hashing =
+        Map.get(password_strength.crack_times_display, :offline_fast_hashing_1e10_per_second)
+
+      offline_slow_hashing =
+        Map.get(password_strength.crack_times_display, :offline_slow_hashing_1e4_per_second)
+
+      cond do
+        password_strength.score === 4 && offline_fast_hashing === "centuries" ->
+          changeset
+
+        password_strength.score <= 4 ->
+          add_error(
+            changeset,
+            :password,
+            "may be cracked in #{offline_fast_hashing} to #{offline_slow_hashing}"
+          )
+      end
+    else
+      changeset
+    end
   end
 
   defp maybe_hash_password(changeset, opts) do
@@ -68,21 +160,42 @@ defmodule Metamorphic.Accounts.User do
       changeset
       # Hashing could be done with `Ecto.Changeset.prepare_changes/2`, but that
       # would keep the database transaction open longer and hurt performance.
-      |> put_change(:hashed_password, Argon2.hash_pwd_salt(password))
+      |> put_change(:hashed_password, Argon2.hash_pwd_salt(password, salt_len: 128))
+      |> put_key_hash_and_key_pair_and_encrypt_user_data()
       |> delete_change(:password)
     else
       changeset
     end
   end
 
-  defp maybe_validate_unique_email(changeset, opts) do
-    if Keyword.get(opts, :validate_email, true) do
-      changeset
-      |> unsafe_validate_unique(:email, Metamorphic.Repo)
-      |> unique_constraint(:email)
-    else
-      changeset
-    end
+  defp put_key_hash_and_key_pair_and_encrypt_user_data(
+         %Ecto.Changeset{
+           valid?: true,
+           changes: %{
+             email: email,
+             password: password
+           }
+         } = changeset
+       ) do
+    user_key = Encrypted.Utils.generate_key()
+    user_attributes_key = Encrypted.Utils.generate_key()
+
+    %{key_hash: key_hash} = Encrypted.Utils.generate_key_hash(password, user_key)
+    %{public: public_key, private: private_key} = Encrypted.Utils.generate_key_pairs()
+
+    encrypted_email = Encrypted.Utils.encrypt(%{key: user_attributes_key, payload: email})
+    encrypted_private_key = Encrypted.Utils.encrypt(%{key: user_key, payload: private_key})
+
+    encrypted_user_attributes_key =
+      Encrypted.Utils.encrypt_message_for_user_with_pk(user_attributes_key, %{
+        public: public_key
+      })
+
+    changeset
+    |> put_change(:email, encrypted_email)
+    |> put_change(:key_hash, key_hash)
+    |> put_change(:key_pair, %{public: public_key, private: encrypted_private_key})
+    |> put_change(:user_key, encrypted_user_attributes_key)
   end
 
   @doc """
