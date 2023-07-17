@@ -23,7 +23,7 @@ config :e2, E2Web.Endpoint,
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "drh35LedEha9VKrObS01lywmeJdcc0ZT+LnZwnARcOg2QFATDI7lQj14PxADAAsY",
+  secret_key_base: System.get_env("SECRET_KEY_BASE"),
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
