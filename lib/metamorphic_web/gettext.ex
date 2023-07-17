@@ -20,5 +20,5 @@ defmodule MetamorphicWeb.Gettext do
 
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
-  use Gettext, otp_app: :Metamorphic
+  use Gettext, otp_app: :metamorphic
 end

@@ -1,5 +1,5 @@
 defmodule MetamorphicWeb.Endpoint do
-  use Phoenix.Endpoint, otp_app: :Metamorphic
+  use Phoenix.Endpoint, otp_app: :metamorphic
 
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
@@ -19,7 +19,7 @@ defmodule MetamorphicWeb.Endpoint do
   # when deploying your static files in production.
   plug Plug.Static,
     at: "/",
-    from: :Metamorphic,
+    from: :metamorphic,
     gzip: false,
     only: MetamorphicWeb.static_paths()
 
@@ -29,7 +29,7 @@ defmodule MetamorphicWeb.Endpoint do
     socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
     plug Phoenix.LiveReloader
     plug Phoenix.CodeReloader
-    plug Phoenix.Ecto.CheckRepoStatus, otp_app: :Metamorphic
+    plug Phoenix.Ecto.CheckRepoStatus, otp_app: :metamorphic
   end
 
   plug Phoenix.LiveDashboard.RequestLogger,

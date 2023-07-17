@@ -8,7 +8,7 @@ config :argon2_elixir, t_cost: 1, m_cost: 8
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
-config :Metamorphic, Metamorphic.Repo,
+config :metamorphic, Metamorphic.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
@@ -18,13 +18,13 @@ config :Metamorphic, Metamorphic.Repo,
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
-config :Metamorphic, MetamorphicWeb.Endpoint,
+config :metamorphic, MetamorphicWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   secret_key_base: "DPRAIDzuG28QXK2U5i9dSOqY3jXHXn+K1OluX+1QvplETYNIw5b9pAd1og9CAo4N",
   server: false
 
 # In test we don't send emails.
-config :Metamorphic, Metamorphic.Mailer, adapter: Swoosh.Adapters.Test
+config :metamorphic, Metamorphic.Mailer, adapter: Swoosh.Adapters.Test
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false

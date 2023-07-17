@@ -7,11 +7,11 @@
 # General application configuration
 import Config
 
-config :Metamorphic,
+config :metamorphic,
   ecto_repos: [Metamorphic.Repo]
 
 # Configures the endpoint
-config :Metamorphic, MetamorphicWeb.Endpoint,
+config :metamorphic, MetamorphicWeb.Endpoint,
   url: [host: "localhost"],
   render_errors: [
     formats: [html: MetamorphicWeb.ErrorHTML, json: MetamorphicWeb.ErrorJSON],
@@ -27,7 +27,7 @@ config :Metamorphic, MetamorphicWeb.Endpoint,
 #
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
-config :Metamorphic, Metamorphic.Mailer, adapter: Swoosh.Adapters.Local
+config :metamorphic, Metamorphic.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)
 config :esbuild,

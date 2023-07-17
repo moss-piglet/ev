@@ -1,7 +1,7 @@
 import Config
 
 # Configure your database
-config :Metamorphic, Metamorphic.Repo,
+config :metamorphic, Metamorphic.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
@@ -16,7 +16,7 @@ config :Metamorphic, Metamorphic.Repo,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-config :Metamorphic, MetamorphicWeb.Endpoint,
+config :metamorphic, MetamorphicWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
   http: [ip: {127, 0, 0, 1}, port: 4000],
@@ -53,7 +53,7 @@ config :Metamorphic, MetamorphicWeb.Endpoint,
 # different ports.
 
 # Watch static and templates for browser reloading.
-config :Metamorphic, MetamorphicWeb.Endpoint,
+config :metamorphic, MetamorphicWeb.Endpoint,
   live_reload: [
     patterns: [
       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
@@ -63,7 +63,7 @@ config :Metamorphic, MetamorphicWeb.Endpoint,
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :Metamorphic, dev_routes: true
+config :metamorphic, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"

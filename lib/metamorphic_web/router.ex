@@ -29,7 +29,7 @@ defmodule MetamorphicWeb.Router do
   # end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
-  if Application.compile_env(:Metamorphic, :dev_routes) do
+  if Application.compile_env(:metamorphic, :dev_routes) do
     # If you want to use the LiveDashboard in production, you should put
     # it behind authentication and allow only admins to access it.
     # If your application does not have an admins-only section yet,
@@ -65,7 +65,10 @@ defmodule MetamorphicWeb.Router do
     pipe_through [:browser, :require_authenticated_user, :require_confirmed_user]
 
     live_session :require_authenticated_user,
-      on_mount: [{MetamorphicWeb.UserAuth, :ensure_authenticated}, {MetamorphicWeb.UserAuth, :ensure_confirmed}] do
+      on_mount: [
+        {MetamorphicWeb.UserAuth, :ensure_authenticated},
+        {MetamorphicWeb.UserAuth, :ensure_confirmed}
+      ] do
       live "/users/settings", UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
     end
