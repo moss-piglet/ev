@@ -62,10 +62,10 @@ defmodule E2Web.Router do
   end
 
   scope "/", E2Web do
-    pipe_through [:browser, :require_authenticated_user]
+    pipe_through [:browser, :require_authenticated_user, :require_confirmed_user]
 
     live_session :require_authenticated_user,
-      on_mount: [{E2Web.UserAuth, :ensure_authenticated}] do
+      on_mount: [{E2Web.UserAuth, :ensure_authenticated}, {E2Web.UserAuth, :ensure_confirmed}] do
       live "/users/settings", UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
     end
