@@ -1,9 +1,11 @@
 defmodule Metamorphic.Accounts.UserToken do
   use Ecto.Schema
   import Ecto.Query
-  alias Metamorphic.Accounts.UserToken
 
-  @hash_algorithm :sha256
+  alias Metamorphic.Accounts.UserToken
+  alias Metamorphic.Encrypted
+
+  @hash_algorithm :sha512
   @rand_size 32
 
   # It is very important to keep the reset password token expiry short,
@@ -13,10 +15,13 @@ defmodule Metamorphic.Accounts.UserToken do
   @change_email_validity_in_days 7
   @session_validity_in_days 60
 
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
   schema "users_tokens" do
     field :token, :binary
     field :context, :string
-    field :sent_to, :string
+    field :sent_to, Encrypted.Binary
+    field :sent_to_hash, Encrypted.HMAC
     belongs_to :user, Metamorphic.Accounts.User
 
     timestamps(updated_at: false)
@@ -67,6 +72,8 @@ defmodule Metamorphic.Accounts.UserToken do
   @doc """
   Builds a token and its hash to be delivered to the user's email.
 
+  The email provided must be a decrypted user email.
+
   The non-hashed token is sent to the user email while the
   hashed part is stored in the database. The original token cannot be reconstructed,
   which means anyone with read-only access to the database cannot directly use
@@ -77,8 +84,8 @@ defmodule Metamorphic.Accounts.UserToken do
   Users can easily adapt the existing code to provide other types of delivery methods,
   for example, by phone numbers.
   """
-  def build_email_token(user, context) do
-    build_hashed_token(user, context, user.email)
+  def build_email_token(user, email, context) do
+    build_hashed_token(user, context, email)
   end
 
   defp build_hashed_token(user, context, sent_to) do
@@ -90,6 +97,7 @@ defmodule Metamorphic.Accounts.UserToken do
        token: hashed_token,
        context: context,
        sent_to: sent_to,
+       sent_to_hash: sent_to,
        user_id: user.id
      }}
   end
@@ -116,7 +124,7 @@ defmodule Metamorphic.Accounts.UserToken do
         query =
           from token in token_and_context_query(hashed_token, context),
             join: user in assoc(token, :user),
-            where: token.inserted_at > ago(^days, "day") and token.sent_to == user.email,
+            where: token.inserted_at > ago(^days, "day") and token.sent_to_hash == user.email_hash,
             select: user
 
         {:ok, query}

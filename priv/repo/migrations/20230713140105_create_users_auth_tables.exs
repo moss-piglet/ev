@@ -9,7 +9,7 @@ defmodule Metamorphic.Repo.Migrations.CreateUsersAuthTables do
 
     create table(:users, primary_key: false) do
       add :id, :binary_id, primary_key: true
-      add :email, :citext, null: false
+      add :email, :binary, null: false
       add :email_hash, :binary, null: false
       add :hashed_password, :string, null: false
       add :is_admin, :boolean, null: false, default: false
@@ -36,7 +36,8 @@ defmodule Metamorphic.Repo.Migrations.CreateUsersAuthTables do
       add :user_id, references(:users, type: :binary_id, on_delete: :delete_all), null: false
       add :token, :binary, null: false
       add :context, :string, null: false
-      add :sent_to, :string
+      add :sent_to, :binary
+      add :sent_to_hash, :binary
       timestamps(updated_at: false)
     end
 

@@ -3,11 +3,18 @@ defmodule MetamorphicWeb.UserSettingsLive do
 
   alias Metamorphic.Accounts
 
+  alias Metamorphic.Encrypted.Users.Utils
+
   def render(assigns) do
     ~H"""
     <.header class="text-center">
       Account Settings
       <:subtitle>Manage your account email address and password settings</:subtitle>
+      <:actions :if={!@current_user.confirmed_at}>
+        <.button type="button" class="bg-brand-500" phx-click={JS.patch(~p"/users/confirm")}>
+          Confirm my account
+        </.button>
+      </:actions>
     </.header>
 
     <div class="space-y-12 divide-y">
@@ -16,9 +23,14 @@ defmodule MetamorphicWeb.UserSettingsLive do
           for={@email_form}
           id="email_form"
           phx-submit="update_email"
-          phx-change="validate_email"
         >
-          <.input field={@email_form[:email]} type="email" label="Email" required />
+          <.input
+            field={@email_form[:email]}
+            type="email"
+            label="Email"
+            value={decr(@current_user.email, @current_user, @key)}
+            required
+          />
           <.input
             field={@email_form[:current_password]}
             name="current_password"
@@ -73,9 +85,12 @@ defmodule MetamorphicWeb.UserSettingsLive do
     """
   end
 
-  def mount(%{"token" => token}, _session, socket) do
+  def mount(%{"token" => token}, %{"key" => key} = _session, socket) do
+    user = socket.assigns.current_user
+    email = Utils.decrypt_user_data(user.email, user, key)
+
     socket =
-      case Accounts.update_user_email(socket.assigns.current_user, token) do
+      case Accounts.update_user_email(user, email, token, key) do
         :ok ->
           put_flash(socket, :info, "Email changed successfully.")
 
@@ -118,12 +133,16 @@ defmodule MetamorphicWeb.UserSettingsLive do
   def handle_event("update_email", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_user
+    key = socket.assigns.key
+    d_email = Utils.decrypt_user_data(user.email, user, key)
 
-    case Accounts.apply_user_email(user, password, user_params) do
+    case Accounts.apply_user_email(user, password, user_params, [key: key, user: user, d_email: d_email]
+         ) do
       {:ok, applied_user} ->
         Accounts.deliver_user_update_email_instructions(
           applied_user,
-          user.email,
+          d_email,
+          user_params["email"],
           &url(~p"/users/settings/confirm_email/#{&1}")
         )
 

@@ -4,8 +4,12 @@ defmodule Metamorphic.Accounts.User do
 
   import ZXCVBN
 
+  import Metamorphic.Encrypted.Users.Utils
+
   alias Metamorphic.Encrypted
 
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
   schema "users" do
     field :email, Encrypted.Binary
     field :email_hash, Encrypted.HMAC
@@ -22,7 +26,7 @@ defmodule Metamorphic.Accounts.User do
     field :username, Encrypted.Binary
     field :username_hash, Encrypted.HMAC
     field :user_key, Encrypted.Binary, redact: true
-    field :visibility, Ecto.Enum, values: [:public, :private, :relations]
+    field :visibility, Ecto.Enum, values: [:public, :private, :relations], default: :public
     field :confirmed_at, :naive_datetime
 
     timestamps()
@@ -55,22 +59,13 @@ defmodule Metamorphic.Accounts.User do
     user
     |> cast(attrs, [:email, :password])
     |> validate_email(opts)
+    |> validate_username(opts)
     |> validate_password(opts)
   end
 
   defp validate_email(changeset, opts) do
-    # use the current_user_session_key to encrypt email change data
-    # for making updates to the email when a user is signed into their
-    # settings page
-    if opts[:current_user_session_key] && !is_nil(get_field(changeset, :email)) do
-      encrypted_email =
-        Encrypted.Users.Utils.encrypt_user_data(
-          get_field(changeset, :email),
-          opts[:user].user_key,
-          opts[:user],
-          opts[:current_user_session_key]
-        )
-
+    if opts[:key] && !is_nil(get_field(changeset, :email)) do
+      email = get_field(changeset, :email)
       changeset
       |> validate_required([:email])
       |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/,
@@ -79,7 +74,7 @@ defmodule Metamorphic.Accounts.User do
       |> validate_length(:email, max: 160)
       |> add_email_hash()
       |> maybe_validate_unique_email_hash(opts)
-      |> put_change(:email, encrypted_email)
+      |> encrypt_email_change(opts, email)
     else
       changeset
       |> validate_required([:email])
@@ -106,6 +101,41 @@ defmodule Metamorphic.Accounts.User do
       changeset
       |> unsafe_validate_unique(:email_hash, Metamorphic.Repo)
       |> unique_constraint(:email_hash)
+    else
+      changeset
+    end
+  end
+
+  defp encrypt_email_change(changeset, opts, email) do
+    changeset
+    |> put_change(:email, encrypt_user_data(email, opts[:user], opts[:key]))
+  end
+
+  defp validate_username(changeset, opts) do
+    if email = get_change(changeset, :email) do
+      changeset
+      |> put_change(:username, email)
+      |> add_username_hash()
+      |> maybe_validate_unique_username_hash(opts)
+    else
+      changeset
+    end
+  end
+
+  defp add_username_hash(changeset) do
+    if Map.has_key?(changeset.changes, :username) do
+      changeset
+      |> put_change(:username_hash, String.downcase(get_field(changeset, :username)))
+    else
+      changeset
+    end
+  end
+
+  defp maybe_validate_unique_username_hash(changeset, opts) do
+    if Keyword.get(opts, :validate_username, true) do
+      changeset
+      |> unsafe_validate_unique(:username_hash, Metamorphic.Repo)
+      |> unique_constraint(:username_hash)
     else
       changeset
     end
@@ -173,7 +203,8 @@ defmodule Metamorphic.Accounts.User do
            valid?: true,
            changes: %{
              email: email,
-             password: password
+             password: password,
+             username: username
            }
          } = changeset
        ) do
@@ -184,6 +215,7 @@ defmodule Metamorphic.Accounts.User do
     %{public: public_key, private: private_key} = Encrypted.Utils.generate_key_pairs()
 
     encrypted_email = Encrypted.Utils.encrypt(%{key: user_attributes_key, payload: email})
+    encrypted_username = Encrypted.Utils.encrypt(%{key: user_attributes_key, payload: username})
     encrypted_private_key = Encrypted.Utils.encrypt(%{key: user_key, payload: private_key})
 
     encrypted_user_attributes_key =
@@ -196,12 +228,18 @@ defmodule Metamorphic.Accounts.User do
     |> put_change(:key_hash, key_hash)
     |> put_change(:key_pair, %{public: public_key, private: encrypted_private_key})
     |> put_change(:user_key, encrypted_user_attributes_key)
+    |> put_change(:username, encrypted_username)
   end
 
   @doc """
   A user changeset for changing the email.
 
   It requires the email to change otherwise an error is added.
+
+  Since this is not generating encryption keys from scratch,
+  like new user registration does, but rather using the
+  current_user's existing keys, we use `encrypt_user_data/3`
+  to encrypt the email change.
   """
   def email_changeset(user, attrs, opts \\ []) do
     user
@@ -265,5 +303,33 @@ defmodule Metamorphic.Accounts.User do
     else
       add_error(changeset, :current_password, "is not valid")
     end
+  end
+
+  @doc """
+  Verifies and decrypts a user's secret key hash and stores in a
+  `key` variable. This is used to encrypt/decrypt a
+  user's data.
+
+  If there is no user or the user doesn't have a password, we call
+  `Argon2.no_user_verify/0` to avoid timing attacks.
+  """
+  def valid_key_hash?(
+        %Metamorphic.Accounts.User{hashed_password: hashed_password, key_hash: key_hash},
+        password
+      )
+      when is_binary(hashed_password) and is_binary(key_hash) and byte_size(password) > 0 and
+             byte_size(key_hash) > 0 do
+    case Argon2.verify_pass(password, hashed_password) do
+      true ->
+        Encrypted.Utils.decrypt_key_hash(password, key_hash)
+
+      _ ->
+        false
+    end
+  end
+
+  def valid_key_hash?(_, _) do
+    Argon2.no_user_verify()
+    false
   end
 end

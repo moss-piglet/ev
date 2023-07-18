@@ -32,6 +32,7 @@ defmodule MetamorphicWeb.UserRegistrationLive do
         </.error>
 
         <.input field={@form[:email]} type="email" label="Email" required />
+        <.input field={@form[:email_hash]} type="hidden" />
         <.input field={@form[:password]} type="password" label="Password" required />
 
         <:actions>
@@ -53,12 +54,13 @@ defmodule MetamorphicWeb.UserRegistrationLive do
     {:ok, socket, temporary_assigns: [form: nil]}
   end
 
-  def handle_event("save", %{"user" => user_params}, socket) do
+  def handle_event("save", %{"user" => %{"email" => email} = user_params}, socket) do
     case Accounts.register_user(user_params) do
       {:ok, user} ->
         {:ok, _} =
           Accounts.deliver_user_confirmation_instructions(
             user,
+            email,
             &url(~p"/users/confirm/#{&1}")
           )
 

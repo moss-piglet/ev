@@ -13,17 +13,18 @@ defmodule Metamorphic.Encrypted.Users.Utils do
   @doc """
   Decrypts payload for the current user's data
   with their current_user_session_key.
+
+  Updated for Metamorphic.
   """
   def decrypt_user_data(
         payload,
-        encrypted_payload_user_key,
         current_user,
         current_user_session_key
       ) do
-    with {:ok, session_key} <- bind_session_key(current_user_session_key),
+    with session_key <- current_user_session_key,
          {:ok, d_private_key} <- decrypt_private_key(current_user, session_key),
-         {:ok, d_user_key} <-
-           decrypt_user_key(current_user, encrypted_payload_user_key, d_private_key),
+         d_user_key <-
+           decrypt_user_key(current_user, current_user.user_key, d_private_key),
          {:ok, d_payload} <- decrypt_payload(d_user_key, payload) do
       d_payload
     else
@@ -43,9 +44,9 @@ defmodule Metamorphic.Encrypted.Users.Utils do
         current_user,
         current_user_session_key
       ) do
-    with {:ok, session_key} <- bind_session_key(current_user_session_key),
+    with session_key <- current_user_session_key,
          {:ok, d_private_key} <- decrypt_private_key(current_user, session_key),
-         {:ok, d_user_key} <-
+         d_user_key <-
            decrypt_user_key(current_user, encrypted_payload_user_key, d_private_key) do
       d_user_key
     else
@@ -64,14 +65,13 @@ defmodule Metamorphic.Encrypted.Users.Utils do
   """
   def encrypt_user_data(
         payload,
-        encrypted_payload_user_key,
         current_user,
         current_user_session_key
       ) do
-    with {:ok, session_key} <- bind_session_key(current_user_session_key),
+    with session_key <- current_user_session_key,
          {:ok, d_private_key} <- decrypt_private_key(current_user, session_key),
-         {:ok, d_user_key} <-
-           decrypt_user_key(current_user, encrypted_payload_user_key, d_private_key),
+         d_user_key <-
+           decrypt_user_key(current_user, current_user.user_key, d_private_key),
          e_payload <- encrypt_payload(d_user_key, payload) do
       e_payload
     else
@@ -82,9 +82,6 @@ defmodule Metamorphic.Encrypted.Users.Utils do
   end
 
   ## Private
-
-  @spec bind_session_key(tuple) :: tuple
-  defp bind_session_key(session_key_tuple) when is_tuple(session_key_tuple), do: session_key_tuple
 
   @spec decrypt_private_key(struct, binary) :: tuple
   defp decrypt_private_key(user, session_key) do
@@ -108,7 +105,7 @@ defmodule Metamorphic.Encrypted.Users.Utils do
            private: d_private_key
          }) do
       {:ok, d_user_key} ->
-        {:ok, d_user_key}
+        d_user_key
 
       {:error, message} ->
         {:error_user_key, message}

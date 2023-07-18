@@ -10,8 +10,14 @@ defmodule Metamorphic.Application do
     children = [
       # Start the Telemetry supervisor
       MetamorphicWeb.Telemetry,
+      # Start the RPC server
+      {Fly.RPC, []},
       # Start the Ecto repository
       Metamorphic.Repo.Local,
+      # Start the tracker after your DB.
+      {Fly.Postgres.LSN.Supervisor, repo: Metamorphic.Repo.Local},
+      # Start the Cloak vault.
+      Metamorphic.Vault,
       # Start the PubSub system
       {Phoenix.PubSub, name: Metamorphic.PubSub},
       # Start Finch

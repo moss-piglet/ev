@@ -4,9 +4,10 @@ defmodule Metamorphic.Accounts do
   """
 
   import Ecto.Query, warn: false
+
   alias Metamorphic.Repo
 
-  alias Metamorphic.Accounts.{User, UserToken, UserNotifier}
+  alias Metamorphic.Accounts.{User, UserToken, UserNotifier, UserTOTP}
 
   ## Database getters
 
@@ -23,7 +24,7 @@ defmodule Metamorphic.Accounts do
 
   """
   def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: email)
+    Repo.get_by(User, email_hash: email)
   end
 
   @doc """
@@ -40,7 +41,7 @@ defmodule Metamorphic.Accounts do
   """
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
-    user = Repo.get_by(User, email: email)
+    user = Repo.get_by(User, email_hash: email)
     if User.valid_password?(user, password), do: user
   end
 
@@ -121,9 +122,9 @@ defmodule Metamorphic.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def apply_user_email(user, password, attrs) do
+  def apply_user_email(user, password, attrs, opts \\ []) do
     user
-    |> User.email_changeset(attrs)
+    |> User.email_changeset(attrs, opts)
     |> User.validate_current_password(password)
     |> Ecto.Changeset.apply_action(:update)
   end
@@ -134,22 +135,22 @@ defmodule Metamorphic.Accounts do
   If the token matches, the user email is updated and the token is deleted.
   The confirmed_at date is also updated to the current time.
   """
-  def update_user_email(user, token) do
-    context = "change:#{user.email}"
+  def update_user_email(user, d_email, token, key) do
+    context = "change:#{d_email}"
 
     with {:ok, query} <- UserToken.verify_change_email_token_query(token, context),
          %UserToken{sent_to: email} <- Repo.one(query),
-         {:ok, _} <- Repo.transaction(user_email_multi(user, email, context)) do
+         {:ok, _} <- Repo.transaction(user_email_multi(user, email, context, key)) do
       :ok
     else
-      _ -> :error
+      _rest -> :error
     end
   end
 
-  defp user_email_multi(user, email, context) do
+  defp user_email_multi(user, email, context, key) do
     changeset =
       user
-      |> User.email_changeset(%{email: email})
+      |> User.email_changeset(%{email: email}, key: key, user: user)
       |> User.confirm_changeset()
 
     Ecto.Multi.new()
@@ -166,12 +167,22 @@ defmodule Metamorphic.Accounts do
       {:ok, %{to: ..., body: ...}}
 
   """
-  def deliver_user_update_email_instructions(%User{} = user, current_email, update_email_url_fun)
+  def deliver_user_update_email_instructions(
+        %User{} = user,
+        current_email,
+        temp_email,
+        update_email_url_fun
+      )
       when is_function(update_email_url_fun, 1) do
-    {encoded_token, user_token} = UserToken.build_email_token(user, "change:#{current_email}")
+    {encoded_token, user_token} =
+      UserToken.build_email_token(user, temp_email, "change:#{current_email}")
 
     Repo.insert!(user_token)
-    UserNotifier.deliver_update_email_instructions(user, update_email_url_fun.(encoded_token))
+    UserNotifier.deliver_update_email_instructions(
+      user,
+      temp_email,
+      update_email_url_fun.(encoded_token)
+    )
   end
 
   @doc """
@@ -212,6 +223,99 @@ defmodule Metamorphic.Accounts do
     |> case do
       {:ok, %{user: user}} -> {:ok, user}
       {:error, :user, changeset, _} -> {:error, changeset}
+    end
+  end
+
+  ## 2FA / TOTP (Time based One Time Password)
+
+  def two_factor_auth_enabled?(user) do
+    !!get_user_totp(user)
+  end
+
+  @doc """
+  Gets the %UserTOTP{} entry, if any.
+  """
+  def get_user_totp(user) do
+    Repo.get_by(UserTOTP, user_id: user.id)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for changing user TOTP.
+
+  ## Examples
+
+      iex> change_user_totp(%UserTOTP{})
+      %Ecto.Changeset{data: %UserTOTP{}}
+
+  """
+  def change_user_totp(totp, attrs \\ %{}) do
+    UserTOTP.changeset(totp, attrs)
+  end
+
+  @doc """
+  Updates the TOTP secret.
+
+  The secret is a random 20 bytes binary that is used to generate the QR Code to
+  enable 2FA using auth applications. It will only be updated if the OTP code
+  sent is valid.
+
+  ## Examples
+
+      iex> upsert_user_totp(%UserTOTP{secret: <<...>>}, code: "123456")
+      {:ok, %Ecto.Changeset{data: %UserTOTP{}}}
+
+  """
+  def upsert_user_totp(totp, attrs) do
+    totp_changeset =
+      totp
+      |> UserTOTP.changeset(attrs)
+      |> UserTOTP.ensure_backup_codes()
+      # If we are updating, let's make sure the secret
+      # in the struct propagates to the changeset.
+      |> Ecto.Changeset.force_change(:secret, totp.secret)
+
+    Repo.insert_or_update(totp_changeset)
+  end
+
+  @doc """
+  Regenerates the user backup codes for totp.
+
+  ## Examples
+
+      iex> regenerate_user_totp_backup_codes(%UserTOTP{})
+      %UserTOTP{backup_codes: [...]}
+
+  """
+  def regenerate_user_totp_backup_codes(totp) do
+    totp
+    |> Ecto.Changeset.change()
+    |> UserTOTP.regenerate_backup_codes()
+    |> Repo.update!()
+  end
+
+  @doc """
+  Disables the TOTP configuration for the given user.
+  """
+  def delete_user_totp(user_totp) do
+    Repo.delete!(user_totp)
+  end
+
+  @doc """
+  Validates if the given TOTP code is valid.
+  """
+  def validate_user_totp(user, code) do
+    totp = Repo.get_by!(UserTOTP, user_id: user.id)
+
+    cond do
+      UserTOTP.valid_totp?(totp, code) ->
+        :valid_totp
+
+      changeset = UserTOTP.validate_backup_code(totp, code) ->
+        totp = Repo.update!(changeset)
+        {:valid_backup_code, Enum.count(totp.backup_codes, &is_nil(&1.used_at))}
+
+      true ->
+        :invalid
     end
   end
 
@@ -256,12 +360,12 @@ defmodule Metamorphic.Accounts do
       {:error, :already_confirmed}
 
   """
-  def deliver_user_confirmation_instructions(%User{} = user, confirmation_url_fun)
+  def deliver_user_confirmation_instructions(%User{} = user, email, confirmation_url_fun)
       when is_function(confirmation_url_fun, 1) do
     if user.confirmed_at do
       {:error, :already_confirmed}
     else
-      {encoded_token, user_token} = UserToken.build_email_token(user, "confirm")
+      {encoded_token, user_token} = UserToken.build_email_token(user, email, "confirm")
       Repo.insert!(user_token)
       UserNotifier.deliver_confirmation_instructions(user, confirmation_url_fun.(encoded_token))
     end
@@ -300,9 +404,9 @@ defmodule Metamorphic.Accounts do
       {:ok, %{to: ..., body: ...}}
 
   """
-  def deliver_user_reset_password_instructions(%User{} = user, reset_password_url_fun)
+  def deliver_user_reset_password_instructions(%User{} = user, email, reset_password_url_fun)
       when is_function(reset_password_url_fun, 1) do
-    {encoded_token, user_token} = UserToken.build_email_token(user, "reset_password")
+    {encoded_token, user_token} = UserToken.build_email_token(user, email, "reset_password")
     Repo.insert!(user_token)
     UserNotifier.deliver_reset_password_instructions(user, reset_password_url_fun.(encoded_token))
   end

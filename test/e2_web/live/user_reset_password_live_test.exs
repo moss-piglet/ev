@@ -11,7 +11,7 @@ defmodule MetamorphicWeb.UserResetPasswordLiveTest do
 
     token =
       extract_user_token(fn url ->
-        Accounts.deliver_user_reset_password_instructions(user, url)
+        Accounts.deliver_user_reset_password_instructions(user, user.email, url)
       end)
 
     %{token: token, user: user}

@@ -44,6 +44,7 @@ defmodule Metamorphic.MixProject do
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:libcluster, "~> 3.3"},
+      {:nimble_totp, "~> 1.0"},
       {:phoenix, "~> 1.7.7"},
       {:phoenix_ecto, "~> 4.4"},
       {:phoenix_html, "~> 3.3"},

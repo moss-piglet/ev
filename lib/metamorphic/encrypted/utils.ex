@@ -49,13 +49,13 @@ defmodule Metamorphic.Encrypted.Utils do
   @spec decrypt_key_hash(
           binary,
           binary
-        ) :: {:error, :failed_verification} | {:ok, binary}
+        ) :: {:error, :failed_verification} | binary
   def decrypt_key_hash(pwd, key_hash) do
     [salt, uk] = key_hash |> String.split("$")
     key = derive_pwd_key(pwd, salt_string_to_bin(salt))
 
     case decrypt(%{key: key, payload: uk}) do
-      {:ok, d_key} -> {:ok, d_key}
+      {:ok, d_key} -> d_key
       {:error, e} -> {:error, e}
     end
   end

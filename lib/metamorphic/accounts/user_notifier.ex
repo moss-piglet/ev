@@ -60,12 +60,12 @@ defmodule Metamorphic.Accounts.UserNotifier do
   @doc """
   Deliver instructions to update a user email.
   """
-  def deliver_update_email_instructions(user, url) do
-    deliver(user.email, "Update email instructions", """
+  def deliver_update_email_instructions(_user, email, url) do
+    deliver(email, "Update email instructions", """
 
     ==============================
 
-    Hi #{user.email},
+    Hi #{email},
 
     You can change your email by visiting the URL below:
 

@@ -35,6 +35,7 @@ defmodule MetamorphicWeb.UserForgotPasswordLive do
     if user = Accounts.get_user_by_email(email) do
       Accounts.deliver_user_reset_password_instructions(
         user,
+        email,
         &url(~p"/users/reset_password/#{&1}")
       )
     end

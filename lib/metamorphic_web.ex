@@ -86,6 +86,8 @@ defmodule MetamorphicWeb do
       # Core UI components and translation
       import MetamorphicWeb.CoreComponents
       import MetamorphicWeb.Gettext
+      # Custom Metamorphic helpers
+      import MetamorphicWeb.Helpers
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

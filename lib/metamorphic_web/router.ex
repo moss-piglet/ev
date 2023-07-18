@@ -62,12 +62,11 @@ defmodule MetamorphicWeb.Router do
   end
 
   scope "/", MetamorphicWeb do
-    pipe_through [:browser, :require_authenticated_user, :require_confirmed_user]
+    pipe_through [:browser, :require_authenticated_user]
 
     live_session :require_authenticated_user,
       on_mount: [
-        {MetamorphicWeb.UserAuth, :ensure_authenticated},
-        {MetamorphicWeb.UserAuth, :ensure_confirmed}
+        {MetamorphicWeb.UserAuth, :ensure_authenticated}
       ] do
       live "/users/settings", UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
