@@ -94,10 +94,15 @@ defmodule MetamorphicWeb.UserSettingsLive do
         </.simple_form>
       </div>
       <div>
+        <.info_banner :if={!@current_user.confirmed_at} navigate={~p"/users/confirm"} nav_title={"Confirm"}>
+          Confirm your account to enable the ability to reset your password if you forget it.
+        </.info_banner>
+
         <.simple_form
           for={@forgot_password_form}
           id="forgot_password_form"
           phx-submit="update_forgot_password"
+          :if={@current_user.confirmed_at}
         >
           <.input
             field={@forgot_password_form[:is_forgot_pwd?]}
