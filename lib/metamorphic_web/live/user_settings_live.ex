@@ -294,38 +294,47 @@ defmodule MetamorphicWeb.UserSettingsLive do
     user = socket.assigns.current_user
     key = socket.assigns.key
 
-    case Accounts.update_user_forgot_password(user, user_params,
-           change_forgot_password: true,
-           key: key,
-           user: user
-         ) do
-      {:ok, user} ->
-        forgot_password_form =
-          user
-          |> Accounts.change_user_forgot_password(user_params)
-          |> to_form()
+    if user.confirmed_at do
+      case Accounts.update_user_forgot_password(user, user_params,
+            change_forgot_password: true,
+            key: key,
+            user: user
+          ) do
+        {:ok, user} ->
+          forgot_password_form =
+            user
+            |> Accounts.change_user_forgot_password(user_params)
+            |> to_form()
 
-        info = "Your forgot password setting has been updated successfully."
+          info = "Your forgot password setting has been updated successfully."
 
-        {:noreply,
-         socket
-         |> put_flash(:info, info)
-         |> assign(forgot_password_form: forgot_password_form)
-         |> redirect(to: ~p"/users/settings")}
+          {:noreply,
+          socket
+          |> put_flash(:info, info)
+          |> assign(forgot_password_form: forgot_password_form)
+          |> redirect(to: ~p"/users/settings")}
 
-      {:error, changeset} ->
-        %{is_forgot_pwd?: [{info, []}]} =
-          Ecto.Changeset.traverse_errors(changeset, fn msg ->
-            msg
-          end)
+        {:error, changeset} ->
+          %{is_forgot_pwd?: [{info, []}]} =
+            Ecto.Changeset.traverse_errors(changeset, fn msg ->
+              msg
+            end)
 
-        info = "Woops, your forgot password setting " <> info <> "."
+          info = "Woops, your forgot password setting " <> info <> "."
 
-        {:noreply,
-         socket
-         |> put_flash(:error, info)
-         |> assign(forgot_password_form: to_form(changeset))
-         |> redirect(to: ~p"/users/settings")}
+          {:noreply,
+          socket
+          |> put_flash(:error, info)
+          |> assign(forgot_password_form: to_form(changeset))
+          |> redirect(to: ~p"/users/settings")}
+      end
+    else
+      info = "Woops, you need to confirm your account first."
+
+      {:noreply,
+      socket
+      |> put_flash(:error, info)
+      |> redirect(to: ~p"/users/settings")}
     end
   end
 end
