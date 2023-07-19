@@ -35,20 +35,44 @@ defmodule Metamorphic.Encrypted.Users.Utils do
     end
   end
 
-  # Used to decrypt relationship key when sharing.
+  # Used to decrypt user_key, aka the
+  # user_attributes_key. This is the key that
+  # is used to encrypt/decrypt data.
   #
-  # Does not require a payload as the payload is
-  # the encrypted_payload_user_key.
-  def decrypt_relationship_key(
-        encrypted_payload_user_key,
+  # It is encrypted by the user's public_key.
+  #
+  # Used for sharing or changing the password.
+  def decrypt_user_attrs_key(
+        user_key,
         current_user,
         current_user_session_key
       ) do
     with session_key <- current_user_session_key,
          {:ok, d_private_key} <- decrypt_private_key(current_user, session_key),
          d_user_key <-
-           decrypt_user_key(current_user, encrypted_payload_user_key, d_private_key) do
+           decrypt_user_key(current_user, user_key, d_private_key) do
       d_user_key
+    else
+      {:error_private_key, message} -> message
+      {:error_user_key, message} -> message
+      rest -> rest
+    end
+  end
+
+  @doc """
+  Used to decrypt the `user_key` and the
+  user's `private_key.
+  """
+  def decrypt_user_keys(
+        user_key,
+        current_user,
+        current_user_session_key
+      ) do
+    with session_key <- current_user_session_key,
+         {:ok, d_private_key} <- decrypt_private_key(current_user, session_key),
+         d_user_key <-
+           decrypt_user_key(current_user, user_key, d_private_key) do
+      %{user_key: d_user_key, private_key: d_private_key}
     else
       {:error_private_key, message} -> message
       {:error_user_key, message} -> message

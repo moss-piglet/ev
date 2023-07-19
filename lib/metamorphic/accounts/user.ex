@@ -216,18 +216,23 @@ defmodule Metamorphic.Accounts.User do
       # Hashing could be done with `Ecto.Changeset.prepare_changes/2`, but that
       # would keep the database transaction open longer and hurt performance.
       |> put_change(:hashed_password, Argon2.hash_pwd_salt(password, salt_len: 128))
-      |> put_new_key_hash_and_key_pair(opts)
+      |> put_new_key_hash_and_key_pair(password, opts)
       |> delete_change(:password)
     else
       changeset
     end
   end
 
-  defp put_new_key_hash_and_key_pair(changeset, opts) do
+  defp put_new_key_hash_and_key_pair(changeset, password, opts) do
     cond do
       opts[:change_password] ->
+        %{user_key: user_key, private_key: private_key} = decrypt_user_keys(opts[:user].user_key, opts[:user], opts[:key])
+       %{key_hash: new_key_hash} = Encrypted.Utils.generate_key_hash(password, user_key)
+        e_private_key = Encrypted.Utils.encrypt(%{key: user_key, payload: private_key})
+
         changeset
-        |> add_error(:password, "error change_password")
+        |> put_change(:key_hash, new_key_hash)
+        |> put_change(:key_pair, %{public: opts[:user].key_pair["public"], private: e_private_key})
 
       opts[:reset_password] ->
         changeset
