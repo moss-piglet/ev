@@ -20,7 +20,6 @@ defmodule MetamorphicWeb.UserSessionController do
 
   defp create(conn, %{"user" => user_params}, info) do
     %{"email" => email, "password" => password} = user_params
-    user = Accounts.get_user_by_encrypted_email(email)
 
     if user = Accounts.get_user_by_email_and_password(email, password) do
       conn

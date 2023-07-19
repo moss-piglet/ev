@@ -12,11 +12,13 @@ defmodule Metamorphic.Repo.Migrations.CreateUsersAuthTables do
       add :email, :binary, null: false
       add :email_hash, :binary, null: false
       add :hashed_password, :string, null: false
-      add :is_admin, :boolean, null: false, default: false
-      add :is_suspended, :boolean, null: false, default: false
-      add :is_deleted, :boolean, null: false, default: false
-      add :is_onboarded, :boolean, null: false, default: false
+      add :is_admin?, :boolean, null: false, default: false
+      add :is_suspended?, :boolean, null: false, default: false
+      add :is_deleted?, :boolean, null: false, default: false
+      add :is_onboarded?, :boolean, null: false, default: false
+      add :is_forgot_pwd?, :boolean, null: false, default: false
       add :key_hash, :binary, null: false
+      add :key, :binary
       add :key_pair, {:map, :binary}, null: false
       add :name, :binary
       add :name_hash, :binary

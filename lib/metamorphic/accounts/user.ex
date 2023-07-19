@@ -15,11 +15,13 @@ defmodule Metamorphic.Accounts.User do
     field :email_hash, Encrypted.HMAC
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
-    field :is_admin, :boolean, default: false
-    field :is_suspended, :boolean, default: false
-    field :is_deleted, :boolean, default: false
-    field :is_onboarded, :boolean, default: false
+    field :is_admin?, :boolean, default: false
+    field :is_suspended?, :boolean, default: false
+    field :is_deleted?, :boolean, default: false
+    field :is_onboarded?, :boolean, default: false
+    field :is_forgot_pwd?, :boolean, default: false
     field :key_hash, Encrypted.Binary
+    field :key, Encrypted.Binary
     field :key_pair, {:map, Encrypted.Binary}
     field :name, Encrypted.Binary
     field :name_hash, Encrypted.HMAC
