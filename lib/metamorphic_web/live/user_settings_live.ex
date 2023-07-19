@@ -94,8 +94,12 @@ defmodule MetamorphicWeb.UserSettingsLive do
         </.simple_form>
       </div>
       <div>
-        <.simple_form for={@forgot_password_form} id="forgot_password_form" phx-submit="update_forgot_password">
-         <.input
+        <.simple_form
+          for={@forgot_password_form}
+          id="forgot_password_form"
+          phx-submit="update_forgot_password"
+        >
+          <.input
             field={@forgot_password_form[:is_forgot_pwd?]}
             type="checkbox"
             label="Enable forgot password?"
@@ -305,7 +309,12 @@ defmodule MetamorphicWeb.UserSettingsLive do
          |> redirect(to: ~p"/users/settings")}
 
       {:error, changeset} ->
-        info = "Uh oh, something went wrong."
+        %{is_forgot_pwd?: [{info, []}]} =
+          Ecto.Changeset.traverse_errors(changeset, fn msg ->
+            msg
+          end)
+
+        info = "Woops, your forgot password setting " <> info <> "."
 
         {:noreply,
          socket

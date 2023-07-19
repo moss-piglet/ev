@@ -247,7 +247,7 @@ defmodule Metamorphic.Accounts.User do
 
   defp put_new_key_hash_and_key_pair(changeset, password, opts) do
     cond do
-      opts[:change_password] ->
+      opts[:change_password] || opts[:reset_password] ->
         %{user_key: user_key, private_key: private_key} =
           decrypt_user_keys(opts[:user].user_key, opts[:user], opts[:key])
 
@@ -258,13 +258,8 @@ defmodule Metamorphic.Accounts.User do
         |> put_change(:key_hash, new_key_hash)
         |> put_change(:key_pair, %{public: opts[:user].key_pair["public"], private: e_private_key})
 
-      opts[:reset_password] ->
-        changeset
-        |> add_error(:password, "error reset_password")
-
       true ->
         changeset
-        |> add_error(:password, "error put new key hash")
     end
   end
 
@@ -374,7 +369,7 @@ defmodule Metamorphic.Accounts.User do
     |> maybe_delete_key(opts)
     |> case do
       %{changes: %{is_forgot_pwd?: _}} = changeset -> changeset
-      %{} = changeset -> add_error(changeset, :username, "did not change")
+      %{} = changeset -> add_error(changeset, :is_forgot_pwd?, "did not change")
     end
   end
 

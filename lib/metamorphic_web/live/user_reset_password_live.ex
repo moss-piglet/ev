@@ -7,8 +7,11 @@ defmodule MetamorphicWeb.UserResetPasswordLive do
     ~H"""
     <div class="mx-auto max-w-sm">
       <.header class="text-center">Reset Password</.header>
-
+      <div :if={!@user.is_forgot_pwd? || !@user.key} class="text-center">
+        You cannot reset your password.
+      </div>
       <.simple_form
+        :if={@user.is_forgot_pwd? && @user.key}
         for={@form}
         id="reset_password_form"
         phx-submit="reset_password"
@@ -18,7 +21,13 @@ defmodule MetamorphicWeb.UserResetPasswordLive do
           Oops, something went wrong! Please check the errors below.
         </.error>
 
-        <.input field={@form[:password]} type="password" label="New password" required />
+        <.input
+          field={@form[:password]}
+          type="password"
+          label="New password"
+          phx-debounce="blur"
+          required
+        />
         <.input
           field={@form[:password_confirmation]}
           type="password"
@@ -56,15 +65,29 @@ defmodule MetamorphicWeb.UserResetPasswordLive do
   # Do not log in the user after reset password to avoid a
   # leaked token giving the user access to the account.
   def handle_event("reset_password", %{"user" => user_params}, socket) do
-    case Accounts.reset_user_password(socket.assigns.user, user_params) do
-      {:ok, _} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Password reset successfully.")
-         |> redirect(to: ~p"/users/log_in")}
+    if socket.assigns.user.is_forgot_pwd? && socket.assigns.user.key do
+      user = socket.assigns.user
+      key = socket.assigns.user.key
 
-      {:error, changeset} ->
-        {:noreply, assign_form(socket, Map.put(changeset, :action, :insert))}
+      case Accounts.reset_user_password(socket.assigns.user, user_params,
+             user: user,
+             key: key,
+             reset_password: true
+           ) do
+        {:ok, _} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Password reset successfully.")
+           |> redirect(to: ~p"/users/log_in")}
+
+        {:error, changeset} ->
+          {:noreply, assign_form(socket, Map.put(changeset, :action, :insert))}
+      end
+    else
+      {:noreply,
+       socket
+       |> put_flash(:error, "Woops, you cannot reset your password.")
+       |> redirect(to: ~p"/users/log_in")}
     end
   end
 

@@ -274,7 +274,9 @@ defmodule MetamorphicWeb.CoreComponents do
   attr :field, Phoenix.HTML.FormField,
     doc: "a form field struct retrieved from the form, for example: @form[:email]"
 
-  attr :description, :string, doc: "optional description, currently only used for checkbox inputs"
+  attr :description, :string,
+    default: nil,
+    doc: "optional description, currently only used for checkbox inputs"
 
   attr :errors, :list, default: []
   attr :checked, :boolean, doc: "the checked flag for checkbox inputs"
@@ -305,8 +307,10 @@ defmodule MetamorphicWeb.CoreComponents do
     <div phx-feedback-for={@name}>
       <div class="relative flex items-start pb-4 pt-3.5">
         <div class="min-w-0 flex-1 text-sm leading-6">
-          <label class="font-medium text-zinc-900"><%= @label %></label>
-          <p id={@id <> "_description"} class="text-zinc-500"><%= @description %></p>
+          <label class="font-semibold text-zinc-900"><%= @label %></label>
+          <p :if={@description} id={@id <> "_description"} class="text-zinc-500">
+            <%= @description %>
+          </p>
         </div>
         <div class="ml-3 flex h-6 items-center">
           <input type="hidden" name={@name} value="false" />

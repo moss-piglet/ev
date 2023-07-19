@@ -483,9 +483,9 @@ defmodule Metamorphic.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def reset_user_password(user, attrs) do
+  def reset_user_password(user, attrs, opts \\ []) do
     Ecto.Multi.new()
-    |> Ecto.Multi.update(:user, User.password_changeset(user, attrs))
+    |> Ecto.Multi.update(:user, User.password_changeset(user, attrs, opts))
     |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, :all))
     |> Repo.transaction()
     |> case do
