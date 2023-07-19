@@ -1,10 +1,6 @@
 defmodule MetamorphicWeb.UserDashLive do
   use MetamorphicWeb, :live_view
 
-  alias Metamorphic.Accounts
-
-  alias Metamorphic.Encrypted.Users.Utils
-
   def render(assigns) do
     ~H"""
     <.header class="text-center">
