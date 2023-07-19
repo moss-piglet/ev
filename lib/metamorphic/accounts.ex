@@ -178,6 +178,7 @@ defmodule Metamorphic.Accounts do
       UserToken.build_email_token(user, temp_email, "change:#{current_email}")
 
     Repo.insert!(user_token)
+
     UserNotifier.deliver_update_email_instructions(
       user,
       temp_email,
@@ -194,8 +195,8 @@ defmodule Metamorphic.Accounts do
       %Ecto.Changeset{data: %User{}}
 
   """
-  def change_user_password(user, attrs \\ %{}) do
-    User.password_changeset(user, attrs, hash_password: false)
+  def change_user_password(user, attrs \\ %{}, opts \\ []) do
+    User.password_changeset(user, attrs, opts ++ [hash_password: false])
   end
 
   @doc """
@@ -210,10 +211,10 @@ defmodule Metamorphic.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_user_password(user, password, attrs) do
+  def update_user_password(user, password, attrs, opts) do
     changeset =
       user
-      |> User.password_changeset(attrs)
+      |> User.password_changeset(attrs, opts)
       |> User.validate_current_password(password)
 
     Ecto.Multi.new()

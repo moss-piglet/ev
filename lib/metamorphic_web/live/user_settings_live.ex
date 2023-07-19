@@ -19,11 +19,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
 
     <div class="space-y-12 divide-y">
       <div>
-        <.simple_form
-          for={@email_form}
-          id="email_form"
-          phx-submit="update_email"
-        >
+        <.simple_form for={@email_form} id="email_form" phx-submit="update_email">
           <.input
             field={@email_form[:email]}
             type="email"
@@ -136,7 +132,10 @@ defmodule MetamorphicWeb.UserSettingsLive do
     key = socket.assigns.key
     d_email = Utils.decrypt_user_data(user.email, user, key)
 
-    case Accounts.apply_user_email(user, password, user_params, [key: key, user: user, d_email: d_email]
+    case Accounts.apply_user_email(user, password, user_params,
+           key: key,
+           user: user,
+           d_email: d_email
          ) do
       {:ok, applied_user} ->
         Accounts.deliver_user_update_email_instructions(
@@ -159,7 +158,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
 
     password_form =
       socket.assigns.current_user
-      |> Accounts.change_user_password(user_params)
+      |> Accounts.change_user_password(user_params, change_password: true)
       |> Map.put(:action, :validate)
       |> to_form()
 
@@ -170,7 +169,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_user
 
-    case Accounts.update_user_password(user, password, user_params) do
+    case Accounts.update_user_password(user, password, user_params, change_password: true) do
       {:ok, user} ->
         password_form =
           user

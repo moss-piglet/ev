@@ -66,6 +66,7 @@ defmodule Metamorphic.Accounts.User do
   defp validate_email(changeset, opts) do
     if opts[:key] && !is_nil(get_field(changeset, :email)) do
       email = get_field(changeset, :email)
+
       changeset
       |> validate_required([:email])
       |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/,
@@ -149,6 +150,14 @@ defmodule Metamorphic.Accounts.User do
     |> maybe_hash_password(opts)
   end
 
+  defp validate_password_change(changeset, opts) do
+    changeset
+    |> validate_required([:password])
+    |> validate_length(:password, min: 12, max: 72)
+    |> check_zxcvbn_strength()
+    |> maybe_hash_password_change(opts)
+  end
+
   defp check_zxcvbn_strength(changeset) do
     password = get_change(changeset, :password)
 
@@ -191,14 +200,46 @@ defmodule Metamorphic.Accounts.User do
       # Hashing could be done with `Ecto.Changeset.prepare_changes/2`, but that
       # would keep the database transaction open longer and hurt performance.
       |> put_change(:hashed_password, Argon2.hash_pwd_salt(password, salt_len: 128))
-      |> put_key_hash_and_key_pair_and_encrypt_user_data()
+      |> put_key_hash_and_key_pair_and_maybe_encrypt_user_data()
       |> delete_change(:password)
     else
       changeset
     end
   end
 
-  defp put_key_hash_and_key_pair_and_encrypt_user_data(
+  defp maybe_hash_password_change(changeset, opts) do
+    hash_password? = Keyword.get(opts, :hash_password, true)
+    password = get_change(changeset, :password)
+
+    if hash_password? && password && changeset.valid? do
+      changeset
+      # Hashing could be done with `Ecto.Changeset.prepare_changes/2`, but that
+      # would keep the database transaction open longer and hurt performance.
+      |> put_change(:hashed_password, Argon2.hash_pwd_salt(password, salt_len: 128))
+      |> put_new_key_hash_and_key_pair(opts)
+      |> delete_change(:password)
+    else
+      changeset
+    end
+  end
+
+  defp put_new_key_hash_and_key_pair(changeset, opts) do
+    cond do
+      opts[:change_password] ->
+        changeset
+        |> add_error(:password, "error change_password")
+
+      opts[:reset_password] ->
+        changeset
+        |> add_error(:password, "error reset_password")
+
+      true ->
+        changeset
+        |> add_error(:password, "error put new key hash")
+    end
+  end
+
+  defp put_key_hash_and_key_pair_and_maybe_encrypt_user_data(
          %Ecto.Changeset{
            valid?: true,
            changes: %{
@@ -254,6 +295,10 @@ defmodule Metamorphic.Accounts.User do
   @doc """
   A user changeset for changing the password.
 
+  This is used from within a user's settings.
+  It must recrypt all user data with the new
+  password.
+
   ## Options
 
     * `:hash_password` - Hashes the password so it can be stored securely
@@ -267,7 +312,7 @@ defmodule Metamorphic.Accounts.User do
     user
     |> cast(attrs, [:password])
     |> validate_confirmation(:password, message: "does not match password")
-    |> validate_password(opts)
+    |> validate_password_change(opts)
   end
 
   @doc """

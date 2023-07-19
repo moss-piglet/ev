@@ -124,7 +124,8 @@ defmodule Metamorphic.Accounts.UserToken do
         query =
           from token in token_and_context_query(hashed_token, context),
             join: user in assoc(token, :user),
-            where: token.inserted_at > ago(^days, "day") and token.sent_to_hash == user.email_hash,
+            where:
+              token.inserted_at > ago(^days, "day") and token.sent_to_hash == user.email_hash,
             select: user
 
         {:ok, query}
