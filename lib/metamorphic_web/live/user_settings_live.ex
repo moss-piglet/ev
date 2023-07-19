@@ -17,6 +17,8 @@ defmodule MetamorphicWeb.UserSettingsLive do
       </:actions>
     </.header>
 
+    <.flash_group flash={@flash} />
+
     <div class="space-y-12 divide-y">
       <div>
         <.simple_form for={@email_form} id="email_form" phx-submit="update_email">
@@ -77,6 +79,20 @@ defmodule MetamorphicWeb.UserSettingsLive do
           </:actions>
         </.simple_form>
       </div>
+      <div>
+        <.simple_form for={@username_form} id="username_form" phx-submit="update_username">
+          <.input
+            field={@username_form[:username]}
+            type="text"
+            label="Username"
+            value={decr(@current_user.username, @current_user, @key)}
+            required
+          />
+          <:actions>
+            <.button phx-disable-with="Changing...">Change Username</.button>
+          </:actions>
+        </.simple_form>
+      </div>
     </div>
     """
   end
@@ -101,6 +117,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
     user = socket.assigns.current_user
     email_changeset = Accounts.change_user_email(user)
     password_changeset = Accounts.change_user_password(user)
+    username_changeset = Accounts.change_user_username(user)
 
     socket =
       socket
@@ -109,6 +126,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
       |> assign(:current_email, user.email)
       |> assign(:email_form, to_form(email_changeset))
       |> assign(:password_form, to_form(password_changeset))
+      |> assign(:username_form, to_form(username_changeset))
       |> assign(:trigger_submit, false)
 
     {:ok, socket}
@@ -181,6 +199,39 @@ defmodule MetamorphicWeb.UserSettingsLive do
 
       {:error, changeset} ->
         {:noreply, assign(socket, password_form: to_form(changeset))}
+    end
+  end
+
+  def handle_event("validate_username", params, socket) do
+    %{"user" => user_params} = params
+
+    username_form =
+      socket.assigns.current_user
+      |> Accounts.change_user_username(user_params)
+      |> Map.put(:action, :validate)
+      |> to_form()
+
+    {:noreply, assign(socket, username_form: username_form)}
+  end
+
+  def handle_event("update_username", params, socket) do
+    %{"user" => user_params} = params
+    user = socket.assigns.current_user
+    key = socket.assigns.key
+
+    case Accounts.update_user_username(user, user_params, [change_username: true, key: key, user: user]) do
+      {:ok, user} ->
+        username_form =
+          user
+          |> Accounts.change_user_username(user_params)
+          |> to_form()
+
+        info = "Your username has been updated successfully."
+        {:noreply, socket |> put_flash(:info, info) |> assign(username_form: username_form) |> redirect(to: ~p"/users/settings")}
+
+      {:error, changeset} ->
+        info = "That username may already be taken."
+        {:noreply, socket |> put_flash(:error, info) |> assign(username_form: to_form(changeset)) |> redirect(to: ~p"/users/settings")}
     end
   end
 end

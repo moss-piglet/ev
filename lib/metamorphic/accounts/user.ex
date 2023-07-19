@@ -112,6 +112,11 @@ defmodule Metamorphic.Accounts.User do
     |> put_change(:email, encrypt_user_data(email, opts[:user], opts[:key]))
   end
 
+  defp encrypt_username_change(changeset, opts, username) do
+    changeset
+    |> put_change(:username, encrypt_user_data(username, opts[:user], opts[:key]))
+  end
+
   defp validate_username(changeset, opts) do
     if email = get_change(changeset, :email) do
       changeset
@@ -119,7 +124,22 @@ defmodule Metamorphic.Accounts.User do
       |> add_username_hash()
       |> maybe_validate_unique_username_hash(opts)
     else
-      changeset
+      if opts[:key] && !is_nil(get_field(changeset, :username)) do
+        username = get_change(changeset, :username)
+
+        changeset
+        |> validate_required([:username])
+        |> validate_length(:username, min: 2, max: 160)
+        |> add_username_hash()
+        |> maybe_validate_unique_username_hash(opts)
+        |> encrypt_username_change(opts, username)
+      else
+        changeset
+        |> validate_required([:username])
+        |> validate_length(:username, min: 2, max: 160)
+        |> add_username_hash()
+        |> maybe_validate_unique_username_hash(opts)
+      end
     end
   end
 
@@ -318,6 +338,26 @@ defmodule Metamorphic.Accounts.User do
     |> cast(attrs, [:password])
     |> validate_confirmation(:password, message: "does not match password")
     |> validate_password_change(opts)
+  end
+
+   @doc """
+  A user changeset for changing the username.
+
+  It requires the username to change otherwise an error is added.
+
+  Since this is not generating encryption keys from scratch,
+  like new user registration does, but rather using the
+  current_user's existing keys, we use `encrypt_user_data/3`
+  to encrypt the username change.
+  """
+  def username_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:username])
+    |> validate_username(opts)
+    |> case do
+      %{changes: %{username: _}} = changeset -> changeset
+      %{} = changeset -> add_error(changeset, :username, "did not change")
+    end
   end
 
   @doc """

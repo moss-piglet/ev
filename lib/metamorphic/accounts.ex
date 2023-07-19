@@ -97,6 +97,25 @@ defmodule Metamorphic.Accounts do
   ## Settings
 
   @doc """
+  Returns an `%Ecto.Changeset{}` for changing the user username.
+
+  ## Examples
+
+      iex> change_user_username(user)
+      %Ecto.Changeset{data: %User{}}
+
+  """
+  def change_user_username(user, attrs \\ %{}) do
+    User.username_changeset(user, attrs, validate_username: false)
+  end
+
+  def update_user_username(user, attrs \\ %{}, opts \\ []) do
+    user
+    |> User.username_changeset(attrs, opts)
+    |> Repo.update()
+  end
+
+  @doc """
   Returns an `%Ecto.Changeset{}` for changing the user email.
 
   ## Examples
