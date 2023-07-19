@@ -48,7 +48,7 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "example.com"
+  host = System.get_env("PHX_HOST") || "metamorphic.app"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :metamorphic, MetamorphicWeb.Endpoint,
@@ -103,6 +103,27 @@ if config_env() == :prod do
   config :swoosh,
     api_client: Swoosh.ApiClient.Finch,
     finch_name: Metamorphic.Finch
+
+  # Configure Oban for fly_postgres.
+  # We want to ensure we're only running on
+  # the primary database.
+  unless System.get_env("FLY_REGION") do
+    System.put_env("FLY_REGION", "bos")
+  end
+
+  unless System.get_env("PRIMARY_REGION") do
+    System.put_env("PRIMARY_REGION", "bos")
+  end
+
+  primary? = System.get_env("FLY_REGION") == System.get_env("PRIMARY_REGION")
+
+  if config_env() == :prod do
+    unless primary? do
+      config :metamorphic, Oban,
+        queues: false,
+        plugins: false
+    end
+  end
 
   # ## SSL Support
   #

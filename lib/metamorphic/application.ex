@@ -10,8 +10,6 @@ defmodule Metamorphic.Application do
     topologies = Application.get_env(:libcluster, :topologies) || []
 
     children = [
-      # Start the Telemetry supervisor
-      MetamorphicWeb.Telemetry,
       # Start the RPC server
       {Fly.RPC, []},
       # Start the Ecto repository
@@ -20,6 +18,10 @@ defmodule Metamorphic.Application do
       {Fly.Postgres.LSN.Supervisor, repo: Metamorphic.Repo.Local},
       # Start the Cloak vault.
       Metamorphic.Vault,
+      # Start Oban supervision.
+      {Oban, Application.fetch_env!(:metamorphic, Oban)},
+      # Start the Telemetry supervisor
+      MetamorphicWeb.Telemetry,
       # Start the PubSub system
       {Phoenix.PubSub, name: Metamorphic.PubSub},
       # Start Finch

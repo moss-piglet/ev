@@ -45,6 +45,7 @@ defmodule Metamorphic.MixProject do
       {:jason, "~> 1.2"},
       {:libcluster, "~> 3.3"},
       {:nimble_totp, "~> 1.0"},
+      {:oban, "~> 2.15"},
       {:phoenix, "~> 1.7.7"},
       {:phoenix_ecto, "~> 4.4"},
       {:phoenix_html, "~> 3.3"},
