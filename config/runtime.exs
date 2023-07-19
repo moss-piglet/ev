@@ -125,11 +125,6 @@ if config_env() == :prod do
     end
   end
 
-  # Configure app specific runtime variables
-  config :metamorphic,
-    session_signing_salt: System.get_env("SESSION_SIGNING_SALT"),
-    session_encryption_salt: System.get_env("SESSION_ENCRYPTION_SALT")
-
   # ## SSL Support
   #
   # To get SSL working, you will need to add the `https` key

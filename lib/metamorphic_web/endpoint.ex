@@ -8,8 +8,8 @@ defmodule MetamorphicWeb.Endpoint do
     store: :cookie,
     secure: true,
     key: "_Metamorphic_key",
-    signing_salt: Application.get_env(:metamorphic, :session_signing_salt),
-    encryption_salt: Application.get_env(:metamorphic, :session_encryption_salt),
+    signing_salt: "xgTdf/jDKJWeSHp7MoSoopYDIN4ebaMeGTeYjW6kH4A=",
+    encryption_salt: "Xrern1kmLt0/NbUPFFBaOyjnMMVriokKNX2ByYu6Nkw=",
     same_site: "Strict"
   ]
 

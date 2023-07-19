@@ -21,7 +21,7 @@ config :metamorphic, MetamorphicWeb.Endpoint,
     layout: false
   ],
   pubsub_server: Metamorphic.PubSub,
-  live_view: [signing_salt: "QZW2G8XF"]
+  live_view: [signing_salt: "QZW2G8XF", encryption_salt: "NbUPFFBa"]
 
 # Configures the mailer
 #
@@ -31,10 +31,6 @@ config :metamorphic, MetamorphicWeb.Endpoint,
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
 config :metamorphic, Metamorphic.Mailer, adapter: Swoosh.Adapters.Local
-
-config :metamorphic,
-    session_signing_salt: System.get_env("SESSION_SIGNING_SALT"),
-    session_encryption_salt: System.get_env("SESSION_ENCRYPTION_SALT")
 
 # Configure esbuild (the version is required)
 config :esbuild,
