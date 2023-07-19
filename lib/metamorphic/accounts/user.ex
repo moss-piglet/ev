@@ -246,8 +246,10 @@ defmodule Metamorphic.Accounts.User do
   defp put_new_key_hash_and_key_pair(changeset, password, opts) do
     cond do
       opts[:change_password] ->
-        %{user_key: user_key, private_key: private_key} = decrypt_user_keys(opts[:user].user_key, opts[:user], opts[:key])
-       %{key_hash: new_key_hash} = Encrypted.Utils.generate_key_hash(password, user_key)
+        %{user_key: user_key, private_key: private_key} =
+          decrypt_user_keys(opts[:user].user_key, opts[:user], opts[:key])
+
+        %{key_hash: new_key_hash} = Encrypted.Utils.generate_key_hash(password, user_key)
         e_private_key = Encrypted.Utils.encrypt(%{key: user_key, payload: private_key})
 
         changeset
@@ -340,7 +342,7 @@ defmodule Metamorphic.Accounts.User do
     |> validate_password_change(opts)
   end
 
-   @doc """
+  @doc """
   A user changeset for changing the username.
 
   It requires the username to change otherwise an error is added.

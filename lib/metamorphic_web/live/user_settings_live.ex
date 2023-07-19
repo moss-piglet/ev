@@ -57,7 +57,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
             field={@password_form[:email]}
             type="hidden"
             id="hidden_user_email"
-            value={@current_email}
+            value={decr(@current_email, @current_user, @key)}
           />
           <.input field={@password_form[:password]} type="password" label="New password" required />
           <.input
@@ -188,7 +188,11 @@ defmodule MetamorphicWeb.UserSettingsLive do
     user = socket.assigns.current_user
     key = socket.assigns.key
 
-    case Accounts.update_user_password(user, password, user_params, [change_password: true, key: key, user: user]) do
+    case Accounts.update_user_password(user, password, user_params,
+           change_password: true,
+           key: key,
+           user: user
+         ) do
       {:ok, user} ->
         password_form =
           user
@@ -219,7 +223,11 @@ defmodule MetamorphicWeb.UserSettingsLive do
     user = socket.assigns.current_user
     key = socket.assigns.key
 
-    case Accounts.update_user_username(user, user_params, [change_username: true, key: key, user: user]) do
+    case Accounts.update_user_username(user, user_params,
+           change_username: true,
+           key: key,
+           user: user
+         ) do
       {:ok, user} ->
         username_form =
           user
@@ -227,11 +235,21 @@ defmodule MetamorphicWeb.UserSettingsLive do
           |> to_form()
 
         info = "Your username has been updated successfully."
-        {:noreply, socket |> put_flash(:info, info) |> assign(username_form: username_form) |> redirect(to: ~p"/users/settings")}
+
+        {:noreply,
+         socket
+         |> put_flash(:info, info)
+         |> assign(username_form: username_form)
+         |> redirect(to: ~p"/users/settings")}
 
       {:error, changeset} ->
         info = "That username may already be taken."
-        {:noreply, socket |> put_flash(:error, info) |> assign(username_form: to_form(changeset)) |> redirect(to: ~p"/users/settings")}
+
+        {:noreply,
+         socket
+         |> put_flash(:error, info)
+         |> assign(username_form: to_form(changeset))
+         |> redirect(to: ~p"/users/settings")}
     end
   end
 end

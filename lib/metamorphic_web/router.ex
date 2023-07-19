@@ -45,6 +45,8 @@ defmodule MetamorphicWeb.Router do
     end
   end
 
+  ## Public routes
+
   ## Authentication routes
 
   scope "/", MetamorphicWeb do
