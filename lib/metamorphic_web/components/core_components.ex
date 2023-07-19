@@ -274,6 +274,8 @@ defmodule MetamorphicWeb.CoreComponents do
   attr :field, Phoenix.HTML.FormField,
     doc: "a form field struct retrieved from the form, for example: @form[:email]"
 
+  attr :description, :string, doc: "optional description, currently only used for checkbox inputs"
+
   attr :errors, :list, default: []
   attr :checked, :boolean, doc: "the checked flag for checkbox inputs"
   attr :prompt, :string, default: nil, doc: "the prompt for select inputs"
@@ -301,20 +303,25 @@ defmodule MetamorphicWeb.CoreComponents do
 
     ~H"""
     <div phx-feedback-for={@name}>
-      <label class="flex items-center gap-4 text-sm leading-6 text-zinc-600">
-        <input type="hidden" name={@name} value="false" />
-        <input
-          type="checkbox"
-          id={@id}
-          name={@name}
-          value="true"
-          checked={@checked}
-          class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
-          {@rest}
-        />
-        <%= @label %>
-      </label>
-      <.error :for={msg <- @errors}><%= msg %></.error>
+      <div class="relative flex items-start pb-4 pt-3.5">
+        <div class="min-w-0 flex-1 text-sm leading-6">
+          <label class="font-medium text-zinc-900"><%= @label %></label>
+          <p id={@id <> "_description"} class="text-zinc-500"><%= @description %></p>
+        </div>
+        <div class="ml-3 flex h-6 items-center">
+          <input type="hidden" name={@name} value="false" />
+          <input
+            type="checkbox"
+            id={@id}
+            name={@name}
+            value="true"
+            checked={@checked}
+            class="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+            {@rest}
+          />
+        </div>
+        <.error :for={msg <- @errors}><%= msg %></.error>
+      </div>
     </div>
     """
   end

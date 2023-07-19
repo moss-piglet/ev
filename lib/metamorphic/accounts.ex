@@ -109,6 +109,25 @@ defmodule Metamorphic.Accounts do
     User.username_changeset(user, attrs, validate_username: false)
   end
 
+  @doc """
+  Returns an `%Ecto.Changeset{}` for changing the user's is_forgot_pwd? boolean.
+
+  ## Examples
+
+      iex> change_user_forgot_password(user)
+      %Ecto.Changeset{data: %User{}}
+
+  """
+  def change_user_forgot_password(user, attrs \\ %{}) do
+    User.forgot_password_changeset(user, attrs, [])
+  end
+
+  def update_user_forgot_password(user, attrs \\ %{}, opts \\ []) do
+    user
+    |> User.forgot_password_changeset(attrs, opts)
+    |> Repo.update()
+  end
+
   def update_user_username(user, attrs \\ %{}, opts \\ []) do
     user
     |> User.username_changeset(attrs, opts)

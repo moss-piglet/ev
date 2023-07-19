@@ -25,7 +25,7 @@ defmodule MetamorphicWeb.UserAuth do
   disconnected on log out. The line can be safely removed
   if you are not using LiveView.
   """
-  def log_in_user(conn, %{is_suspended: false, is_deleted: false} = user, params) do
+  def log_in_user(conn, %{is_suspended?: false, is_deleted?: false} = user, params) do
     token = Accounts.generate_user_session_token(user)
     key = Accounts.User.valid_key_hash?(user, params["password"])
     user_return_to = get_session(conn, :user_return_to)

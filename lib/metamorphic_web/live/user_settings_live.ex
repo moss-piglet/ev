@@ -93,6 +93,19 @@ defmodule MetamorphicWeb.UserSettingsLive do
           </:actions>
         </.simple_form>
       </div>
+      <div>
+        <.simple_form for={@forgot_password_form} id="forgot_password_form" phx-submit="update_forgot_password">
+         <.input
+            field={@forgot_password_form[:is_forgot_pwd?]}
+            type="checkbox"
+            label="Enable forgot password?"
+            description="This gives you the ability to reset your password in case you forget it. Keep in mind, when enabled, your account is slightly less secure because we have to store your key with symmetric encryption. This means a legal authority could access your account data with the proper authorization while this setting is enabled. Disable this at any time to delete the stored encrypted record of your key and return your account to its full security (only your password can decrypt your key) — just don't forget your password."
+          />
+          <:actions>
+            <.button phx-disable-with="Changing...">Change</.button>
+          </:actions>
+        </.simple_form>
+      </div>
     </div>
     """
   end
@@ -118,6 +131,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
     email_changeset = Accounts.change_user_email(user)
     password_changeset = Accounts.change_user_password(user)
     username_changeset = Accounts.change_user_username(user)
+    forgot_password_changeset = Accounts.change_user_forgot_password(user)
 
     socket =
       socket
@@ -127,6 +141,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
       |> assign(:email_form, to_form(email_changeset))
       |> assign(:password_form, to_form(password_changeset))
       |> assign(:username_form, to_form(username_changeset))
+      |> assign(:forgot_password_form, to_form(forgot_password_changeset))
       |> assign(:trigger_submit, false)
 
     {:ok, socket}
@@ -249,6 +264,53 @@ defmodule MetamorphicWeb.UserSettingsLive do
          socket
          |> put_flash(:error, info)
          |> assign(username_form: to_form(changeset))
+         |> redirect(to: ~p"/users/settings")}
+    end
+  end
+
+  def handle_event("validate_forgot_password", params, socket) do
+    %{"user" => user_params} = params
+
+    forgot_password_form =
+      socket.assigns.current_user
+      |> Accounts.change_user_forgot_password(user_params)
+      |> Map.put(:action, :validate)
+      |> to_form()
+
+    {:noreply, assign(socket, forgot_password_form: forgot_password_form)}
+  end
+
+  def handle_event("update_forgot_password", params, socket) do
+    %{"user" => user_params} = params
+    user = socket.assigns.current_user
+    key = socket.assigns.key
+
+    case Accounts.update_user_forgot_password(user, user_params,
+           change_forgot_password: true,
+           key: key,
+           user: user
+         ) do
+      {:ok, user} ->
+        forgot_password_form =
+          user
+          |> Accounts.change_user_forgot_password(user_params)
+          |> to_form()
+
+        info = "Your forgot password setting has been updated successfully."
+
+        {:noreply,
+         socket
+         |> put_flash(:info, info)
+         |> assign(forgot_password_form: forgot_password_form)
+         |> redirect(to: ~p"/users/settings")}
+
+      {:error, changeset} ->
+        info = "Uh oh, something went wrong."
+
+        {:noreply,
+         socket
+         |> put_flash(:error, info)
+         |> assign(forgot_password_form: to_form(changeset))
          |> redirect(to: ~p"/users/settings")}
     end
   end

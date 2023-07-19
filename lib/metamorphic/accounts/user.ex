@@ -365,6 +365,48 @@ defmodule Metamorphic.Accounts.User do
   end
 
   @doc """
+  A user changeset for changing the `is_forgot_pwd?` boolean.
+  """
+  def forgot_password_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:is_forgot_pwd?, :key])
+    |> maybe_store_key(opts)
+    |> maybe_delete_key(opts)
+    |> case do
+      %{changes: %{is_forgot_pwd?: _}} = changeset -> changeset
+      %{} = changeset -> add_error(changeset, :username, "did not change")
+    end
+  end
+
+  # We store the session key in an
+  # encrypted binary (Cloak) to enable
+  # the ability to reset your password
+  # if you forget it.
+  defp maybe_store_key(changeset, opts) do
+    if get_field(changeset, :is_forgot_pwd?) do
+      changeset
+      |> put_change(:key, opts[:key])
+    else
+      changeset
+    end
+  end
+
+  # We delete the saved session key
+  # if you disable the `is_forgot_pwd?`
+  # setting to protect your account and
+  # remove the ability to reset your password
+  # if you forget it.
+  defp maybe_delete_key(changeset, _opts) do
+    if get_field(changeset, :is_forgot_pwd?) do
+      changeset
+    else
+      # we update the key to `nil` if `is_forgot_pwd?` is false
+      changeset
+      |> put_change(:key, nil)
+    end
+  end
+
+  @doc """
   Confirms the account by setting `confirmed_at`.
   """
   def confirm_changeset(user) do
