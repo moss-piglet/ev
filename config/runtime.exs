@@ -53,6 +53,11 @@ if config_env() == :prod do
 
   config :metamorphic, MetamorphicWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
+    check_origin: true,
+    live_view: [
+      signing_salt: System.get_env("LIVE_VIEW_SIGNING_SALT"),
+      encryption_salt: System.get_env("LIVE_VIEW_ENCRYPTION_SALT")
+    ],
     http: [
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
@@ -63,6 +68,24 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
+  # Configure libcluster for clustering
+  app_name =
+    System.get_env("FLY_APP_NAME") ||
+      raise "FLY_APP_NAME not available"
+
+  config :libcluster,
+    debug: true,
+    topologies: [
+      fly6pn: [
+        strategy: Cluster.Strategy.DNSPoll,
+        config: [
+          polling_interval: 5_000,
+          query: "#{app_name}.internal",
+          node_basename: app_name
+        ]
+      ]
+    ]
+
   # Cloak
   config :metamorphic, Metamorphic.Vault,
     ciphers: [
@@ -71,6 +94,15 @@ if config_env() == :prod do
       key: Base.decode64!("CLOAK_KEY"),
       iv_length: 12
     ]
+
+  # Configure Swoosh for production.
+  config :metamorphic, Metamorphic.Mailer,
+    adapter: Swoosh.Adapters.Sendgrid,
+    api_key: System.get_env("SENDGRID_API_KEY")
+
+  config :swoosh,
+    api_client: Swoosh.ApiClient.Finch,
+    finch_name: Metamorphic.Finch
 
   # ## SSL Support
   #

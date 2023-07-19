@@ -6,9 +6,11 @@ defmodule MetamorphicWeb.Endpoint do
   # Set :encryption_salt if you would also like to encrypt it.
   @session_options [
     store: :cookie,
+    secure: true,
     key: "_Metamorphic_key",
-    signing_salt: "m76UIfNp",
-    same_site: "Lax"
+    signing_salt: :enacl.randombytes(32) |> Base.encode64(),
+    encryption_salt: :enacl.randombytes(32) |> Base.encode64(),
+    same_site: "Strict"
   ]
 
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]

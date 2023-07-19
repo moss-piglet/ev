@@ -7,6 +7,8 @@ defmodule Metamorphic.Application do
 
   @impl true
   def start(_type, _args) do
+    topologies = Application.get_env(:libcluster, :topologies) || []
+
     children = [
       # Start the Telemetry supervisor
       MetamorphicWeb.Telemetry,
@@ -22,6 +24,8 @@ defmodule Metamorphic.Application do
       {Phoenix.PubSub, name: Metamorphic.PubSub},
       # Start Finch
       {Finch, name: Metamorphic.Finch},
+      # Start libcluster for clustering
+      {Cluster.Supervisor, [topologies, [name: Metamorphic.ClusterSupervisor]]},
       # Start the Endpoint (http/https)
       MetamorphicWeb.Endpoint
       # Start a worker by calling: Metamorphic.Worker.start_link(arg)
