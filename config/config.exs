@@ -32,6 +32,10 @@ config :metamorphic, MetamorphicWeb.Endpoint,
 # at the `config/runtime.exs`.
 config :metamorphic, Metamorphic.Mailer, adapter: Swoosh.Adapters.Local
 
+config :metamorphic,
+    session_signing_salt: System.get_env("SESSION_SIGNING_SALT"),
+    session_encryption_salt: System.get_env("SESSION_ENCRYPTION_SALT")
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.17.11",
