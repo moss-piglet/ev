@@ -8,8 +8,8 @@ defmodule MetamorphicWeb.Endpoint do
     store: :cookie,
     secure: true,
     key: "_Metamorphic_key",
-    signing_salt: "xgTdf/jDKJWeSHp7MoSoopYDIN4ebaMeGTeYjW6kH4A=",
-    encryption_salt: "Xrern1kmLt0/NbUPFFBaOyjnMMVriokKNX2ByYu6Nkw=",
+    signing_salt: "Yr8TAYeVUdSn1cqI",
+    encryption_salt: "fbxcutOHHeuO8clG",
     same_site: "Strict"
   ]
 
