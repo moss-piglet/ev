@@ -14,6 +14,7 @@ kill_signal = "SIGTERM"
   PHX_HOST = "metamorphic.app"
   PORT = "8080"
   PRIMARY_REGION="bos"
+  RELEASE_COOKIE="1a3LEqcIUmDIK-GNMeH1MQGRaNvnfIny4MSmqsk85kv7Zh1Z35tVgg=="
 
 [http_service]
   internal_port = 8080
