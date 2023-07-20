@@ -8,7 +8,7 @@ defmodule Metamorphic.Accounts.UserNotifier do
     email =
       new()
       |> to(recipient)
-      |> from({"Metamorphic", "contact@example.com"})
+      |> from({"Metamorphic", "support@metamorphic.app"})
       |> subject(subject)
       |> text_body(body)
 
