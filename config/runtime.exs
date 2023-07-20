@@ -86,15 +86,6 @@ if config_env() == :prod do
       ]
     ]
 
-  # Cloak
-  config :metamorphic, Metamorphic.Vault,
-    ciphers: [
-      default: Cloak.Ciphers.AES.GCM,
-      tag: "AES.GCM.V1",
-      key: Base.decode64!("CLOAK_KEY"),
-      iv_length: 12
-    ]
-
   # Configure Swoosh for production.
   config :metamorphic, Metamorphic.Mailer,
     adapter: Swoosh.Adapters.Sendgrid,
