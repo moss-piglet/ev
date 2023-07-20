@@ -91,6 +91,8 @@ if config_env() == :prod do
     adapter: Swoosh.Adapters.Sendgrid,
     api_key: System.get_env("SENDGRID_API_KEY")
 
+  config :user_notifier, api_key: System.get_env("SENDGRID_API_KEY")
+
   config :swoosh,
     api_client: Swoosh.ApiClient.Finch,
     finch_name: Metamorphic.Finch

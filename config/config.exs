@@ -32,6 +32,8 @@ config :metamorphic, MetamorphicWeb.Endpoint,
 # at the `config/runtime.exs`.
 config :metamorphic, Metamorphic.Mailer, adapter: Swoosh.Adapters.Local
 
+config :user_notifier, api_key: System.get_env("SENDGRID_API_KEY")
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.17.11",
