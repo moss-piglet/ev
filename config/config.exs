@@ -11,6 +11,9 @@ config :metamorphic,
   ecto_repos: [Metamorphic.Repo.Local],
   generators: [binary_id: true]
 
+config :metamorphic,
+  mailer_default_from_email: "support@metamorphic.app",
+
 config :metamorphic, Metamorphic.Repo.Local, priv: "priv/repo"
 
 # Configures the endpoint

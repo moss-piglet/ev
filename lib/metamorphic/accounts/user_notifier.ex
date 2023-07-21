@@ -8,14 +8,17 @@ defmodule Metamorphic.Accounts.UserNotifier do
     email =
       new()
       |> to(recipient)
-      |> from({"Metamorphic", "support@metamorphic.app"})
-      #|> header("Authorization", "Bearer " <> Application.get_env(:user_notifier, :api_key))
+      |> from({"Metamorphic", from_email()})
       |> subject(subject)
       |> text_body(body)
 
     with {:ok, _metadata} <- Mailer.deliver(email) do
       {:ok, email}
     end
+  end
+
+  defp from_email do
+    Metamorphic.config(:mailer_default_from_email)
   end
 
   @doc """
