@@ -9,7 +9,7 @@ defmodule Metamorphic.Accounts.UserNotifier do
       new()
       |> to(recipient)
       |> from({"Metamorphic", "support@metamorphic.app"})
-      |> header("Authorization", "Bearer " <> Application.get_env(:user_notifier, :api_key))
+      #|> header("Authorization", "Bearer " <> Application.get_env(:user_notifier, :api_key))
       |> subject(subject)
       |> text_body(body)
 
@@ -21,12 +21,12 @@ defmodule Metamorphic.Accounts.UserNotifier do
   @doc """
   Deliver instructions to confirm account.
   """
-  def deliver_confirmation_instructions(user, url) do
-    deliver(user.email, "Confirmation instructions", """
+  def deliver_confirmation_instructions(_user, email, url) do
+    deliver(email, "Confirmation instructions", """
 
     ==============================
 
-    Hi #{user.email},
+    Hi #{email},
 
     You can confirm your account by visiting the URL below:
 
@@ -41,12 +41,12 @@ defmodule Metamorphic.Accounts.UserNotifier do
   @doc """
   Deliver instructions to reset a user password.
   """
-  def deliver_reset_password_instructions(user, url) do
-    deliver(user.email, "Reset password instructions", """
+  def deliver_reset_password_instructions(_user, email, url) do
+    deliver(email, "Reset password instructions", """
 
     ==============================
 
-    Hi #{user.email},
+    Hi #{email},
 
     You can reset your password by visiting the URL below:
 
