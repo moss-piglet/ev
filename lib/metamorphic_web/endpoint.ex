@@ -6,8 +6,9 @@ defmodule MetamorphicWeb.Endpoint do
   # Set :encryption_salt if you would also like to encrypt it.
   @session_options [
     store: :cookie,
+    path: "/",
     secure: true,
-    key: "_Metamorphic_key",
+    key: "__Host-_metamorphic_key",
     signing_salt: "Yr8TAYeVUdSn1cqI",
     encryption_salt: "fbxcutOHHeuO8clG",
     same_site: "Strict"
