@@ -28,7 +28,7 @@ defmodule Metamorphic.Accounts.User do
     field :username, Encrypted.Binary
     field :username_hash, Encrypted.HMAC
     field :user_key, Encrypted.Binary, redact: true
-    field :visibility, Ecto.Enum, values: [:public, :private, :relations], default: :public
+    field :visibility, Ecto.Enum, values: [:public, :private, :relation], default: :public
     field :confirmed_at, :naive_datetime
 
     timestamps()
@@ -356,6 +356,21 @@ defmodule Metamorphic.Accounts.User do
     |> case do
       %{changes: %{username: _}} = changeset -> changeset
       %{} = changeset -> add_error(changeset, :username, "did not change")
+    end
+  end
+
+  @doc """
+  A user changeset for changing the visiblity.
+
+  It requires the visiblity to change otherwise an error is added.
+  """
+  def visibility_changeset(user, attrs, _opts \\ []) do
+    user
+    |> cast(attrs, [:visibility])
+    |> validate_required([:visibility])
+    |> case do
+      %{changes: %{visibility: _}} = changeset -> changeset
+      %{} = changeset -> add_error(changeset, :visibility, "did not change")
     end
   end
 

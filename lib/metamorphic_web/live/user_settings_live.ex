@@ -94,6 +94,20 @@ defmodule MetamorphicWeb.UserSettingsLive do
         </.simple_form>
       </div>
       <div>
+        <.simple_form for={@visibility_form} id="visibility_form" phx-submit="update_visibility">
+          <.input
+            field={@username_form[:visibility]}
+            type="select"
+            options={Ecto.Enum.values(Accounts.User, :visibility)}
+            label="Visibility"
+            required
+          />
+          <:actions>
+            <.button phx-disable-with="Changing...">Change Visibility</.button>
+          </:actions>
+        </.simple_form>
+      </div>
+      <div>
         <.info_banner
           :if={!@current_user.confirmed_at}
           navigate={~p"/users/confirm"}
@@ -112,7 +126,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
             field={@forgot_password_form[:is_forgot_pwd?]}
             type="checkbox"
             label="Enable forgot password?"
-            description="This gives you the ability to reset your password in case you forget it. Keep in mind, when enabled, your account is slightly less secure because we have to store your key with symmetric encryption. This means a legal authority could access your account data with the proper authorization while this setting is enabled. Disable this at any time to delete the stored encrypted record of your key and return your account to its full security (only your password can decrypt your key) — just don't forget your password."
+            description="Change whether you can reset your password if you forget it. Keep in mind, when enabled, your account is slightly less secure because we have to store your key with symmetric encryption. This means a legal authority could access your account data with the proper authorization while this setting is enabled. Disable this at any time to delete the stored encrypted record of your key and return your account to its full security (only your password can decrypt your key) — just don't forget your password."
           />
           <:actions>
             <.button phx-disable-with="Changing...">Change</.button>
@@ -144,6 +158,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
     email_changeset = Accounts.change_user_email(user)
     password_changeset = Accounts.change_user_password(user)
     username_changeset = Accounts.change_user_username(user)
+    visibility_changeset = Accounts.change_user_visibility(user)
     forgot_password_changeset = Accounts.change_user_forgot_password(user)
 
     socket =
@@ -154,6 +169,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
       |> assign(:email_form, to_form(email_changeset))
       |> assign(:password_form, to_form(password_changeset))
       |> assign(:username_form, to_form(username_changeset))
+      |> assign(:visibility_form, to_form(visibility_changeset))
       |> assign(:forgot_password_form, to_form(forgot_password_changeset))
       |> assign(:trigger_submit, false)
 
@@ -277,6 +293,48 @@ defmodule MetamorphicWeb.UserSettingsLive do
          socket
          |> put_flash(:error, info)
          |> assign(username_form: to_form(changeset))
+         |> redirect(to: ~p"/users/settings")}
+    end
+  end
+
+  def handle_event("validate_visibility", params, socket) do
+    %{"user" => user_params} = params
+
+    username_form =
+      socket.assigns.current_user
+      |> Accounts.change_user_visibility(user_params)
+      |> Map.put(:action, :validate)
+      |> to_form()
+
+    {:noreply, assign(socket, username_form: username_form)}
+  end
+
+  def handle_event("update_visibility", params, socket) do
+    %{"user" => user_params} = params
+    user = socket.assigns.current_user
+
+    case Accounts.update_user_visibility(user, user_params) do
+      {:ok, user} ->
+        visibility_form =
+          user
+          |> Accounts.change_user_username(user_params)
+          |> to_form()
+
+        info = "Your visibility has been updated successfully."
+
+        {:noreply,
+         socket
+         |> put_flash(:info, info)
+         |> assign(visibility_form: visibility_form)
+         |> redirect(to: ~p"/users/settings")}
+
+      {:error, changeset} ->
+        info = "Woops, something went wrong."
+
+        {:noreply,
+         socket
+         |> put_flash(:error, info)
+         |> assign(visibility_form: to_form(changeset))
          |> redirect(to: ~p"/users/settings")}
     end
   end
