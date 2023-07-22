@@ -54,11 +54,6 @@ if config_env() == :prod do
   # Configure the canonical host for redirects.
   config :metamorphic, canonical_host: host
 
-  # Configure the session singing and encryption salts
-  config :metamorphic,
-    session_signing_salt: System.get_env("SESSION_SIGNING_SALT"),
-    session_encryption_salt: System.get_env("SESSION_ENCRYPTION_SALT")
-
   config :metamorphic, MetamorphicWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     force_ssl: [rewrite_on: [:x_forwarded_proto]],
