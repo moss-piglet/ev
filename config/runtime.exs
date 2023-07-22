@@ -51,6 +51,9 @@ if config_env() == :prod do
   host = System.get_env("PHX_HOST") || "metamorphic.app"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
+  # Configure the canonical host for redirects.
+  config :metamorphic, canonical_host: host
+
   config :metamorphic, MetamorphicWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     check_origin: true,

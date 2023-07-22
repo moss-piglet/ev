@@ -6,7 +6,9 @@ defmodule MetamorphicWeb.Endpoint do
   # Set :encryption_salt if you would also like to encrypt it.
   @session_options [
     store: :cookie,
+    path: "/",
     secure: true,
+    http_only: true,
     key: "__Host-_metamorphic_key",
     signing_salt: "Yr8TAYeVUdSn1cqI",
     encryption_salt: "fbxcutOHHeuO8clG",
@@ -14,6 +16,9 @@ defmodule MetamorphicWeb.Endpoint do
   ]
 
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
+
+  # redirect requests through the canonical host=metamorphic.app
+  plug(:canonical_host)
 
   # Serve at "/" the static files from "priv/static" directory.
   #
