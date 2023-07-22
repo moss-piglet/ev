@@ -94,15 +94,19 @@ defmodule MetamorphicWeb.UserSettingsLive do
         </.simple_form>
       </div>
       <div>
-        <.info_banner :if={!@current_user.confirmed_at} navigate={~p"/users/confirm"} nav_title={"Confirm"}>
+        <.info_banner
+          :if={!@current_user.confirmed_at}
+          navigate={~p"/users/confirm"}
+          nav_title="Confirm"
+        >
           Confirm your account to enable the ability to reset your password if you forget it.
         </.info_banner>
 
         <.simple_form
+          :if={@current_user.confirmed_at}
           for={@forgot_password_form}
           id="forgot_password_form"
           phx-submit="update_forgot_password"
-          :if={@current_user.confirmed_at}
         >
           <.input
             field={@forgot_password_form[:is_forgot_pwd?]}
@@ -296,10 +300,10 @@ defmodule MetamorphicWeb.UserSettingsLive do
 
     if user.confirmed_at do
       case Accounts.update_user_forgot_password(user, user_params,
-            change_forgot_password: true,
-            key: key,
-            user: user
-          ) do
+             change_forgot_password: true,
+             key: key,
+             user: user
+           ) do
         {:ok, user} ->
           forgot_password_form =
             user
@@ -309,10 +313,10 @@ defmodule MetamorphicWeb.UserSettingsLive do
           info = "Your forgot password setting has been updated successfully."
 
           {:noreply,
-          socket
-          |> put_flash(:info, info)
-          |> assign(forgot_password_form: forgot_password_form)
-          |> redirect(to: ~p"/users/settings")}
+           socket
+           |> put_flash(:info, info)
+           |> assign(forgot_password_form: forgot_password_form)
+           |> redirect(to: ~p"/users/settings")}
 
         {:error, changeset} ->
           %{is_forgot_pwd?: [{info, []}]} =
@@ -323,18 +327,18 @@ defmodule MetamorphicWeb.UserSettingsLive do
           info = "Woops, your forgot password setting " <> info <> "."
 
           {:noreply,
-          socket
-          |> put_flash(:error, info)
-          |> assign(forgot_password_form: to_form(changeset))
-          |> redirect(to: ~p"/users/settings")}
+           socket
+           |> put_flash(:error, info)
+           |> assign(forgot_password_form: to_form(changeset))
+           |> redirect(to: ~p"/users/settings")}
       end
     else
       info = "Woops, you need to confirm your account first."
 
       {:noreply,
-      socket
-      |> put_flash(:error, info)
-      |> redirect(to: ~p"/users/settings")}
+       socket
+       |> put_flash(:error, info)
+       |> redirect(to: ~p"/users/settings")}
     end
   end
 end
