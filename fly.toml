@@ -27,10 +27,3 @@ kill_signal = "SIGTERM"
     type = "connections"
     hard_limit = 1000
     soft_limit = 1000
-
-  [[services.ports]]
-    handlers = ["tls", "http"]
-    port = "443"
-    tls_options = { "alpn" = ["h2", "http/1.1"], "versions" = ["TLSv1.2", "TLSv1.3"] }
-
-
