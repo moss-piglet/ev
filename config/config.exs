@@ -16,9 +16,6 @@ config :metamorphic,
 
 config :metamorphic, Metamorphic.Repo.Local, priv: "priv/repo"
 
-# Configure the canonical host for redirects.
-config :metamorphic, canonical_host: host
-
 # Configures the endpoint
 config :metamorphic, MetamorphicWeb.Endpoint,
   url: [host: "localhost"],
@@ -37,8 +34,6 @@ config :metamorphic, MetamorphicWeb.Endpoint,
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
 config :metamorphic, Metamorphic.Mailer, adapter: Swoosh.Adapters.Local
-
-config :user_notifier, api_key: System.get_env("SENDGRID_API_KEY")
 
 # Configure esbuild (the version is required)
 config :esbuild,
