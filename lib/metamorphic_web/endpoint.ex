@@ -6,7 +6,6 @@ defmodule MetamorphicWeb.Endpoint do
   # Set :encryption_salt if you would also like to encrypt it.
   @session_options [
     store: :cookie,
-    path: "/",
     secure: true,
     key: "__Host-_metamorphic_key",
     signing_salt: "Yr8TAYeVUdSn1cqI",
@@ -50,6 +49,5 @@ defmodule MetamorphicWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
-  plug RemoteIp, headers: ["fly-client-ip"]
   plug MetamorphicWeb.Router
 end

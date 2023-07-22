@@ -52,7 +52,7 @@ if config_env() == :prod do
   port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :metamorphic, MetamorphicWeb.Endpoint,
-    url: [host: host, port: 443, scheme: "https"],
+    url: [scheme: "https", host: host, port: 443],
     check_origin: true,
     live_view: [
       signing_salt: System.get_env("LIVE_VIEW_SIGNING_SALT"),
