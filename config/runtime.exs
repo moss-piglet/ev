@@ -91,8 +91,9 @@ if config_env() == :prod do
 
   # Configure Swoosh for production.
   config :metamorphic, Metamorphic.Mailer,
-    adapter: Swoosh.Adapters.Sendgrid,
-    api_key: System.get_env("SENDGRID_API_KEY")
+    adapter: Swoosh.Adapters.Mailgun,
+    api_key: System.get_env("MAILGUN_API_KEY"),
+    domain: System.get_env("MAILGUN_DOMAIN")
 
   config :swoosh,
     api_client: Swoosh.ApiClient.Finch,
