@@ -8,10 +8,6 @@ import Config
 config :metamorphic, MetamorphicWeb.Endpoint,
   cache_static_manifest: "priv/static/cache_manifest.json"
 
-config :metamorphic, MetamorphicWeb.Endpoint,
-  server: true,
-  url: [host: "metamorphic.app", port: 443, scheme: "https"],
-
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: Metamorphic.Finch
 
