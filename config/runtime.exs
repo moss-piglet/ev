@@ -48,11 +48,11 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "metamorphic.app"
+  host = System.get_env("HOST") || "metamorphic.app"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
   config :metamorphic, MetamorphicWeb.Endpoint,
-    url: [scheme: "https", host: host, port: 443],
+    url: [host: System.get_env("HOST"), port: 443, scheme: "https"],
     check_origin: true,
     live_view: [
       signing_salt: System.get_env("LIVE_VIEW_SIGNING_SALT"),
