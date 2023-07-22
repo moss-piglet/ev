@@ -10,8 +10,8 @@ defmodule MetamorphicWeb.Endpoint do
     secure: true,
     http_only: true,
     key: "__Host-_metamorphic_key",
-    signing_salt: Metamorphic.config(:session_signing_salt),
-    encryption_salt: Metamorphic.config(:session_encryption_salt),
+    signing_salt: {Metamorphic.Encrypted.Session, :signing_salt, []},
+    encryption_salt: {Metamorphic.Encrypted.Session, :encryption_salt, []},
     same_site: "Strict"
   ]
 

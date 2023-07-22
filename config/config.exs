@@ -14,11 +14,6 @@ config :metamorphic,
 config :metamorphic,
   mailer_default_from_email: "support@mail.metamorphic.app"
 
-# Configure the session singing and encryption salts
-config :metamorphic,
-  session_signing_salt: System.get_env("SESSION_SIGNING_SALT"),
-  session_encryption_salt: System.get_env("SESSION_ENCRYPTION_SALT")
-
 config :metamorphic, Metamorphic.Repo.Local, priv: "priv/repo"
 
 # Configures the endpoint
