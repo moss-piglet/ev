@@ -16,6 +16,9 @@ config :metamorphic,
 
 config :metamorphic, Metamorphic.Repo.Local, priv: "priv/repo"
 
+# Configure the canonical host for redirects.
+config :metamorphic, canonical_host: host
+
 # Configures the endpoint
 config :metamorphic, MetamorphicWeb.Endpoint,
   url: [host: "localhost"],

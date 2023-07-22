@@ -55,4 +55,9 @@ defmodule MetamorphicWeb.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
   plug MetamorphicWeb.Router
+
+  defp canonical_host(conn, _opts) do
+    opts = PlugCanonicalHost.init(canonical_host: Application.get_env(:myapp, :canonical_host))
+    PlugCanonicalHost.call(conn, opts)
+  end
 end
