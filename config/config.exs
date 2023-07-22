@@ -12,7 +12,7 @@ config :metamorphic,
   generators: [binary_id: true]
 
 config :metamorphic,
-  mailer_default_from_email: "support@metamorphic.app"
+  mailer_default_from_email: "support@mail.metamorphic.app"
 
 config :metamorphic, Metamorphic.Repo.Local, priv: "priv/repo"
 
