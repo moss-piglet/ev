@@ -50,5 +50,6 @@ defmodule MetamorphicWeb.Endpoint do
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
+  plug RemoteIp, headers: ["fly-client-ip"]
   plug MetamorphicWeb.Router
 end

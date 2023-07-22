@@ -50,7 +50,6 @@ if config_env() == :prod do
 
   host = System.get_env("PHX_HOST") || "metamorphic.app"
   port = String.to_integer(System.get_env("PORT") || "4000")
-  IO.puts "HOST: #{host}"
 
   config :metamorphic, MetamorphicWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
@@ -67,8 +66,6 @@ if config_env() == :prod do
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
       port: port
     ],
-    # Fly handles the hsts/ssl
-    force_ssl: [rewrite_on: [:x_forwarded_proto]],
     secret_key_base: secret_key_base
 
   # Configure libcluster for clustering
