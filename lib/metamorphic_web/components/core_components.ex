@@ -15,6 +15,7 @@ defmodule MetamorphicWeb.CoreComponents do
   Icons are provided by [heroicons](https://heroicons.com). See `icon/1` for usage.
   """
   use Phoenix.Component
+  use MetamorphicWeb, :verified_routes
 
   alias Phoenix.LiveView.JS
   import MetamorphicWeb.Gettext
@@ -225,7 +226,7 @@ defmodule MetamorphicWeb.CoreComponents do
     <button
       type={@type}
       class={[
-        "phx-submit-loading:opacity-75 rounded-lg bg-brand-900 hover:bg-brand-700 py-2 px-3",
+        "phx-submit-loading:opacity-75 rounded-lg bg-brand-700 hover:bg-brand-600 py-2 px-3",
         "text-sm font-semibold leading-6 text-white active:text-white/80",
         @class
       ]}
@@ -320,7 +321,7 @@ defmodule MetamorphicWeb.CoreComponents do
             name={@name}
             value="true"
             checked={@checked}
-            class="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+            class="h-4 w-4 rounded border-brand-300 text-brand-700 focus:ring-brand-500"
             {@rest}
           />
         </div>
@@ -546,6 +547,120 @@ defmodule MetamorphicWeb.CoreComponents do
       </dl>
     </div>
     """
+  end
+
+  @doc """
+  Returns a button triggered dropdown with aria keyboard and focus supporrt.
+
+  Accepts the follow slots:
+
+    * `:id` - The id to uniquely identify this dropdown
+    * `:img` - The optional img to show beside the button title
+    * `:title` - The button title
+    * `:subtitle` - The button subtitle
+
+  ## Examples
+
+      <.dropdown id={@id}>
+        <:img src={@current_user.avatar_url}/>
+        <:title><%= @current_user.name %></:title>
+        <:subtitle>@<%= @current_user.username %></:subtitle>
+
+        <:link navigate={profile_path(@current_user)}>View Profile</:link>
+        <:link navigate={~p"/profile/settings"}Settings</:link>
+      </.dropdown>
+  """
+  attr :id, :string, required: true
+
+  slot :img do
+    attr :src, :string
+  end
+
+  slot :title
+  slot :subtitle
+
+  slot :link do
+    attr :navigate, :string
+    attr :href, :string
+    attr :method, :any
+  end
+
+  def dropdown(assigns) do
+    ~H"""
+    <!-- User account dropdown -->
+    <div class="px-3 mt-6 relative inline-block text-left">
+      <div>
+        <button
+          id={@id}
+          type="button"
+          class="group w-full bg-gray-100 rounded-md px-3.5 py-2 text-sm text-left font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-purple-500"
+          phx-click={show_dropdown("##{@id}-dropdown")}
+          phx-hook="Menu"
+          data-active-class="bg-gray-100"
+          aria-haspopup="true"
+        >
+          <span class="flex w-full justify-between items-center">
+            <span class="flex min-w-0 items-center justify-between space-x-3">
+              <%= for img <- @img do %>
+                <img
+                  class="w-10 h-10 bg-gray-300 rounded-full flex-shrink-0"
+                  alt=""
+                  {assigns_to_attributes(img)}
+                />
+              <% end %>
+              <span class="flex-1 flex flex-col min-w-0">
+                <span class="text-gray-900 text-sm font-medium truncate">
+                  <%= render_slot(@title) %>
+                </span>
+                <span class="text-gray-500 text-sm truncate"><%= render_slot(@subtitle) %></span>
+              </span>
+            </span>
+            <.icon name="hero-ellipsis-vertical" class="h-5 w-5" />
+          </span>
+        </button>
+      </div>
+      <div
+        id={"#{@id}-dropdown"}
+        phx-click-away={hide_dropdown("##{@id}-dropdown")}
+        class="hidden z-10 mx-3 origin-top absolute right-0 left-0 mt-1 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-200"
+        role="menu"
+        aria-labelledby={@id}
+      >
+        <div class="py-1" role="none">
+          <%= for link <- @link do %>
+            <.link
+              tabindex="-1"
+              role="menuitem"
+              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-purple-500"
+              {link}
+            >
+              <%= render_slot(link) %>
+            </.link>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  def show_dropdown(to) do
+    JS.show(
+      to: to,
+      transition:
+        {"transition ease-out duration-120", "transform opacity-0 scale-95",
+         "transform opacity-100 scale-100"}
+    )
+    |> JS.set_attribute({"aria-expanded", "true"}, to: to)
+  end
+
+  def hide_dropdown(to) do
+    JS.hide(
+      to: to,
+      transition:
+        {"transition ease-in duration-120", "transform opacity-100 scale-100",
+         "transform opacity-0 scale-95"}
+    )
+    |> JS.remove_attribute("aria-expanded", to: to)
   end
 
   @doc """

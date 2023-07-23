@@ -1,0 +1,32 @@
+<.header>
+  Post <%= @post.id %>
+  <:subtitle>This is a post record from <%= @post.inserted_at %>.</:subtitle>
+  <:actions>
+    <.link :if={can_edit?(@current_user.id, @post)} patch={~p"/posts/#{@post}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit post</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Username"><%= @post.username %></:item>
+  <:item title="Body"><%= @post.body %></:item>
+  <:item title="Repost"><%= @post.repost %></:item>
+  <:item title="Favs count"><%= @post.favs_count %></:item>
+  <:item title="Reposts count"><%= @post.reposts_count %></:item>
+</.list>
+
+<.back navigate={~p"/posts"}>Back to posts</.back>
+
+<.modal :if={@live_action == :edit && can_edit?(@current_user.id, @post)} id="post-modal" show on_cancel={JS.patch(~p"/posts/#{@post}")}>
+  <.live_component
+    module={MetamorphicWeb.PostLive.FormComponent}
+    id={@post.id}
+    title={@page_title}
+    action={@live_action}
+    post={@post}
+    user={@current_user}
+    key={@key}
+    patch={~p"/posts/#{@post}"}
+  />
+</.modal>

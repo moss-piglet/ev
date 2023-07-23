@@ -12,4 +12,14 @@ defmodule MetamorphicWeb.Helpers do
       key
     )
   end
+
+  ## Edit
+
+  def can_edit?(id, item) when is_struct(item) do
+    if id == item.user_id, do: true
+  end
+
+  def can_edit?(id, item) when is_map(item) do
+    if id == item["user_id"], do: true
+  end
 end

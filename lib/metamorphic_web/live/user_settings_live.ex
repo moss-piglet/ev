@@ -11,7 +11,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
       Account Settings
       <:subtitle>Manage your account email address and password settings</:subtitle>
       <:actions :if={!@current_user.confirmed_at}>
-        <.button type="button" class="bg-brand-500" phx-click={JS.patch(~p"/users/confirm")}>
+        <.button type="button" class="bg-brand-600" phx-click={JS.patch(~p"/users/confirm")}>
           Confirm my account
         </.button>
       </:actions>
