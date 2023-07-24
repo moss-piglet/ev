@@ -5,9 +5,10 @@ defmodule Metamorphic.Accounts do
 
   import Ecto.Query, warn: false
 
+  alias Ecto.Adapters.SQL.Sandbox.Connection
   alias Metamorphic.Repo
 
-  alias Metamorphic.Accounts.{User, UserToken, UserNotifier, UserTOTP}
+  alias Metamorphic.Accounts.{Connection, User, UserToken, UserNotifier, UserTOTP}
 
   ## Database getters
 
@@ -64,7 +65,8 @@ defmodule Metamorphic.Accounts do
   ## User registration
 
   @doc """
-  Registers a user.
+  Registers a user and creates its
+  associated connection record.
 
   ## Examples
 
@@ -76,9 +78,25 @@ defmodule Metamorphic.Accounts do
 
   """
   def register_user(attrs) do
-    %User{}
-    |> User.registration_changeset(attrs)
-    |> Repo.insert()
+    user = User.registration_changeset(%User{}, attrs)
+
+    c_attrs = Map.merge(%{}, user.changes.connection_map)
+
+    {:ok, %{insert_user: user, insert_connection: _conn}} =
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(:insert_user, user)
+      |> Ecto.Multi.insert(:insert_connection, fn %{insert_user: user} ->
+        Connection.register_changeset(%Connection{}, %{
+          email: c_attrs.c_email,
+          email_hash: c_attrs.c_email_hash,
+          username: c_attrs.c_username,
+          username_hash: c_attrs.c_username_hash
+        })
+        |> Ecto.Changeset.put_assoc(:user, user)
+      end)
+      |> Repo.transaction()
+
+    {:ok, user}
   end
 
   @doc """

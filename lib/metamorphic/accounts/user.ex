@@ -6,7 +6,9 @@ defmodule Metamorphic.Accounts.User do
 
   import Metamorphic.Encrypted.Users.Utils
 
+  alias Metamorphic.Accounts.{Connection, UserConnection}
   alias Metamorphic.Encrypted
+  alias Metamorphic.Timeline.{Post, UserPost}
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -29,8 +31,16 @@ defmodule Metamorphic.Accounts.User do
     field :key_pair, {:map, Encrypted.Binary}
     field :user_key, Encrypted.Binary, redact: true
     field :conn_key, Encrypted.Binary, redact: true
-    field :visibility, Ecto.Enum, values: [:public, :private, :relation], default: :public
+    field :visibility, Ecto.Enum, values: [:public, :private, :connections], default: :public
     field :confirmed_at, :naive_datetime
+
+    field :connection_map, :map, virtual: true
+
+    has_one :connection, Connection
+
+    has_many :posts, Post
+    has_many :user_connections, UserConnection
+    has_many :user_posts, UserPost
 
     timestamps()
   end
@@ -281,12 +291,13 @@ defmodule Metamorphic.Accounts.User do
            }
          } = changeset
        ) do
-    user_key = Encrypted.Utils.generate_key()
-    user_attributes_key = Encrypted.Utils.generate_key()
+
+    {user_key, user_attributes_key, conn_key} = generate_user_registration_keys()
 
     %{key_hash: key_hash} = Encrypted.Utils.generate_key_hash(password, user_key)
     %{public: public_key, private: private_key} = Encrypted.Utils.generate_key_pairs()
 
+    # Encrypt user data
     encrypted_email = Encrypted.Utils.encrypt(%{key: user_attributes_key, payload: email})
     encrypted_username = Encrypted.Utils.encrypt(%{key: user_attributes_key, payload: username})
     encrypted_private_key = Encrypted.Utils.encrypt(%{key: user_key, payload: private_key})
@@ -296,12 +307,35 @@ defmodule Metamorphic.Accounts.User do
         public: public_key
       })
 
+    # Encrypt connection data
+    # This data will not be cast to the user record
+    # (except for the conn_key). It will be used
+    # to cast to the connection record for registering.
+    #
+    # The temp c_*_hash will be hashed in the Connection
+    # changeset.
+
+    c_encrypted_email = Encrypted.Utils.encrypt(%{key: conn_key, payload: email})
+    c_encrypted_username = Encrypted.Utils.encrypt(%{key: conn_key, payload: username})
+
+    encrypted_conn_key =
+      Encrypted.Utils.encrypt_message_for_user_with_pk(conn_key, %{
+        public: public_key
+      })
+
     changeset
     |> put_change(:email, encrypted_email)
     |> put_change(:key_hash, key_hash)
     |> put_change(:key_pair, %{public: public_key, private: encrypted_private_key})
-    |> put_change(:user_key, encrypted_user_attributes_key)
     |> put_change(:username, encrypted_username)
+    |> put_change(:user_key, encrypted_user_attributes_key)
+    |> put_change(:conn_key, encrypted_conn_key)
+    |> put_change(:connection_map, %{
+      c_email: c_encrypted_email,
+      c_username: c_encrypted_username,
+      c_email_hash: email,
+      c_username_hash: username
+    })
   end
 
   @doc """
@@ -485,5 +519,13 @@ defmodule Metamorphic.Accounts.User do
   def valid_key_hash?(_, _) do
     Argon2.no_user_verify()
     false
+  end
+
+  defp generate_user_registration_keys() do
+    user_key = Encrypted.Utils.generate_key()
+    user_attributes_key = Encrypted.Utils.generate_key()
+    conn_key = Encrypted.Utils.generate_key()
+
+    {user_key, user_attributes_key, conn_key}
   end
 end

@@ -1,6 +1,7 @@
 defmodule Metamorphic.Timeline.UserPost do
   @moduledoc false
   use Ecto.Schema
+  import Ecto.Changeset
 
   alias Metamorphic.Accounts.User
   alias Metamorphic.Encrypted
@@ -11,9 +12,14 @@ defmodule Metamorphic.Timeline.UserPost do
   schema "user_posts" do
     field :key, Encrypted.Binary
 
-    belongs_to :user, User
     belongs_to :post, Post
+    belongs_to :user, User
 
     timestamps()
+  end
+
+  def changeset(user_post, attrs \\ %{}) do
+    user_post
+    |> cast(attrs, [:key, :post_id, :user_id])
   end
 end
