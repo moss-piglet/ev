@@ -3,7 +3,7 @@ defmodule Metamorphic.Accounts.Connection do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Metamorphic.Accounts.{Connection, User, UserConnection}
+  alias Metamorphic.Accounts.{User, UserConnection}
 
   alias Metamorphic.Encrypted
 
