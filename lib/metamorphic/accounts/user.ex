@@ -15,6 +15,10 @@ defmodule Metamorphic.Accounts.User do
     field :email_hash, Encrypted.HMAC
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
+    field :name, Encrypted.Binary
+    field :name_hash, Encrypted.HMAC
+    field :username, Encrypted.Binary
+    field :username_hash, Encrypted.HMAC
     field :is_admin?, :boolean, default: false
     field :is_suspended?, :boolean, default: false
     field :is_deleted?, :boolean, default: false
@@ -23,11 +27,8 @@ defmodule Metamorphic.Accounts.User do
     field :key_hash, Encrypted.Binary
     field :key, Encrypted.Binary
     field :key_pair, {:map, Encrypted.Binary}
-    field :name, Encrypted.Binary
-    field :name_hash, Encrypted.HMAC
-    field :username, Encrypted.Binary
-    field :username_hash, Encrypted.HMAC
     field :user_key, Encrypted.Binary, redact: true
+    field :conn_key, Encrypted.Binary, redact: true
     field :visibility, Ecto.Enum, values: [:public, :private, :relation], default: :public
     field :confirmed_at, :naive_datetime
 
@@ -250,6 +251,13 @@ defmodule Metamorphic.Accounts.User do
       opts[:change_password] || opts[:reset_password] ->
         %{user_key: user_key, private_key: private_key} =
           decrypt_user_keys(opts[:user].user_key, opts[:user], opts[:key])
+
+        # Can update this as the private_key is not needed
+        # so we  also don't need to make changes to they key pair.
+        # We only need to get the user_key and make a new key_hash
+        # with the new password.
+        #
+        # We can drop the put_change -> key_pair work. :)
 
         %{key_hash: new_key_hash} = Encrypted.Utils.generate_key_hash(password, user_key)
         e_private_key = Encrypted.Utils.encrypt(%{key: user_key, payload: private_key})

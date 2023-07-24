@@ -25,6 +25,7 @@ defmodule Metamorphic.Repo.Migrations.CreateUsersAuthTables do
       add :username, :binary, null: false
       add :username_hash, :binary, null: false
       add :user_key, :binary, null: false
+      add :conn_key, :binary, null: false
       add :visibility, :string, null: false
       add :confirmed_at, :naive_datetime
       timestamps()

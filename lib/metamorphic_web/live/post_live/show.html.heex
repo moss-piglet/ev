@@ -2,7 +2,11 @@
   Post <%= @post.id %>
   <:subtitle>This is a post record from <%= @post.inserted_at %>.</:subtitle>
   <:actions>
-    <.link :if={can_edit?(@current_user.id, @post)} patch={~p"/posts/#{@post}/show/edit"} phx-click={JS.push_focus()}>
+    <.link
+      :if={can_edit?(@current_user.id, @post)}
+      patch={~p"/posts/#{@post}/show/edit"}
+      phx-click={JS.push_focus()}
+    >
       <.button>Edit post</.button>
     </.link>
   </:actions>
@@ -18,7 +22,12 @@
 
 <.back navigate={~p"/posts"}>Back to posts</.back>
 
-<.modal :if={@live_action == :edit && can_edit?(@current_user.id, @post)} id="post-modal" show on_cancel={JS.patch(~p"/posts/#{@post}")}>
+<.modal
+  :if={@live_action == :edit && can_edit?(@current_user.id, @post)}
+  id="post-modal"
+  show
+  on_cancel={JS.patch(~p"/posts/#{@post}")}
+>
   <.live_component
     module={MetamorphicWeb.PostLive.FormComponent}
     id={@post.id}

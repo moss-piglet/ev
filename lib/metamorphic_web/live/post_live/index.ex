@@ -78,6 +78,7 @@ defmodule MetamorphicWeb.PostLive.Index do
   def handle_event("fav", %{"id" => id}, socket) do
     post = Timeline.get_post!(id)
     user = socket.assigns.current_user
+
     if user.id not in post.favs_list do
       {:ok, post} = Timeline.inc_favs(post)
       Timeline.update_post(post, %{favs_list: List.insert_at(post.favs_list, 0, user.id)})
@@ -90,6 +91,7 @@ defmodule MetamorphicWeb.PostLive.Index do
   def handle_event("unfav", %{"id" => id}, socket) do
     post = Timeline.get_post!(id)
     user = socket.assigns.current_user
+
     if user.id in post.favs_list do
       {:ok, post} = Timeline.decr_favs(post)
       Timeline.update_post(post, %{favs_list: List.delete(post.favs_list, user.id)})
@@ -105,7 +107,9 @@ defmodule MetamorphicWeb.PostLive.Index do
 
     if post.user_id != user.id && user.id not in post.reposts_list do
       {:ok, post} = Timeline.inc_reposts(post)
-      {:ok, post} = Timeline.update_post(post, %{reposts_list: List.insert_at(post.reposts_list, 0, user.id)})
+
+      {:ok, post} =
+        Timeline.update_post(post, %{reposts_list: List.insert_at(post.reposts_list, 0, user.id)})
 
       repost_params = %{
         body: body,

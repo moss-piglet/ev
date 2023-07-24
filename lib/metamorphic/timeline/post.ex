@@ -25,7 +25,15 @@ defmodule Metamorphic.Timeline.Post do
   @doc false
   def changeset(post, attrs) do
     post
-    |> cast(attrs, [:body, :username, :favs_count, :reposts_count, :reposts_list, :favs_list, :user_id])
+    |> cast(attrs, [
+      :body,
+      :username,
+      :favs_count,
+      :reposts_count,
+      :reposts_list,
+      :favs_list,
+      :user_id
+    ])
     |> validate_required([:body, :username, :user_id])
     |> validate_length(:body, min: 2, max: 250)
   end

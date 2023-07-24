@@ -17,12 +17,22 @@
     <div class="line-clamp-1"><%= post.body %></div>
   </:col>
   <:col :let={{_id, post}} label="Favs count">
-    <div :if={can_fav?(@current_user.id, post)} class="inline-flex align-middle" phx-click="fav" phx-value-id={post.id}>
+    <div
+      :if={can_fav?(@current_user.id, post)}
+      class="inline-flex align-middle"
+      phx-click="fav"
+      phx-value-id={post.id}
+    >
       <.icon name="hero-star" class="h-4 w-4 hover:text-brand-600" />
       <span class="ml-1 text-xs"><%= post.favs_count %></span>
     </div>
 
-    <div :if={!can_fav?(@current_user.id, post)} class="inline-flex align-middle" phx-click="unfav" phx-value-id={post.id}>
+    <div
+      :if={!can_fav?(@current_user.id, post)}
+      class="inline-flex align-middle"
+      phx-click="unfav"
+      phx-value-id={post.id}
+    >
       <.icon name="hero-star-solid" class="h-4 w-4 text-brand-600" />
       <span class="ml-1 text-xs"><%= post.favs_count %></span>
     </div>
@@ -40,10 +50,7 @@
       <span class="ml-1 text-xs"><%= post.reposts_count %></span>
     </div>
 
-    <div
-      :if={!repost?(@current_user.id, post)}
-      class="inline-flex align-middle"
-    >
+    <div :if={!repost?(@current_user.id, post)} class="inline-flex align-middle">
       <.icon name="hero-arrow-path-rounded-square" class="h-4 w-4" />
       <span class="ml-1 text-xs"><%= post.reposts_count %></span>
     </div>
