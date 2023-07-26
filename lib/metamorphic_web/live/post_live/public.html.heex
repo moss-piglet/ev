@@ -1,6 +1,9 @@
 <.header>
   Public Timeline
   <:actions>
+    <.link :if={@current_user} patch={~p"/posts"}>
+      <.button>Timeline</.button>
+    </.link>
     <.link :if={@current_user} patch={~p"/posts/new"}>
       <.button>New Post</.button>
     </.link>
@@ -50,7 +53,7 @@
       class="inline-flex align-middle"
       phx-click="repost"
       phx-value-id={post.id}
-      phx-value-body={post.body}
+      phx-value-body={decr_public_post(post.body, get_post_key(post))}
       phx-value-username={decr(@current_user.username, @current_user, @key)}
     >
       <.icon name="hero-arrow-path-rounded-square" class="h-4 w-4 hover:text-brand-600" />

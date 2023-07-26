@@ -7,7 +7,6 @@ defmodule MetamorphicWeb.PostLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket) do
-      Timeline.subscribe()
       Timeline.private_subscribe(socket.assigns.current_user)
     end
 
@@ -123,7 +122,7 @@ defmodule MetamorphicWeb.PostLive.Index do
       {:ok, post} = Timeline.inc_reposts(post)
 
       {:ok, post} =
-        Timeline.update_post(post, %{reposts_list: List.insert_at(post.reposts_list, 0, user.id)})
+        Timeline.update_post_repost(post, %{reposts_list: List.insert_at(post.reposts_list, 0, user.id)})
 
       repost_params = %{
         body: body,

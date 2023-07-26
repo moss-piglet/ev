@@ -16,11 +16,11 @@
   row_click={fn {_id, post} -> JS.navigate(~p"/posts/#{post}") end}
 >
   <:col :let={{_id, post}} label="Username">
-    <%= decr_post(post.username, @current_user, get_post_key(post), @key) %>
+    <%= decr_post(post.username, @current_user, get_post_key(post), @key, post) %>
   </:col>
   <:col :let={{_id, post}} label="Body">
     <div class="line-clamp-1">
-      <%= decr_post(post.body, @current_user, get_post_key(post), @key) %>
+      <%= decr_post(post.body, @current_user, get_post_key(post), @key, post) %>
     </div>
   </:col>
   <:col :let={{_id, post}} label="Favs count">
@@ -50,7 +50,7 @@
       class="inline-flex align-middle"
       phx-click="repost"
       phx-value-id={post.id}
-      phx-value-body={post.body}
+      phx-value-body={decr_post(post.body, @current_user, get_post_key(post), @key, post)}
       phx-value-username={decr(@current_user.username, @current_user, @key)}
     >
       <.icon name="hero-arrow-path-rounded-square" class="h-4 w-4 hover:text-brand-600" />

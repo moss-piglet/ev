@@ -76,7 +76,6 @@ defmodule MetamorphicWeb.Helpers do
   end
 
   def get_post_key(post) do
-    IO.inspect post.visibility, label: "VIZ"
     Enum.at(post.user_posts, 0).key
   end
 end

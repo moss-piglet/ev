@@ -61,9 +61,8 @@ defmodule Metamorphic.Timeline do
     {1, [post]} =
       from(p in Post, where: p.id == ^id, select: p)
       |> Repo.update_all(inc: [reposts_count: 1])
-      |> Repo.preload([:user_posts])
 
-    broadcast({:ok, post}, :post_updated)
+    {:ok, post |> Repo.preload([:user_posts])}
   end
 
   @doc """
@@ -128,10 +127,29 @@ defmodule Metamorphic.Timeline do
 
   """
   def create_repost(attrs \\ %{}, opts \\ []) do
-    %Post{}
-    |> Post.repost_changeset(attrs, opts)
-    |> Repo.insert()
-    |> Repo.preload([:user_posts])
+    #%Post{}
+    #|> Post.repost_changeset(attrs, opts)
+    #|> Repo.insert()
+    #|> Repo.preload([:user_posts])
+    #|> broadcast(:post_reposted)
+
+    post = Post.changeset(%Post{}, attrs, opts)
+    user = Accounts.get_user!(opts[:user].id)
+    p_attrs = post.changes.user_post_map
+
+    {:ok, %{insert_post: post, insert_user_post: _user_post_conn}} =
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(:insert_post, post)
+      |> Ecto.Multi.insert(:insert_user_post, fn %{insert_post: post} ->
+        UserPost.changeset(%UserPost{}, %{
+          key: p_attrs.key
+        })
+        |> Ecto.Changeset.put_assoc(:post, post)
+        |> Ecto.Changeset.put_assoc(:user, user)
+      end)
+      |> Repo.transaction()
+
+    {:ok, post |> Repo.preload([:user_posts])}
     |> broadcast(:post_reposted)
   end
 
@@ -169,6 +187,15 @@ defmodule Metamorphic.Timeline do
   end
 
   def update_post_fav(%Post{} = post, attrs, opts \\ []) do
+    {:ok, post} =
+      Post.changeset(post, attrs, opts)
+      |> Repo.update()
+
+    {:ok, post |> Repo.preload([:user_posts])}
+    |> broadcast(:post_updated)
+  end
+
+  def update_post_repost(%Post{} = post, attrs, opts \\ []) do
     {:ok, post} =
       Post.changeset(post, attrs, opts)
       |> Repo.update()

@@ -6,7 +6,6 @@ defmodule MetamorphicWeb.PostLive.Show do
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket) do
-      Timeline.subscribe()
       Timeline.private_subscribe(socket.assigns.current_user)
     end
 

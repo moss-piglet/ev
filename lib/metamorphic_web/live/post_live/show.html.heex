@@ -20,7 +20,8 @@
   <:item title="Reposts count"><%= @post.reposts_count %></:item>
 </.list>
 
-<.back navigate={~p"/posts"}>Back to posts</.back>
+<.back :if={@post.visibility != :public} navigate={~p"/posts"}>Back to posts</.back>
+<.back :if={@post.visibility == :public} navigate={~p"/public/posts"}>Back to public posts</.back>
 
 <.modal
   :if={@live_action == :edit && can_edit?(@current_user, @post)}
