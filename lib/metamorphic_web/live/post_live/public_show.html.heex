@@ -1,6 +1,9 @@
 <.header>
-  Post <%= @post.id %>
-  <:subtitle>This is a post record from <%= time_ago(@post.inserted_at) %>.</:subtitle>
+  Public Post
+  <:subtitle>
+    This is a <span class="font-semibold text-brand-600">public</span>
+    post record from <%= time_ago(@post.inserted_at) %>.
+  </:subtitle>
   <:actions>
     <.link
       :if={@current_user && can_edit?(@current_user, @post)}
@@ -20,7 +23,7 @@
   <:item title="Reposts count"><%= @post.reposts_count %></:item>
 </.list>
 
-<.back navigate={~p"/posts"}>Back to posts</.back>
+<.back navigate={~p"/public/posts"}>Back to posts</.back>
 
 <.modal
   :if={@live_action == :edit && can_edit?(@current_user.id, @post)}

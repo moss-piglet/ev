@@ -291,7 +291,6 @@ defmodule Metamorphic.Accounts.User do
            }
          } = changeset
        ) do
-
     {user_key, user_attributes_key, conn_key} = generate_user_registration_keys()
 
     %{key_hash: key_hash} = Encrypted.Utils.generate_key_hash(password, user_key)

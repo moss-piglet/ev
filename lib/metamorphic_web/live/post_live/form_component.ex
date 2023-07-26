@@ -21,6 +21,13 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
       >
         <.input field={@form[:user_id]} type="hidden" value={@user.id} />
         <.input field={@form[:username]} type="hidden" value={decr(@user.username, @user, @key)} />
+        <.input
+          field={@form[:visibility]}
+          type="select"
+          options={Ecto.Enum.values(Timeline.Post, :visibility)}
+          label="Visibility"
+          required
+        />
         <.input field={@form[:body]} type="textarea" label="Body" />
         <:actions>
           <.button phx-disable-with="Saving...">Save Post</.button>
@@ -55,7 +62,7 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
   end
 
   defp save_post(socket, :edit, post_params) do
-    if can_edit?(socket.assigns.user.id, socket.assigns.post) do
+    if can_edit?(socket.assigns.user, socket.assigns.post) do
       case Timeline.update_post(socket.assigns.post, post_params) do
         {:ok, post} ->
           notify_parent({:saved, post})
@@ -74,8 +81,11 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
   end
 
   defp save_post(socket, :new, post_params) do
-    if post_params["user_id"] == socket.assigns.user.id do
-      case Timeline.create_post(post_params) do
+    user = socket.assigns.user
+    key = socket.assigns.key
+
+    if post_params["user_id"] == user.id do
+      case Timeline.create_post(post_params, user: user, key: key) do
         {:ok, post} ->
           notify_parent({:saved, post})
 

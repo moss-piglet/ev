@@ -38,6 +38,8 @@ defmodule Metamorphic.MixProject do
       {:ecto_sql, "~> 3.10"},
       {:enacl, "~> 1.2"},
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
+      {:ex_cldr, "~> 2.37"},
+      {:ex_cldr_dates_times, "~> 2.0"},
       {:finch, "~> 0.13"},
       {:floki, ">= 0.30.0", only: :test},
       {:fly_postgres, "~> 0.3.2"},

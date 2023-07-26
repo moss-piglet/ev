@@ -35,6 +35,17 @@ defmodule Metamorphic.Encrypted.Users.Utils do
     end
   end
 
+  def decrypt_user_post(payload, user, post_key, key) do
+    with d_post_key <- decrypt_user_attrs_key(post_key, user, key),
+         {:ok, d_payload} <- decrypt_payload(d_post_key, payload) do
+      d_payload
+    else
+      {:error_user_key, message} -> message
+      {:error_payload, message} -> message
+      rest -> rest
+    end
+  end
+
   # Used to decrypt user_key, aka the
   # user_attributes_key. This is the key that
   # is used to encrypt/decrypt data.

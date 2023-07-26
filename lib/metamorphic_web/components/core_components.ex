@@ -335,6 +335,9 @@ defmodule MetamorphicWeb.CoreComponents do
     ~H"""
     <div phx-feedback-for={@name}>
       <.label for={@id}><%= @label %></.label>
+      <p :if={@description} id={@id <> "_description"} class="mt-2 text-sm leading-6 text-zinc-600">
+        <%= @description %>
+      </p>
       <select
         id={@id}
         name={@name}

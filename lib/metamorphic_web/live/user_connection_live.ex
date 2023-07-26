@@ -1,11 +1,11 @@
-defmodule MetamorphicWeb.UserDashLive do
+defmodule MetamorphicWeb.UserConnectionLive do
   use MetamorphicWeb, :live_view
 
   def render(assigns) do
     ~H"""
     <.header class="text-center">
-      Welcome home
-      <:subtitle>This is your account dashboard.</:subtitle>
+      Connections
+      <:subtitle>This is your connections dashboard.</:subtitle>
       <:actions :if={!@current_user.confirmed_at}>
         <.button type="button" class="bg-brand-500" phx-click={JS.patch(~p"/users/confirm")}>
           Confirm my account
@@ -39,6 +39,19 @@ defmodule MetamorphicWeb.UserDashLive do
         </.link>
       </div>
     </div>
+
+    <.modal :if={@live_action in [:new, :edit]} id="post-modal" show on_cancel={JS.patch(~p"/posts")}>
+      <.live_component
+        module={MetamorphicWeb.PostLive.FormComponent}
+        id={@post.id || :new}
+        title={@page_title}
+        action={@live_action}
+        post={@post}
+        user={@current_user}
+        key={@key}
+        patch={~p"/posts"}
+      />
+    </.modal>
     """
   end
 

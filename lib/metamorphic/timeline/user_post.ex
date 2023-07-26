@@ -20,6 +20,9 @@ defmodule Metamorphic.Timeline.UserPost do
 
   def changeset(user_post, attrs \\ %{}) do
     user_post
-    |> cast(attrs, [:key, :post_id, :user_id])
+    |> cast(attrs, [:key])
+    |> cast_assoc(:post)
+    |> cast_assoc(:user)
+    |> validate_required([:key])
   end
 end

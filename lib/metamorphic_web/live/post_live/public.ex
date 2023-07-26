@@ -1,4 +1,4 @@
-defmodule MetamorphicWeb.PostLive.Index do
+defmodule MetamorphicWeb.PostLive.Public do
   use MetamorphicWeb, :live_view
 
   alias Metamorphic.Timeline
@@ -7,7 +7,7 @@ defmodule MetamorphicWeb.PostLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket), do: Timeline.subscribe()
-    {:ok, stream(socket, :posts, Timeline.list_posts(socket.assigns.current_user))}
+    {:ok, stream(socket, :posts, Timeline.list_public_posts())}
   end
 
   @impl true
@@ -69,7 +69,6 @@ defmodule MetamorphicWeb.PostLive.Index do
     if post.user_id == socket.assigns.current_user.id do
       {:ok, _} = Timeline.delete_post(post)
 
-      socket = put_flash(socket, :info, "Post deleted successfully.")
       {:noreply, stream_delete(socket, :posts, post)}
     else
       {:noreply, socket}

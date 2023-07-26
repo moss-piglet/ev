@@ -113,7 +113,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
           navigate={~p"/users/confirm"}
           nav_title="Confirm"
         >
-          Confirm your account to enable the ability to reset your password if you forget it.
+          Confirm your account to enable the "forgot password" feature.
         </.info_banner>
 
         <.simple_form

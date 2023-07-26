@@ -80,7 +80,7 @@ defmodule Metamorphic.Accounts do
   def register_user(attrs) do
     user = User.registration_changeset(%User{}, attrs)
 
-    c_attrs = Map.merge(%{}, user.changes.connection_map)
+    c_attrs = user.changes.connection_map
 
     {:ok, %{insert_user: user, insert_connection: _conn}} =
       Ecto.Multi.new()

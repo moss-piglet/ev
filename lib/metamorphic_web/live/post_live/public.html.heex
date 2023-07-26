@@ -1,10 +1,7 @@
 <.header>
-  Timeline
+  Public Timeline
   <:actions>
-    <.link patch={~p"/public/posts"}>
-      <.button>Public Timeline</.button>
-    </.link>
-    <.link patch={~p"/posts/new"}>
+    <.link :if={@current_user} patch={~p"/posts/new"}>
       <.button>New Post</.button>
     </.link>
   </:actions>
@@ -13,15 +10,15 @@
 <.table
   id="posts"
   rows={@streams.posts}
-  row_click={fn {_id, post} -> JS.navigate(~p"/posts/#{post}") end}
+  row_click={fn {_id, post} -> JS.navigate(~p"/public/posts/#{post}") end}
 >
-  <:col :let={{_id, post}} label="Username"><%= decr_post(post.username, @current_user, get_key(post), @key) %></:col>
+  <:col :let={{_id, post}} label="Username"><%= post.username %></:col>
   <:col :let={{_id, post}} label="Body">
-    <div class="line-clamp-1"><%= decr_post(post.body, @current_user, get_key(post), @key) %></div>
+    <div class="line-clamp-1"><%= post.body %></div>
   </:col>
   <:col :let={{_id, post}} label="Favs count">
     <div
-      :if={can_fav?(@current_user, post)}
+      :if={@current_user && can_fav?(@current_user, post)}
       class="inline-flex align-middle"
       phx-click="fav"
       phx-value-id={post.id}
@@ -31,7 +28,7 @@
     </div>
 
     <div
-      :if={!can_fav?(@current_user, post)}
+      :if={@current_user && !can_fav?(@current_user, post)}
       class="inline-flex align-middle"
       phx-click="unfav"
       phx-value-id={post.id}
@@ -39,10 +36,15 @@
       <.icon name="hero-star-solid" class="h-4 w-4 text-brand-600" />
       <span class="ml-1 text-xs"><%= post.favs_count %></span>
     </div>
+
+    <div :if={!@current_user && post.favs_count > 0} class="inline-flex align-middle">
+      <.icon name="hero-star-solid" class="h-4 w-4 text-brand-600" />
+      <span class="ml-1 text-xs"><%= post.favs_count %></span>
+    </div>
   </:col>
   <:col :let={{_id, post}} label="Reposts count">
     <div
-      :if={can_repost?(@current_user, post)}
+      :if={@current_user && can_repost?(@current_user, post)}
       class="inline-flex align-middle"
       phx-click="repost"
       phx-value-id={post.id}
@@ -53,7 +55,12 @@
       <span class="ml-1 text-xs"><%= post.reposts_count %></span>
     </div>
 
-    <div :if={!can_repost?(@current_user, post)} class="inline-flex align-middle">
+    <div :if={@current_user && !can_repost?(@current_user, post)} class="inline-flex align-middle">
+      <.icon name="hero-arrow-path-rounded-square" class="h-4 w-4" />
+      <span class="ml-1 text-xs"><%= post.reposts_count %></span>
+    </div>
+
+    <div :if={!@current_user && post.reposts_count > 0} class="inline-flex align-middle">
       <.icon name="hero-arrow-path-rounded-square" class="h-4 w-4" />
       <span class="ml-1 text-xs"><%= post.reposts_count %></span>
     </div>
@@ -62,7 +69,7 @@
     <span class="ml-1 text-xs"><%= time_ago(post.inserted_at) %></span>
   </:col>
   <:action :let={{_id, post}}>
-    <span :if={post.user_id == @current_user.id}>
+    <span :if={@current_user && post.user_id == @current_user.id}>
       <div class="sr-only">
         <.link navigate={~p"/posts/#{post}"}>Show</.link>
       </div>
@@ -71,7 +78,7 @@
   </:action>
   <:action :let={{id, post}}>
     <.link
-      :if={post.user_id == @current_user.id}
+      :if={@current_user && post.user_id == @current_user.id}
       phx-click={JS.push("delete", value: %{id: post.id}) |> hide("##{id}")}
       data-confirm="Are you sure?"
     >

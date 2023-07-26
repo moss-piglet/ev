@@ -21,6 +21,15 @@ defmodule MetamorphicWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+
+    live_session :public,
+      on_mount: [
+        {MetamorphicWeb.UserAuth, :mount_current_user},
+        {MetamorphicWeb.UserAuth, :mount_current_user_session_key}
+      ] do
+      live "/public/posts", PostLive.Public, :index
+      live "/public/posts/:id", PostLive.PublicShow, :show
+    end
   end
 
   # Other scopes may use custom stacks.
@@ -45,8 +54,6 @@ defmodule MetamorphicWeb.Router do
     end
   end
 
-  ## Public routes
-
   ## Authentication routes
 
   scope "/", MetamorphicWeb do
@@ -70,16 +77,30 @@ defmodule MetamorphicWeb.Router do
       on_mount: [
         {MetamorphicWeb.UserAuth, :ensure_authenticated}
       ] do
+      live "/users/dash", UserDashLive, :index
+
+      live "/users/profile/:id", UserProfileLive, :show
+
+      live "/users/settings", UserSettingsLive, :edit
+      live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
+    end
+  end
+
+  scope "/", MetamorphicWeb do
+    pipe_through [:browser, :require_authenticated_user, :require_confirmed_user]
+
+    live_session :require_authenticated_and_confirmed_user,
+      on_mount: [
+        {MetamorphicWeb.UserAuth, :ensure_authenticated},
+        {MetamorphicWeb.UserAuth, :ensure_confirmed}
+      ] do
       live "/posts", PostLive.Index, :index
       live "/posts/new", PostLive.Index, :new
       live "/posts/:id/edit", PostLive.Index, :edit
       live "/posts/:id", PostLive.Show, :show
       live "/posts/:id/show/edit", PostLive.Show, :edit
 
-      live "/users/dash", UserDashLive, :index
-      live "/users/profile/:id", UserProfileLive, :show
-      live "/users/settings", UserSettingsLive, :edit
-      live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
+      live "/users/connections", UserConnectionLive, :index
     end
   end
 

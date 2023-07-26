@@ -4,12 +4,14 @@ defmodule Metamorphic.Timeline do
   """
 
   import Ecto.Query, warn: false
-  alias Metamorphic.Repo
 
-  alias Metamorphic.Timeline.Post
+  alias Metamorphic.Accounts
+  alias Metamorphic.Repo
+  alias Metamorphic.Timeline.{Post, UserPost}
 
   @doc """
-  Returns the list of posts.
+  Returns the list of non-public posts for
+  the user.
 
   ## Examples
 
@@ -17,8 +19,21 @@ defmodule Metamorphic.Timeline do
       [%Post{}, ...]
 
   """
-  def list_posts do
-    Repo.all(from p in Post, order_by: [desc: p.inserted_at])
+  def list_posts(user) do
+    Repo.all(
+      from p in Post,
+        join: up in UserPost,
+        on: up.user_id == ^user.id,
+        where: up.post_id == p.id,
+        where: p.visibility != :public,
+        where: p.user_id == ^user.id,
+        order_by: [desc: p.inserted_at],
+        preload: [:user_posts]
+    )
+  end
+
+  def list_public_posts do
+    Repo.all(from p in Post, where: p.visibility == :public, order_by: [desc: p.inserted_at])
   end
 
   def inc_favs(%Post{id: id}) do
@@ -73,10 +88,24 @@ defmodule Metamorphic.Timeline do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_post(attrs \\ %{}) do
-    %Post{}
-    |> Post.changeset(attrs)
-    |> Repo.insert()
+  def create_post(attrs \\ %{}, opts \\ []) do
+    post = Post.changeset(%Post{}, attrs, opts)
+    user = Accounts.get_user!(opts[:user].id)
+    p_attrs = post.changes.user_post_map
+
+    {:ok, %{insert_post: post, insert_user_post: _user_post_conn}} =
+      Ecto.Multi.new()
+      |> Ecto.Multi.insert(:insert_post, post)
+      |> Ecto.Multi.insert(:insert_user_post, fn %{insert_post: post} ->
+        UserPost.changeset(%UserPost{}, %{
+          key: p_attrs.key
+        })
+        |> Ecto.Changeset.put_assoc(:post, post)
+        |> Ecto.Changeset.put_assoc(:user, user)
+      end)
+      |> Repo.transaction()
+
+    {:ok, post |> Repo.preload([:user_posts])}
     |> broadcast(:post_created)
   end
 
@@ -85,16 +114,16 @@ defmodule Metamorphic.Timeline do
 
   ## Examples
 
-      iex> repost(%{field: value})
+      iex> create_repost(%{field: value})
       {:ok, %Post{}}
 
-      iex> repost(%{field: bad_value})
+      iex> create_repost(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def repost(attrs \\ %{}) do
+  def create_repost(attrs \\ %{}, opts \\ []) do
     %Post{}
-    |> Post.repost_changeset(attrs)
+    |> Post.repost_changeset(attrs, opts)
     |> Repo.insert()
     |> broadcast(:post_reposted)
   end
