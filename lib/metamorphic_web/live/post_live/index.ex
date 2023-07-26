@@ -6,7 +6,11 @@ defmodule MetamorphicWeb.PostLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    if connected?(socket), do: Timeline.subscribe()
+    if connected?(socket) do
+      Timeline.subscribe()
+      Timeline.private_subscribe(socket.assigns.current_user)
+    end
+
     {:ok, stream(socket, :posts, Timeline.list_posts(socket.assigns.current_user))}
   end
 
@@ -35,12 +39,20 @@ defmodule MetamorphicWeb.PostLive.Index do
 
   @impl true
   def handle_info({MetamorphicWeb.PostLive.FormComponent, {:saved, post}}, socket) do
-    {:noreply, stream_insert(socket, :posts, post)}
+    if post.visibility != :public do
+      {:noreply, stream_insert(socket, :posts, post)}
+    else
+      {:noreply, socket}
+    end
   end
 
   @impl true
   def handle_info({:post_created, post}, socket) do
-    {:noreply, stream_insert(socket, :posts, post, at: 0)}
+    if post.visibility != :public do
+      {:noreply, stream_insert(socket, :posts, post, at: 0)}
+    else
+      {:noreply, socket}
+    end
   end
 
   @impl true
@@ -82,7 +94,7 @@ defmodule MetamorphicWeb.PostLive.Index do
 
     if user.id not in post.favs_list do
       {:ok, post} = Timeline.inc_favs(post)
-      Timeline.update_post(post, %{favs_list: List.insert_at(post.favs_list, 0, user.id)})
+      Timeline.update_post_fav(post, %{favs_list: List.insert_at(post.favs_list, 0, user.id)})
       {:noreply, socket}
     else
       {:noreply, socket}
@@ -95,7 +107,7 @@ defmodule MetamorphicWeb.PostLive.Index do
 
     if user.id in post.favs_list do
       {:ok, post} = Timeline.decr_favs(post)
-      Timeline.update_post(post, %{favs_list: List.delete(post.favs_list, user.id)})
+      Timeline.update_post_fav(post, %{favs_list: List.delete(post.favs_list, user.id)})
       {:noreply, socket}
     else
       {:noreply, socket}

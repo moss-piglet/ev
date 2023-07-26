@@ -35,6 +35,11 @@ defmodule MetamorphicWeb.PostLive.PublicShow do
     end
   end
 
+  @impl true
+  def handle_info(_message, socket) do
+    {:noreply, socket}
+  end
+
   defp page_title(:show), do: "Public Show Post"
   defp page_title(:edit), do: "Edit Post"
 end

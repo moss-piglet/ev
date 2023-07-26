@@ -12,7 +12,9 @@ config :metamorphic,
   generators: [binary_id: true]
 
 config :metamorphic,
-  mailer_default_from_email: "support@mail.metamorphic.app"
+  mailer_default_from_email: "support@mail.metamorphic.app",
+  server_public_key: System.get_env("SERVER_PUBLIC_KEY"),
+  server_private_key: System.get_env("SERVER_PRIVATE_KEY")
 
 config :metamorphic, Metamorphic.Repo.Local, priv: "priv/repo"
 

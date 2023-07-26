@@ -9,7 +9,8 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
     <div>
       <.header>
         <%= @title %>
-        <:subtitle>Use this form to manage post records in your database.</:subtitle>
+        <:subtitle :if={@action == :new}>Use this form to create a new post.</:subtitle>
+        <:subtitle :if={@action == :edit}>Use this form to edit your existing post.</:subtitle>
       </.header>
 
       <.simple_form
@@ -22,13 +23,28 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
         <.input field={@form[:user_id]} type="hidden" value={@user.id} />
         <.input field={@form[:username]} type="hidden" value={decr(@user.username, @user, @key)} />
         <.input
+          :if={@action != :edit}
           field={@form[:visibility]}
           type="select"
           options={Ecto.Enum.values(Timeline.Post, :visibility)}
           label="Visibility"
           required
         />
-        <.input field={@form[:body]} type="textarea" label="Body" />
+        <.input :if={@action == :new} field={@form[:body]} type="textarea" label="Body" />
+        <.input
+          :if={@action == :edit && @post.visibility == :private}
+          field={@form[:body]}
+          type="textarea"
+          label="Body"
+          value={decr_post(@post.body, @user, get_post_key(@post), @key)}
+        />
+        <.input
+          :if={@action == :edit && @post.visibility == :public}
+          field={@form[:body]}
+          type="textarea"
+          label="Body"
+          value={decr_public_post(@post.body, get_post_key(@post))}
+        />
         <:actions>
           <.button phx-disable-with="Saving...">Save Post</.button>
         </:actions>
@@ -41,10 +57,18 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
   def update(%{post: post} = assigns, socket) do
     changeset = Timeline.change_post(post)
 
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign_form(changeset)}
+    if :edit == Map.get(assigns, :action) do
+      {:ok,
+       socket
+       |> assign(:post_key, get_post_key(post))
+       |> assign(assigns)
+       |> assign_form(changeset)}
+    else
+      {:ok,
+       socket
+       |> assign(assigns)
+       |> assign_form(changeset)}
+    end
   end
 
   @impl true
@@ -63,7 +87,15 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
 
   defp save_post(socket, :edit, post_params) do
     if can_edit?(socket.assigns.user, socket.assigns.post) do
-      case Timeline.update_post(socket.assigns.post, post_params) do
+      user = socket.assigns.user
+      key = socket.assigns.key
+
+      case Timeline.update_post(socket.assigns.post, post_params,
+             update_post: true,
+             post_key: socket.assigns.post_key,
+             user: user,
+             key: key
+           ) do
         {:ok, post} ->
           notify_parent({:saved, post})
 

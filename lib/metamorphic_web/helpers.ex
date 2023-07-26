@@ -16,8 +16,25 @@ defmodule MetamorphicWeb.Helpers do
     )
   end
 
-  def decr_post(payload, user, post_key, key) do
-    Encrypted.Users.Utils.decrypt_user_post(payload, user, post_key, key)
+  def decr_post(payload, user, post_key, key, post \\ nil) do
+    if post && post.visibility == :public do
+      decr_public_post(payload, post_key)
+    else
+      Encrypted.Users.Utils.decrypt_user_post(payload, user, post_key, key)
+    end
+  end
+
+  def decr_public_post(payload, post_key) do
+    Encrypted.Users.Utils.decrypt_public_post(payload, post_key)
+  end
+
+  # This is currently not used. Consider removing.
+  def decr_post_key(payload_key, post, user, key) do
+    case post.visibility do
+      :public -> Encrypted.Users.Utils.decrypt_public_post_key(payload_key)
+      :private -> Encrypted.Users.Utils.decrypt_user_attrs_key(payload_key, user, key)
+      :connections -> :error
+    end
   end
 
   ## General
@@ -58,7 +75,8 @@ defmodule MetamorphicWeb.Helpers do
     end
   end
 
-  def get_key(struct) do
-    Enum.at(struct.user_posts, 0).key
+  def get_post_key(post) do
+    IO.inspect post.visibility, label: "VIZ"
+    Enum.at(post.user_posts, 0).key
   end
 end

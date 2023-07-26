@@ -5,7 +5,11 @@ defmodule MetamorphicWeb.PostLive.Show do
 
   @impl true
   def mount(_params, _session, socket) do
-    if connected?(socket), do: Timeline.subscribe()
+    if connected?(socket) do
+      Timeline.subscribe()
+      Timeline.private_subscribe(socket.assigns.current_user)
+    end
+
     {:ok, socket}
   end
 
@@ -33,6 +37,11 @@ defmodule MetamorphicWeb.PostLive.Show do
     else
       {:noreply, socket}
     end
+  end
+
+  @impl true
+  def handle_info(_message, socket) do
+    {:noreply, socket}
   end
 
   defp page_title(:show), do: "Show Post"

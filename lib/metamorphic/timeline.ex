@@ -33,7 +33,12 @@ defmodule Metamorphic.Timeline do
   end
 
   def list_public_posts do
-    Repo.all(from p in Post, where: p.visibility == :public, order_by: [desc: p.inserted_at])
+    Repo.all(
+      from p in Post,
+        where: p.visibility == :public,
+        order_by: [desc: p.inserted_at],
+        preload: [:user_posts]
+    )
   end
 
   def inc_favs(%Post{id: id}) do
@@ -41,7 +46,7 @@ defmodule Metamorphic.Timeline do
       from(p in Post, where: p.id == ^id, select: p)
       |> Repo.update_all(inc: [favs_count: 1])
 
-    broadcast({:ok, post}, :post_updated)
+    {:ok, post |> Repo.preload([:user_posts])}
   end
 
   def decr_favs(%Post{id: id}) do
@@ -49,13 +54,14 @@ defmodule Metamorphic.Timeline do
       from(p in Post, where: p.id == ^id, select: p)
       |> Repo.update_all(inc: [favs_count: -1])
 
-    broadcast({:ok, post}, :post_updated)
+    {:ok, post |> Repo.preload([:user_posts])}
   end
 
   def inc_reposts(%Post{id: id}) do
     {1, [post]} =
       from(p in Post, where: p.id == ^id, select: p)
       |> Repo.update_all(inc: [reposts_count: 1])
+      |> Repo.preload([:user_posts])
 
     broadcast({:ok, post}, :post_updated)
   end
@@ -74,7 +80,7 @@ defmodule Metamorphic.Timeline do
       ** (Ecto.NoResultsError)
 
   """
-  def get_post!(id), do: Repo.get!(Post, id)
+  def get_post!(id), do: Repo.get!(Post, id) |> Repo.preload([:user_posts])
 
   @doc """
   Creates a post.
@@ -125,6 +131,7 @@ defmodule Metamorphic.Timeline do
     %Post{}
     |> Post.repost_changeset(attrs, opts)
     |> Repo.insert()
+    |> Repo.preload([:user_posts])
     |> broadcast(:post_reposted)
   end
 
@@ -140,11 +147,39 @@ defmodule Metamorphic.Timeline do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_post(%Post{} = post, attrs) do
-    post
-    |> Post.changeset(attrs)
-    |> Repo.update()
+  def update_post(%Post{} = post, attrs, opts \\ []) do
+    post = Post.changeset(post, attrs, opts)
+    user = Accounts.get_user!(opts[:user].id)
+    p_attrs = post.changes.user_post_map
+
+    {:ok, %{update_post: post, update_user_post: _user_post_conn}} =
+      Ecto.Multi.new()
+      |> Ecto.Multi.update(:update_post, post)
+      |> Ecto.Multi.update(:update_user_post, fn %{update_post: post} ->
+        UserPost.changeset(get_user_post(post), %{
+          key: p_attrs.key
+        })
+        |> Ecto.Changeset.put_assoc(:post, post)
+        |> Ecto.Changeset.put_assoc(:user, user)
+      end)
+      |> Repo.transaction()
+
+    {:ok, post |> Repo.preload([:user_posts])}
     |> broadcast(:post_updated)
+  end
+
+  def update_post_fav(%Post{} = post, attrs, opts \\ []) do
+    {:ok, post} =
+      Post.changeset(post, attrs, opts)
+      |> Repo.update()
+
+    {:ok, post |> Repo.preload([:user_posts])}
+    |> broadcast(:post_updated)
+  end
+
+  defp get_user_post(post) do
+    Enum.at(post.user_posts, 0)
+    |> Repo.preload([:post, :user])
   end
 
   @doc """
@@ -181,10 +216,40 @@ defmodule Metamorphic.Timeline do
     Phoenix.PubSub.subscribe(Metamorphic.PubSub, "posts")
   end
 
-  defp broadcast({:error, _reason} = error, _event), do: error
+  def private_subscribe(user) do
+    Phoenix.PubSub.subscribe(Metamorphic.PubSub, "priv_posts:#{user.id}")
+  end
 
-  defp broadcast({:ok, post}, event) do
+  def connections_subscribe(user_conn) do
+    Phoenix.PubSub.subscribe(Metamorphic.PubSub, "conn_posts:#{user_conn.id}")
+  end
+
+  defp broadcast({:ok, post}, event, _user_conn \\ %{}) do
+    case post.visibility do
+      :public -> public_broadcast({:ok, post}, event)
+      :private -> private_broadcast({:ok, post}, event)
+      :connections -> connections_broadcast({:ok, post}, event)
+    end
+  end
+
+  defp public_broadcast({:error, _reason} = error, _event), do: error
+
+  defp public_broadcast({:ok, post}, event) do
     Phoenix.PubSub.broadcast(Metamorphic.PubSub, "posts", {event, post})
+    {:ok, post}
+  end
+
+  defp private_broadcast({:error, _reason} = error, _event), do: error
+
+  defp private_broadcast({:ok, post}, event) do
+    Phoenix.PubSub.broadcast(Metamorphic.PubSub, "priv_posts:#{post.user_id}", {event, post})
+    {:ok, post}
+  end
+
+  defp connections_broadcast({:error, _reason} = error, _event), do: error
+
+  defp connections_broadcast({:ok, post}, event) do
+    Phoenix.PubSub.broadcast(Metamorphic.PubSub, "conn_posts:need_user_conn_id", {event, post})
     {:ok, post}
   end
 end

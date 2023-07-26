@@ -12,9 +12,11 @@
   rows={@streams.posts}
   row_click={fn {_id, post} -> JS.navigate(~p"/public/posts/#{post}") end}
 >
-  <:col :let={{_id, post}} label="Username"><%= post.username %></:col>
+  <:col :let={{_id, post}} label="Username">
+    <%= decr_public_post(post.username, get_post_key(post)) %>
+  </:col>
   <:col :let={{_id, post}} label="Body">
-    <div class="line-clamp-1"><%= post.body %></div>
+    <div class="line-clamp-1"><%= decr_public_post(post.body, get_post_key(post)) %></div>
   </:col>
   <:col :let={{_id, post}} label="Favs count">
     <div

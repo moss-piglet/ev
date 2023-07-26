@@ -81,7 +81,7 @@ defmodule MetamorphicWeb.PostLive.Public do
 
     if user.id not in post.favs_list do
       {:ok, post} = Timeline.inc_favs(post)
-      Timeline.update_post(post, %{favs_list: List.insert_at(post.favs_list, 0, user.id)})
+      Timeline.update_post_fav(post, %{favs_list: List.insert_at(post.favs_list, 0, user.id)})
       {:noreply, socket}
     else
       {:noreply, socket}
@@ -94,7 +94,7 @@ defmodule MetamorphicWeb.PostLive.Public do
 
     if user.id in post.favs_list do
       {:ok, post} = Timeline.decr_favs(post)
-      Timeline.update_post(post, %{favs_list: List.delete(post.favs_list, user.id)})
+      Timeline.update_post_fav(post, %{favs_list: List.delete(post.favs_list, user.id)})
       {:noreply, socket}
     else
       {:noreply, socket}

@@ -16,8 +16,8 @@
 </.header>
 
 <.list>
-  <:item title="Username"><%= @post.username %></:item>
-  <:item title="Body"><%= @post.body %></:item>
+  <:item title="Username"><%= decr_public_post(@post.username, get_post_key(@post)) %></:item>
+  <:item title="Body"><%= decr_public_post(@post.body, get_post_key(@post)) %></:item>
   <:item title="Repost"><%= @post.repost %></:item>
   <:item title="Favs count"><%= @post.favs_count %></:item>
   <:item title="Reposts count"><%= @post.reposts_count %></:item>
@@ -26,7 +26,7 @@
 <.back navigate={~p"/public/posts"}>Back to posts</.back>
 
 <.modal
-  :if={@live_action == :edit && can_edit?(@current_user.id, @post)}
+  :if={@live_action == :edit && can_edit?(@current_user, @post)}
   id="post-modal"
   show
   on_cancel={JS.patch(~p"/posts/#{@post}")}

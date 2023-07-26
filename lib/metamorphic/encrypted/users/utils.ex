@@ -2,6 +2,9 @@ defmodule Metamorphic.Encrypted.Users.Utils do
   @moduledoc false
   alias Metamorphic.Encrypted
 
+  @serv_pk Application.compile_env(:metamorphic, :server_public_key)
+  @serv_k Application.compile_env(:metamorphic, :server_private_key)
+
   ## Notes
   #
   # We need the `encrypted_payload_user_key` argument
@@ -42,6 +45,33 @@ defmodule Metamorphic.Encrypted.Users.Utils do
     else
       {:error_user_key, message} -> message
       {:error_payload, message} -> message
+      rest -> rest
+    end
+  end
+
+  def decrypt_public_post(payload, post_key) do
+    with {:ok, d_post_key} <-
+           Encrypted.Utils.decrypt_message_for_user(post_key, %{
+             public: @serv_pk,
+             private: @serv_k
+           }),
+         {:ok, d_payload} <- decrypt_payload(d_post_key, payload) do
+      d_payload
+    else
+      {:error_user_key, message} -> message
+      rest -> rest
+    end
+  end
+
+  def decrypt_public_post_key(payload) do
+    with {:ok, d_post_key} <-
+           Encrypted.Utils.decrypt_message_for_user(payload, %{
+             public: @serv_pk,
+             private: @serv_k
+           }) do
+      d_post_key
+    else
+      {:error_user_key, message} -> message
       rest -> rest
     end
   end

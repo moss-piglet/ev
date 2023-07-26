@@ -7,6 +7,8 @@ defmodule Metamorphic.Timeline.Post do
   alias Metamorphic.Encrypted.Utils
   alias Metamorphic.Timeline.{Post, UserPost}
 
+  @serv_pk Application.compile_env(:metamorphic, :server_public_key)
+
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   schema "posts" do
@@ -86,11 +88,19 @@ defmodule Metamorphic.Timeline.Post do
       body = get_change(changeset, :body)
       username = get_field(changeset, :username)
       visibility = get_field(changeset, :visibility)
-      post_key = Encrypted.Utils.generate_key()
+      post_key = maybe_generate_post_key(opts, visibility)
 
       case visibility do
         :public ->
           changeset
+          |> put_change(:body, Utils.encrypt(%{key: post_key, payload: body}))
+          |> put_change(:username, Utils.encrypt(%{key: post_key, payload: username}))
+          |> put_change(:user_post_map, %{
+            key:
+              Encrypted.Utils.encrypt_message_for_user_with_pk(post_key, %{
+                public: @serv_pk
+              })
+          })
 
         :private ->
           changeset
@@ -111,6 +121,23 @@ defmodule Metamorphic.Timeline.Post do
       end
     else
       changeset
+    end
+  end
+
+  defp maybe_generate_post_key(opts, visibility) do
+    if opts[:update_post] do
+      case visibility do
+        :public ->
+          Encrypted.Users.Utils.decrypt_public_post_key(opts[:post_key])
+
+        :private ->
+          Encrypted.Users.Utils.decrypt_user_attrs_key(opts[:post_key], opts[:user], opts[:key])
+
+        :connections ->
+          :error
+      end
+    else
+      Encrypted.Utils.generate_key()
     end
   end
 end
