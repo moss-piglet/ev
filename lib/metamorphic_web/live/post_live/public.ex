@@ -55,11 +55,7 @@ defmodule MetamorphicWeb.PostLive.Public do
 
   @impl true
   def handle_info({:post_deleted, post}, socket) do
-    if post.user_id == socket.assigns.current_user.id do
-      {:noreply, stream_delete(socket, :posts, post)}
-    else
-      {:noreply, socket}
-    end
+    {:noreply, stream_delete(socket, :posts, post)}
   end
 
   @impl true
