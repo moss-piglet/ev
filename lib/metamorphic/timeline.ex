@@ -127,13 +127,7 @@ defmodule Metamorphic.Timeline do
 
   """
   def create_repost(attrs \\ %{}, opts \\ []) do
-    #%Post{}
-    #|> Post.repost_changeset(attrs, opts)
-    #|> Repo.insert()
-    #|> Repo.preload([:user_posts])
-    #|> broadcast(:post_reposted)
-
-    post = Post.changeset(%Post{}, attrs, opts)
+    post = Post.repost_changeset(%Post{}, attrs, opts)
     user = Accounts.get_user!(opts[:user].id)
     p_attrs = post.changes.user_post_map
 
