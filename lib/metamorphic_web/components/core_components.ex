@@ -525,6 +525,39 @@ defmodule MetamorphicWeb.CoreComponents do
     """
   end
 
+  attr :id, :string, required: true
+  attr :items, :list, required: true
+  attr :card_id, :any, default: nil, doc: "the function for generating the row id"
+  attr :card_click, :any, default: nil, doc: "the function for handling phx-click on each card"
+
+  attr :card_item, :any,
+    default: &Function.identity/1,
+    doc: "the function for mapping each row before calling the :col and :action slots"
+
+  slot :block, required: true
+
+  slot :action, doc: "the slot for showing user actions in the last table column"
+
+  def cards(assigns) do
+    assigns =
+      with %{items: %Phoenix.LiveView.LiveStream{}} <- assigns do
+        assign(assigns, card_id: assigns.card_id || fn {id, _item} -> id end)
+      end
+
+    ~H"""
+    <div>
+      <ul id={@id} phx-update={match?(%Phoenix.LiveView.LiveStream{}, @items) && "stream"} role="list" class="divide-y divide-brand-100">
+        <li :for={item <- @items}
+            id={@card_id && @card_id.(item)}
+            phx-click={@card_click && @card_click.(item)}
+            class={["group flex gap-x-4 py-5", @card_click && "hover:cursor-pointer"]}>
+            <%= render_slot(@block, @card_item.(item)) %>
+        </li>
+      </ul>
+    </div>
+    """
+  end
+
   @doc """
   Renders a data list.
 

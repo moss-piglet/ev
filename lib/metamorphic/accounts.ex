@@ -8,7 +8,7 @@ defmodule Metamorphic.Accounts do
   alias Ecto.Adapters.SQL.Sandbox.Connection
   alias Metamorphic.Repo
 
-  alias Metamorphic.Accounts.{Connection, User, UserToken, UserNotifier, UserTOTP}
+  alias Metamorphic.Accounts.{Connection, User, UserConnection, UserToken, UserNotifier, UserTOTP}
 
   ## Database getters
 
@@ -61,6 +61,13 @@ defmodule Metamorphic.Accounts do
 
   """
   def get_user!(id), do: Repo.get!(User, id)
+
+  @doc """
+  List user's user_connections.
+  """
+  def list_user_connections(user) do
+    Repo.all(from uc in UserConnection, where: uc.user_id == ^user.id)
+  end
 
   ## User registration
 

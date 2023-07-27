@@ -1,6 +1,8 @@
 defmodule MetamorphicWeb.UserConnectionLive do
   use MetamorphicWeb, :live_view
 
+  alias Metamorphic.Accounts
+
   def render(assigns) do
     ~H"""
     <.header class="text-center">
@@ -16,7 +18,7 @@ defmodule MetamorphicWeb.UserConnectionLive do
     <.flash_group flash={@flash} />
 
     <div class="w-full sm:w-auto">
-      <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-4">
+      <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-4">
         <.link
           navigate={~p"/users/connections"}
           class="group relative rounded-2xl px-6 py-4 text-sm font-semibold leading-6 text-zinc-900 sm:py-6"
@@ -56,6 +58,10 @@ defmodule MetamorphicWeb.UserConnectionLive do
   end
 
   def mount(_params, _session, socket) do
-    {:ok, socket}
+    if connected?(socket) do
+
+    end
+
+    {:ok, assign(socket, :user_connections, Accounts.list_user_connections(socket.assigns.current_user))}
   end
 end
