@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
-    <.live_title suffix=" · Phoenix Framework">
+    <.live_title suffix=" · Metamorphic">
       <%= assigns[:page_title] || "Metamorphic" %>
     </.live_title>
     <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
@@ -18,6 +18,7 @@
           Hi, <.link
             navigate={~p"/users/profile/#{@current_user}"}
             class="text-brand-600 font-bold"
+            title="View profile"
           ><%= decr(@current_user.username, @current_user, @conn.private.plug_session["key"]) %></.link>!
         </li>
         <li>

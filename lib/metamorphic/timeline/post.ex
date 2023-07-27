@@ -7,8 +7,6 @@ defmodule Metamorphic.Timeline.Post do
   alias Metamorphic.Encrypted.Utils
   alias Metamorphic.Timeline.{Post, UserPost}
 
-  @serv_pk Application.compile_env(:metamorphic, :server_public_key)
-
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   schema "posts" do
@@ -90,6 +88,8 @@ defmodule Metamorphic.Timeline.Post do
       visibility = get_field(changeset, :visibility)
       post_key = maybe_generate_post_key(opts, visibility)
 
+      IO.inspect Encrypted.Session.server_public_key(), label: "SERVER PUBLIC KEY"
+
       case visibility do
         :public ->
           changeset
@@ -98,7 +98,7 @@ defmodule Metamorphic.Timeline.Post do
           |> put_change(:user_post_map, %{
             key:
               Encrypted.Utils.encrypt_message_for_user_with_pk(post_key, %{
-                public: @serv_pk
+                public: Encrypted.Session.server_public_key()
               })
           })
 

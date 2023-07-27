@@ -12,15 +12,15 @@
       <a href="https://podcast.metamorphic.app" class="hover:text-zinc-700">
         @podcast
       </a>
-      <a href="https://github.com/f0rest8/everest" class="hover:text-zinc-700">
-        GitHub
+      <a href="mailto:support@metamorphic.app" title="Email support" class="hover:text-zinc-700">
+        <.icon name="hero-envelope" class="h-4 w-4" />
       </a>
       <a
         :if={@current_user}
         href={~p"/users/dash"}
         class="rounded-lg bg-zinc-100 px-2 py-1 hover:bg-zinc-200/80"
       >
-        Go Home <span aria-hidden="true">&rarr;</span>
+        Dashboard <span aria-hidden="true">&rarr;</span>
       </a>
       <a
         :if={!@current_user}

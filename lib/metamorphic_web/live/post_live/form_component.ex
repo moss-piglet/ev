@@ -46,7 +46,8 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
           value={decr_public_post(@post.body, get_post_key(@post))}
         />
         <:actions>
-          <.button phx-disable-with="Saving...">Save Post</.button>
+          <.button :if={@form.source.valid?} phx-disable-with="Saving...">Save Post</.button>
+          <.button :if={!@form.source.valid?} disabled class="opacity-25">Save Post</.button>
         </:actions>
       </.simple_form>
     </div>

@@ -89,6 +89,10 @@ if config_env() == :prod do
       ]
     ]
 
+  config :metamorphic,
+    server_public_key: System.get_env("SERVER_PUBLIC_KEY"),
+    server_private_key: System.get_env("SERVER_PRIVATE_KEY")
+
   # Configure Swoosh for production.
   config :metamorphic, Metamorphic.Mailer,
     adapter: Swoosh.Adapters.Mailgun,

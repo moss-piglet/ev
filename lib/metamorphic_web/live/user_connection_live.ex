@@ -26,17 +26,7 @@ defmodule MetamorphicWeb.UserConnectionLive do
           <span class="absolute inset-0 rounded-2xl bg-zinc-50 transition group-hover:bg-zinc-100 sm:group-hover:scale-105">
           </span>
           <span class="relative flex items-center gap-4 sm:flex-col">
-            <.icon name="hero-user-group" class="h-6 w-6" /> Connections
-          </span>
-        </.link>
-        <.link
-          navigate={~p"/posts/"}
-          class="group relative rounded-2xl px-6 py-4 text-sm font-semibold leading-6 text-zinc-900 sm:py-6"
-        >
-          <span class="absolute inset-0 rounded-2xl bg-zinc-50 transition group-hover:bg-zinc-100 sm:group-hover:scale-105">
-          </span>
-          <span class="relative flex items-center gap-4 sm:flex-col">
-            <.icon name="hero-chat-bubble-oval-left" class="h-6 w-6" /> Timeline
+            <.icon name="hero-user-group" class="h-6 w-6" /> Coming soon
           </span>
         </.link>
       </div>

@@ -7,7 +7,11 @@ defmodule MetamorphicWeb.PostLive.Public do
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket), do: Timeline.subscribe()
-    {:ok, stream(socket, :posts, Timeline.list_public_posts())}
+    {:ok,
+      socket
+      |> assign(page: 1, per_page: 20)
+      |> paginate_posts(1)
+    }
   end
 
   @impl true
@@ -29,7 +33,7 @@ defmodule MetamorphicWeb.PostLive.Public do
 
   defp apply_action(socket, :index, _params) do
     socket
-    |> assign(:page_title, "Listing Posts")
+    |> assign(:page_title, "Public Timeline")
     |> assign(:post, nil)
   end
 
@@ -56,6 +60,30 @@ defmodule MetamorphicWeb.PostLive.Public do
   @impl true
   def handle_info({:post_deleted, post}, socket) do
     {:noreply, stream_delete(socket, :posts, post)}
+  end
+
+  @impl true
+  def handle_event("top", _, socket) do
+    {:noreply, socket |> put_flash(:info, "You reached the top") |> paginate_posts(1)}
+  end
+
+  @impl true
+  def handle_event("next-page", _, socket) do
+    {:noreply, paginate_posts(socket, socket.assigns.page + 1)}
+  end
+
+  @impl true
+  def handle_event("prev-page", %{"_overran" => true}, socket) do
+    {:noreply, paginate_posts(socket, 1)}
+  end
+
+  @impl true
+  def handle_event("prev-page", _, socket) do
+    if socket.assigns.page > 1 do
+      {:noreply, paginate_posts(socket, socket.assigns.page - 1)}
+    else
+      {:noreply, socket}
+    end
   end
 
   @impl true
@@ -126,6 +154,31 @@ defmodule MetamorphicWeb.PostLive.Public do
       {:noreply, socket}
     else
       {:noreply, socket}
+    end
+  end
+
+  defp paginate_posts(socket, new_page) when new_page >= 1 do
+    %{per_page: per_page, page: cur_page} = socket.assigns
+    posts = Timeline.list_public_posts(offset: (new_page - 1) * per_page, limit: per_page)
+
+    {posts, at, limit} =
+      if new_page >= cur_page do
+        {posts, -1, per_page * 3 * -1}
+      else
+        {Enum.reverse(posts), 0, per_page * 3}
+      end
+
+    case posts do
+      [] ->
+        socket
+        |> assign(end_of_timeline?: at == -1)
+        |> stream(:posts, [])
+
+      [_ | _] = posts ->
+        socket
+        |> assign(end_of_timeline?: false)
+        |> assign(page: if(posts == [], do: cur_page, else: new_page))
+        |> stream(:posts, posts, at: at, limit: limit)
     end
   end
 end
