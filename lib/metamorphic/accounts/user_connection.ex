@@ -13,6 +13,7 @@ defmodule Metamorphic.Accounts.UserConnection do
     field :key, Encrypted.Binary
     field :photos?, :boolean
     field :zen?, :boolean
+    field :label, Encrypted.Binary
 
     belongs_to :connection, Connection
     belongs_to :user, User
@@ -22,7 +23,7 @@ defmodule Metamorphic.Accounts.UserConnection do
 
   def changeset(user_conn, attrs \\ %{}) do
     user_conn
-    |> cast(attrs, [:key, :photos?, :zen?, :connection_id, :user_id])
+    |> cast(attrs, [:key, :photos?, :zen?, :label, :connection_id, :user_id])
     |> validate_required([:key, :connection_id, :user_id])
   end
 end

@@ -28,7 +28,7 @@ defmodule Metamorphic.Accounts.User do
     field :is_forgot_pwd?, :boolean, default: false
     field :key_hash, Encrypted.Binary
     field :key, Encrypted.Binary
-    field :key_pair, {:map, Encrypted.Binary}
+    field :key_pair, Encrypted.Map
     field :user_key, Encrypted.Binary, redact: true
     field :conn_key, Encrypted.Binary, redact: true
     field :visibility, Ecto.Enum, values: [:public, :private, :connections], default: :public
