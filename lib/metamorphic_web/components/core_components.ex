@@ -632,7 +632,7 @@ defmodule MetamorphicWeb.CoreComponents do
             <span class="ml-1 text-xs"><%= @post.reposts_count %></span>
           </div>
 
-          <div :if={@current_user && !can_repost?(@current_user, @post)} class="inline-flex align-middle">
+          <div :if={@current_user && (@post.reposts_count > 0 && !can_repost?(@current_user, @post))} class="inline-flex align-middle">
             <.icon name="hero-arrow-path-rounded-square" class="h-4 w-4" />
             <span class="ml-1 text-xs"><%= @post.reposts_count %></span>
           </div>
