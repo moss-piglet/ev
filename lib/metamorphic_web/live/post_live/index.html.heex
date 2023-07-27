@@ -10,6 +10,7 @@
   </:actions>
 </.header>
 
+<div class="py-2"></div>
 <.cards id="timeline" 
   stream={@streams.posts} page={@page} end_of_timeline?={@end_of_timeline?} 
   card_click={fn post -> JS.navigate(~p"/posts/#{post}") end}

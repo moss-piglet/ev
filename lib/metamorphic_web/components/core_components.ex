@@ -561,7 +561,7 @@ defmodule MetamorphicWeb.CoreComponents do
         <li :for={{id, post} <- @stream}
             id={id}
             phx-click={@card_click.(post)}
-            class={["group flex gap-x-4 py-5", @card_click && "hover:cursor-pointer"]}>
+            class={["group flex gap-x-4 py-5 px-2", @card_click && "transition hover:cursor-pointer hover:bg-brand-50 sm:hover:rounded-2xl sm:hover:scale-105"]}>
             <.post_card
               post={post}
               current_user={@current_user}
