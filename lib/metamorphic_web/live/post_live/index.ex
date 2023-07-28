@@ -11,10 +11,9 @@ defmodule MetamorphicWeb.PostLive.Index do
     end
 
     {:ok,
-      socket
-      |> assign(page: 1, per_page: 20)
-      |> paginate_posts(1)
-    }
+     socket
+     |> assign(page: 1, per_page: 20)
+     |> paginate_posts(1)}
   end
 
   @impl true
@@ -150,7 +149,9 @@ defmodule MetamorphicWeb.PostLive.Index do
       {:ok, post} = Timeline.inc_reposts(post)
 
       {:ok, post} =
-        Timeline.update_post_repost(post, %{reposts_list: List.insert_at(post.reposts_list, 0, user.id)})
+        Timeline.update_post_repost(post, %{
+          reposts_list: List.insert_at(post.reposts_list, 0, user.id)
+        })
 
       repost_params = %{
         body: body,

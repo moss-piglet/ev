@@ -88,7 +88,7 @@ defmodule Metamorphic.Timeline.Post do
       visibility = get_field(changeset, :visibility)
       post_key = maybe_generate_post_key(opts, visibility)
 
-      IO.inspect Encrypted.Session.server_public_key(), label: "SERVER PUBLIC KEY"
+      IO.inspect(Encrypted.Session.server_public_key(), label: "SERVER PUBLIC KEY")
 
       case visibility do
         :public ->

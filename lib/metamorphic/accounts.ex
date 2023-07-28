@@ -28,6 +28,10 @@ defmodule Metamorphic.Accounts do
     Repo.get_by(User, email_hash: email)
   end
 
+  def get_user_by_username(username) when is_binary(username) do
+    Repo.get_by(User, username_hash: username)
+  end
+
   @doc """
   Gets a user by email and password.
 
@@ -106,6 +110,18 @@ defmodule Metamorphic.Accounts do
     {:ok, user}
   end
 
+  def create_user_connection(attrs, opts) do
+    IO.inspect opts, label: "OPTS"
+    {:ok, user_conn} =
+      %UserConnection{}
+      |> UserConnection.changeset(attrs, opts)
+      |> IO.inspect(label: "CHANGESET BEFORE INSERT")
+      |> Repo.insert()
+
+    {:ok, user_conn |> Repo.preload([:user, :connection])}
+    |> broadcast(:uconn_created)
+  end
+
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking user changes.
 
@@ -128,8 +144,8 @@ defmodule Metamorphic.Accounts do
       %Ecto.Changeset{data: %UserConnection{}}
 
   """
-  def change_user_connection(%UserConnection{} = user_conn, attrs \\ %{}) do
-    UserConnection.changeset(user_conn, attrs)
+  def change_user_connection(%UserConnection{} = user_conn, attrs \\ %{}, opts \\ []) do
+    UserConnection.changeset(user_conn, attrs, opts)
   end
 
   ## Settings
@@ -431,6 +447,7 @@ defmodule Metamorphic.Accounts do
   """
   def get_user_by_session_token(token) do
     {:ok, query} = UserToken.verify_session_token_query(token)
+
     Repo.one(query)
     |> Repo.preload([:connection])
   end
@@ -560,5 +577,14 @@ defmodule Metamorphic.Accounts do
       {:ok, %{user: user}} -> {:ok, user}
       {:error, :user, changeset, _} -> {:error, changeset}
     end
+  end
+
+  defp broadcast({:ok, uconn}, event) do
+    Phoenix.PubSub.broadcast(Metamorphic.PubSub, "accounts:#{uconn.user_id}", {event, uconn})
+    {:ok, uconn}
+  end
+
+  def private_subscribe(user) do
+    Phoenix.PubSub.subscribe(Metamorphic.PubSub, "priv_accounts:#{user.id}")
   end
 end

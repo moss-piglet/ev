@@ -37,6 +37,10 @@ defmodule MetamorphicWeb.Helpers do
     end
   end
 
+  def decr_attrs_key(payload_key, user, key) do
+    Encrypted.Users.Utils.decrypt_user_attrs_key(payload_key, user, key)
+  end
+
   ## General
 
   def now() do

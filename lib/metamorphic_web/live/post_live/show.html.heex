@@ -1,6 +1,10 @@
 <.header>
   Post <%= @post.id %>
-  <:subtitle>This is a <span :if={@post.visibility == :public} class="font-semibold text-brand-600">public</span> post from <%= time_ago(@post.inserted_at) %>.</:subtitle>
+  <:subtitle>
+    This is a
+    <span :if={@post.visibility == :public} class="font-semibold text-brand-600">public</span>
+    post from <%= time_ago(@post.inserted_at) %>.
+  </:subtitle>
   <:actions>
     <.link
       :if={@current_user && can_edit?(@current_user, @post)}
@@ -13,8 +17,12 @@
 </.header>
 
 <.list>
-  <:item title="Username"><%= decr_post(@post.username, @current_user, get_post_key(@post), @key, @post) %></:item>
-  <:item title="Body"><%= decr_post(@post.body, @current_user, get_post_key(@post), @key, @post) %></:item>
+  <:item title="Username">
+    <%= decr_post(@post.username, @current_user, get_post_key(@post), @key, @post) %>
+  </:item>
+  <:item title="Body">
+    <%= decr_post(@post.body, @current_user, get_post_key(@post), @key, @post) %>
+  </:item>
   <:item title="Repost"><%= @post.repost %></:item>
   <:item title="Favs count"><%= @post.favs_count %></:item>
   <:item title="Reposts count"><%= @post.reposts_count %></:item>

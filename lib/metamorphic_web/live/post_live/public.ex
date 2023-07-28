@@ -7,11 +7,11 @@ defmodule MetamorphicWeb.PostLive.Public do
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket), do: Timeline.subscribe()
+
     {:ok,
-      socket
-      |> assign(page: 1, per_page: 20)
-      |> paginate_posts(1)
-    }
+     socket
+     |> assign(page: 1, per_page: 20)
+     |> paginate_posts(1)}
   end
 
   @impl true
@@ -134,7 +134,9 @@ defmodule MetamorphicWeb.PostLive.Public do
       {:ok, post} = Timeline.inc_reposts(post)
 
       {:ok, post} =
-        Timeline.update_post_repost(post, %{reposts_list: List.insert_at(post.reposts_list, 0, user.id)})
+        Timeline.update_post_repost(post, %{
+          reposts_list: List.insert_at(post.reposts_list, 0, user.id)
+        })
 
       repost_params = %{
         body: body,
