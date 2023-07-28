@@ -534,8 +534,6 @@ defmodule MetamorphicWeb.CoreComponents do
   attr :current_user, :string, required: true
   attr :key, :string, required: true
 
-  slot :block, required: true
-
   slot :action, doc: "the slot for showing user actions in the last table column"
 
   def cards(assigns) do

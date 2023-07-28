@@ -4,6 +4,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   alias Metamorphic.Accounts
   alias Metamorphic.Accounts.UserConnection
 
+  @impl true
   def render(assigns) do
     ~H"""
     <.header class="text-center">
@@ -58,6 +59,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
     """
   end
 
+  @impl true
   def mount(_params, _session, socket) do
     if connected?(socket) do
 
