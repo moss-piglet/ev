@@ -119,6 +119,19 @@ defmodule Metamorphic.Accounts do
     User.registration_changeset(user, attrs, hash_password: false, validate_email: false)
   end
 
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking user_connection changes.
+
+  ## Examples
+
+      iex> change_user_connection(user_conn)
+      %Ecto.Changeset{data: %UserConnection{}}
+
+  """
+  def change_user_connection(%UserConnection{} = user_conn, attrs \\ %{}) do
+    UserConnection.changeset(user_conn, attrs)
+  end
+
   ## Settings
 
   @doc """
@@ -419,6 +432,7 @@ defmodule Metamorphic.Accounts do
   def get_user_by_session_token(token) do
     {:ok, query} = UserToken.verify_session_token_query(token)
     Repo.one(query)
+    |> Repo.preload([:connection])
   end
 
   @doc """

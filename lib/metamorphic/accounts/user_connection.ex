@@ -21,7 +21,7 @@ defmodule Metamorphic.Accounts.UserConnection do
     timestamps()
   end
 
-  def changeset(user_conn, attrs \\ %{}) do
+  def changeset(user_conn, attrs \\ %{}, opts \\ []) do
     user_conn
     |> cast(attrs, [:key, :photos?, :zen?, :label, :connection_id, :user_id])
     |> validate_required([:key, :connection_id, :user_id])
