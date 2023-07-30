@@ -13,7 +13,7 @@
   </head>
   <body class="bg-white antialiased">
     <ul class="relative z-10 flex items-center gap-4 px-4 sm:px-6 lg:px-8 justify-end">
-      <%= if @current_user do %>
+      <%= if @current_user && @conn.private.plug_session["key"] do %>
         <li class="text-[0.8125rem] leading-6 text-zinc-900">
           Hi, <.link
             navigate={~p"/users/profile/#{@current_user}"}

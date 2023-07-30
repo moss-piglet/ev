@@ -22,11 +22,6 @@ kill_signal = "SIGTERM"
   processes = ["app"]
 
   [[services.ports]]
-    port = 80
-    handlers = ["http"]
-    force_https = true
-
-  [[services.ports]]
     port = 443
     handlers = ["tls", "http"]
   [services.concurrency]

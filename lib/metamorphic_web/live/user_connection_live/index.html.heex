@@ -1,16 +1,12 @@
 <.header class="text-center">
       Connections
+      <span class="inline-flex items-center rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800">Under construction</span>
       <:subtitle>This is your connections dashboard.</:subtitle>
       <:actions :if={!@current_user.confirmed_at}>
         <.button type="button" class="bg-brand-500" phx-click={JS.patch(~p"/users/confirm")}>
           Confirm my account
         </.button>
       </:actions>
-       <:actions :if={!Enum.empty?(@streams.uconns.inserts)}>
-        <div :if={!Enum.empty?@streams.uconns.inserts} class="flex justify-center pt-4 -pb-4">
-      <span class="inline-flex items-center rounded-full bg-brand-100 px-2 py-1 text-xs font-medium text-brand-700">You have connections!</span>
-      </div>
-       </:actions>
     </.header>
 
     <.flash_group flash={@flash} />
@@ -28,8 +24,9 @@
           </span>
         </.link>
         <.link
+          :if={!Enum.empty?@streams.uconns.inserts}
           navigate={~p"/users/connections"}
-          class="group relative rounded-2xl px-6 py-4 text-sm font-semibold leading-6 text-zinc-900 sm:py-6"
+          class="group relative rounded-2xl px-6 py-4 text-sm font-semibold leading-6 text-zinc-900 sm:py-6"   
         >
           <span class="absolute inset-0 rounded-2xl bg-zinc-50 transition group-hover:bg-zinc-100 sm:group-hover:scale-105">
           </span>
