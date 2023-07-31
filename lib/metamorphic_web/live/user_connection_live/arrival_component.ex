@@ -13,7 +13,15 @@ defmodule MetamorphicWeb.UserConnectionLive.ArrivalComponent do
         <:subtitle :if={@action == :screen}>Use this form to screen new connections.</:subtitle>
       </.header>
 
-
+      <.cards_uconns
+        id="arrivals_screen"
+        stream={@stream}
+        current_user={@user}
+        key={@key}
+        page={@page}
+        end_of_timeline?={@end_of_timeline?}
+        card_click={fn uconn -> JS.navigate(~p"/users/connections/#{uconn}") end}
+      />
     </div>
     """
   end
@@ -22,6 +30,7 @@ defmodule MetamorphicWeb.UserConnectionLive.ArrivalComponent do
   def update(assigns, socket) do
     {:ok,
      socket
+     |> assign(page: 1, per_page: 10)
      |> assign(assigns)}
   end
 

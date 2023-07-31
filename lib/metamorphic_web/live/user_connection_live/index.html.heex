@@ -68,6 +68,8 @@
     action={@live_action}
     stream={@streams.arrivals}
     user={@current_user}
+    page={@page}
+    end_of_timeline?={@end_of_timeline?}
     key={@key}
     patch={~p"/users/connections"}
   />

@@ -561,16 +561,76 @@ defmodule MetamorphicWeb.CoreComponents do
       ]}
     >
       <li
-        :for={{id, post} <- @stream}
+        :for={{id, item} <- @stream}
         id={id}
-        phx-click={@card_click.(post)}
+        phx-click={@card_click.(item)}
         class={[
           "group flex gap-x-4 py-5 px-2",
           @card_click &&
             "transition hover:cursor-pointer hover:bg-brand-50 sm:hover:rounded-2xl sm:hover:scale-105"
         ]}
       >
-        <.post_card post={post} current_user={@current_user} key={@key} />
+        <.post_card
+          :if={%Metamorphic.Timeline.Post{} = item}
+          post={item}
+          current_user={@current_user}
+          key={@key}
+        />
+      </li>
+    </ul>
+    <div :if={@end_of_timeline?} class="mt-5 text-[50px] text-center">
+      🎉 You made it to the beginning of time 🎉
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :stream, :list, required: true
+  attr :card_click, :any, default: nil, doc: "the function for handling phx-click on each card"
+  attr :page, :integer, required: true
+  attr :end_of_timeline?, :boolean, required: true
+  attr :current_user, :string, required: true
+  attr :key, :string, required: true
+
+  slot :action, doc: "the slot for showing user actions in the last table column"
+
+  def cards_uconns(assigns) do
+    ~H"""
+    <span
+      :if={@page > 1}
+      class="text-3xl fixed bottom-2 right-2 bg-zinc-900 text-white rounded-lg p-3 text-center min-w-[65px] z-50 opacity-80"
+    >
+      <span class="text-sm">pg</span>
+      <%= @page %>
+    </span>
+    <ul
+      id={@id}
+      phx-update="stream"
+      phx-viewport-top={@page > 1 && "prev-page"}
+      phx-viewport-bottom={!@end_of_timeline? && "next-page"}
+      phx-page-loading
+      class={[
+        if(@end_of_timeline?, do: "pb-10", else: "pb-[calc(25vh)]"),
+        if(@page == 1, do: "pt-10", else: "pt-[calc(25vh)]") &&
+          "divide-y divide-brand-100"
+      ]}
+    >
+      <li
+        :for={{id, item} <- @stream}
+        id={id}
+        phx-click={@card_click.(item)}
+        class={[
+          "group flex gap-x-4 py-5 px-2",
+          @card_click &&
+            "transition hover:cursor-pointer hover:bg-brand-50 sm:hover:rounded-2xl sm:hover:scale-105"
+        ]}
+      >
+        <.uconn_card
+          :if={%Metamorphic.Accounts.UserConnection{} = item}
+          uconn={item}
+          current_user={@current_user}
+          key={@key}
+        />
       </li>
     </ul>
     <div :if={@end_of_timeline?} class="mt-5 text-[50px] text-center">
@@ -668,6 +728,50 @@ defmodule MetamorphicWeb.CoreComponents do
         <.link
           :if={@current_user && @post.user_id == @current_user.id}
           phx-click={JS.push("delete", value: %{id: @post.id})}
+          data-confirm="Are you sure?"
+          class="hover:text-brand-600"
+        >
+          Delete
+        </.link>
+      </div>
+    </div>
+    """
+  end
+
+  attr :current_user, :string, required: true
+  attr :key, :string, required: true
+  attr :uconn, Metamorphic.Accounts.UserConnection, required: true
+
+  def uconn_card(assigns) do
+    ~H"""
+    <img
+      class="h-12 w-12 flex-none rounded-full text-center"
+      src={~p"/images/logo.svg"}
+      alt="Metamorphic egg logo"
+    />
+    <div class="flex-auto">
+      <div class="flex items-baseline justify-between gap-x-4">
+        <p class="text-sm font-semibold leading-6 text-gray-900">
+          <%= decr(@uconn.request_username, @current_user, @key) %>
+        </p>
+        <p class="flex-none text-xs text-gray-600">
+          <time datetime={@uconn.inserted_at}><%= time_ago(@uconn.inserted_at) %></time>
+        </p>
+      </div>
+      <p class="mt-1 line-clamp-2 text-sm leading-6 text-gray-600">
+        <%= decr_post(@uconn.body, @current_user, get_post_key(@uconn), @key, @uconn) %>
+      </p>
+      <!-- actions -->
+      <div class="inline-flex space-x-2 ml-1 text-xs align-middle">
+        <span :if={@current_user && @post.user_id == @current_user.id}>
+          <div class="sr-only">
+            <.link navigate={~p"/posts/#{@post}"}>Show</.link>
+          </div>
+          <.link patch={~p"/posts/#{@post}/edit"} class="hover:text-brand-600">Edit</.link>
+        </span>
+        <.link
+          :if={@current_user && @uconn.user_id == @current_user.id}
+          phx-click={JS.push("delete", value: %{id: @uconn.id})}
           data-confirm="Are you sure?"
           class="hover:text-brand-600"
         >

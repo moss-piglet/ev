@@ -14,8 +14,9 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
 
     {:ok,
      socket
+     |> assign(page: 1, per_page: 10)
      |> stream(:uconns, Accounts.list_user_connections(user))
-     |> stream(:arrivals, Accounts.list_user_arrival_connections(user))}
+     |> paginate_arrivals(1)}
   end
 
   @impl true
@@ -55,12 +56,43 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
 
     socket
     |> assign(:page_title, "Connection Arrivals")
-    |> stream(:arrivals, Accounts.list_user_arrival_connections(user))
+    |> stream(:arrivals, Accounts.list_user_arrival_connections(user, limit: 10))
   end
 
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(:page_title, "Your Connections")
     |> assign(:uconn, nil)
+  end
+
+  defp paginate_arrivals(socket, new_page) when new_page >= 1 do
+    %{per_page: per_page, page: cur_page} = socket.assigns
+    user = socket.assigns.current_user
+
+    arrivals =
+      Accounts.list_user_arrival_connections(user,
+        offset: (new_page - 1) * per_page,
+        limit: per_page
+      )
+
+    {arrivals, at, limit} =
+      if new_page >= cur_page do
+        {arrivals, -1, per_page * 3 * -1}
+      else
+        {Enum.reverse(arrivals), 0, per_page * 3}
+      end
+
+    case arrivals do
+      [] ->
+        socket
+        |> assign(end_of_timeline?: at == -1)
+        |> stream(:arrivals, [])
+
+      [_ | _] = arrivals ->
+        socket
+        |> assign(end_of_timeline?: false)
+        |> assign(page: if(arrivals == [], do: cur_page, else: new_page))
+        |> stream(:arrivals, arrivals, at: at, limit: limit)
+    end
   end
 end

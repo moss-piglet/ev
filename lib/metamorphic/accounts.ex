@@ -75,10 +75,19 @@ defmodule Metamorphic.Accounts do
     )
   end
 
-  def list_user_arrival_connections(user) do
-    Repo.all(
-      from uc in UserConnection, where: uc.user_id == ^user.id, where: is_nil(uc.confirmed_at)
+  def list_user_arrival_connections(user, opts) do
+    limit = Keyword.fetch!(opts, :limit)
+    offset = Keyword.get(opts, :offset, 0)
+
+    from(uc in UserConnection,
+      where: uc.user_id == ^user.id,
+      where: is_nil(uc.confirmed_at),
+      offset: ^offset,
+      limit: ^limit,
+      order_by: [desc: uc.inserted_at],
+      preload: [:user, :connection]
     )
+    |> Repo.all()
   end
 
   ## User registration
