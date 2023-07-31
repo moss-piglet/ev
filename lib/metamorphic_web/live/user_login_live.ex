@@ -5,7 +5,7 @@ defmodule MetamorphicWeb.UserLoginLive do
     ~H"""
     <div class="mx-auto max-w-sm">
       <.header class="text-center">
-        Sign in to account
+        Sign in to your account
         <:subtitle>
           Don't have an account?
           <.link navigate={~p"/users/register"} class="font-semibold text-brand-600 hover:underline">
@@ -38,6 +38,6 @@ defmodule MetamorphicWeb.UserLoginLive do
   def mount(_params, _session, socket) do
     email = live_flash(socket.assigns.flash, :email)
     form = to_form(%{"email" => email}, as: "user")
-    {:ok, assign(socket, form: form), temporary_assigns: [form: form]}
+    {:ok, assign(socket, form: form, page_title: "Log In"), temporary_assigns: [form: form]}
   end
 end

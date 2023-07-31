@@ -48,6 +48,7 @@ defmodule MetamorphicWeb.UserRegistrationLive do
 
     socket =
       socket
+      |> assign(page_title: "Register")
       |> assign(trigger_submit: false, check_errors: false)
       |> assign_form(changeset)
 
