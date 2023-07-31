@@ -13,8 +13,6 @@ defmodule MetamorphicWeb.UserDashLive do
       </:actions>
     </.header>
 
-    <.flash_group flash={@flash} />
-
     <div class="w-full sm:w-auto">
       <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-4">
         <.link
@@ -34,7 +32,7 @@ defmodule MetamorphicWeb.UserDashLive do
           <span class="absolute inset-0 rounded-2xl bg-zinc-50 transition group-hover:bg-zinc-100 sm:group-hover:scale-105">
           </span>
           <span class="relative flex items-center gap-4 sm:flex-col">
-            <.icon name="hero-chat-bubble-oval-left" class="h-6 w-6" /> Timeline
+            <.icon name="hero-chat-bubble-oval-left-ellipsis" class="h-6 w-6" /> Timeline
           </span>
         </.link>
       </div>

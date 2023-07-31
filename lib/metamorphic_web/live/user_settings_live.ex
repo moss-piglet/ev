@@ -17,8 +17,6 @@ defmodule MetamorphicWeb.UserSettingsLive do
       </:actions>
     </.header>
 
-    <.flash_group flash={@flash} />
-
     <div class="space-y-12 divide-y">
       <div>
         <.simple_form for={@email_form} id="email_form" phx-submit="update_email">
