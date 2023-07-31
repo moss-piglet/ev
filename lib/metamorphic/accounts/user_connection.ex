@@ -19,6 +19,10 @@ defmodule Metamorphic.Accounts.UserConnection do
     field :confirmed_at, :naive_datetime
     field :username, :string, virtual: true
     field :email, :string, virtual: true
+    field :request_username, Encrypted.Binary
+    field :request_email, Encrypted.Binary
+    field :request_username_hash, Encrypted.HMAC
+    field :request_email_hash, Encrypted.HMAC
 
     belongs_to :connection, Connection
     belongs_to :user, User
@@ -26,13 +30,25 @@ defmodule Metamorphic.Accounts.UserConnection do
     timestamps()
   end
 
-  def changeset(user_conn, attrs \\ %{}, opts \\ []) do
-    user_conn
-    |> cast(attrs, [:key, :photos?, :zen?, :label, :email, :username, :user_id, :connection_id])
+  def changeset(uconn, attrs \\ %{}, opts \\ []) do
+    uconn
+    |> cast(attrs, [
+      :key,
+      :photos?,
+      :zen?,
+      :label,
+      :email,
+      :username,
+      :request_email,
+      :request_username,
+      :user_id,
+      :connection_id
+    ])
     |> cast_assoc(:user)
     |> cast_assoc(:connection)
     |> validate_required([:label])
     |> validate_length(:label, min: 2, max: 160)
+    |> validate_request_email_and_username()
     |> validate_email_or_username(opts)
     |> add_label_hash()
   end
@@ -40,18 +56,9 @@ defmodule Metamorphic.Accounts.UserConnection do
   @doc """
   Confirms the user_connection by setting `confirmed_at`.
   """
-  def confirm_changeset(user_conn) do
+  def confirm_changeset(uconn) do
     now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-    change(user_conn, confirmed_at: now)
-  end
-
-  defp add_label_hash(changeset) do
-    if Map.get(changeset.changes, :label) do
-      changeset
-      |> put_change(:label_hash, String.downcase(get_field(changeset, :label)))
-    else
-      changeset
-    end
+    change(uconn, confirmed_at: now)
   end
 
   defp validate_email_or_username(changeset, opts) do
@@ -72,6 +79,13 @@ defmodule Metamorphic.Accounts.UserConnection do
       _rest ->
         changeset
     end
+  end
+
+  defp validate_request_email_and_username(changeset) do
+    changeset
+    |> validate_required([:request_email, :request_username])
+    |> add_request_email_hash()
+    |> add_request_username_hash()
   end
 
   defp validate_email(changeset, opts) do
@@ -95,7 +109,7 @@ defmodule Metamorphic.Accounts.UserConnection do
     if recipient = Accounts.get_user_by_email(email) do
       changeset
       |> put_change(:user_id, recipient.id)
-      |> encrypt_connection_key(recipient, opts)
+      |> encrypt_connection_key_and_data(recipient, opts)
     else
       changeset
     end
@@ -107,13 +121,43 @@ defmodule Metamorphic.Accounts.UserConnection do
     if recipient = Accounts.get_user_by_username(username) do
       changeset
       |> put_change(:user_id, recipient.id)
-      |> encrypt_connection_key(recipient, opts)
+      |> encrypt_connection_key_and_data(recipient, opts)
     else
       changeset
     end
   end
 
-  defp encrypt_connection_key(changeset, recipient, opts) do
+  defp add_label_hash(changeset) do
+    if Map.get(changeset.changes, :label) do
+      changeset
+      |> put_change(:label_hash, String.downcase(get_field(changeset, :label)))
+    else
+      changeset
+    end
+  end
+
+  defp add_request_email_hash(changeset) do
+    if Map.get(changeset.changes, :request_email) do
+      changeset
+      |> put_change(:request_email_hash, String.downcase(get_field(changeset, :request_email)))
+    else
+      changeset
+    end
+  end
+
+  defp add_request_username_hash(changeset) do
+    if Map.get(changeset.changes, :request_username) do
+      changeset
+      |> put_change(
+        :request_username_hash,
+        String.downcase(get_field(changeset, :request_username))
+      )
+    else
+      changeset
+    end
+  end
+
+  defp encrypt_connection_key_and_data(changeset, recipient, opts) do
     if opts[:user] && opts[:key] do
       # We first decrypt the current_user's conn_key
       # and then encrypt it with the recipient's public key.
@@ -124,10 +168,25 @@ defmodule Metamorphic.Accounts.UserConnection do
           opts[:key]
         )
 
+      request_username = get_field(changeset, :request_username)
+      request_email = get_field(changeset, :request_email)
+
       changeset
       |> put_change(
         :key,
         Encrypted.Utils.encrypt_message_for_user_with_pk(d_conn_key, %{
+          public: recipient.key_pair["public"]
+        })
+      )
+      |> put_change(
+        :request_username,
+        Encrypted.Utils.encrypt_message_for_user_with_pk(request_username, %{
+          public: recipient.key_pair["public"]
+        })
+      )
+      |> put_change(
+        :request_email,
+        Encrypted.Utils.encrypt_message_for_user_with_pk(request_email, %{
           public: recipient.key_pair["public"]
         })
       )

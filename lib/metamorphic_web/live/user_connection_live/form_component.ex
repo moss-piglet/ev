@@ -23,6 +23,12 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
       >
         <.input field={@form[:connection_id]} type="hidden" value={@user.connection.id} />
         <.input field={@form[:user_id]} type="hidden" value={@recipient_id} />
+        <.input
+          field={@form[:request_username]}
+          type="hidden"
+          value={decr(@user.username, @user, @key)}
+        />
+        <.input field={@form[:request_email]} type="hidden" value={decr(@user.email, @user, @key)} />
         <.input field={@form[:key]} type="hidden" value={@recipient_key} />
 
         <.input
@@ -45,8 +51,8 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
         <.input :if={@selector == "username"} field={@form[:username]} type="text" label="Username" />
 
         <:actions>
-          <.button :if={@form.source.valid?} disabled phx-disable-with="Saving...">Coming soon</.button>
-          <.button :if={!@form.source.valid?} disabled class="opacity-25">Coming Soon</.button>
+          <.button :if={@form.source.valid?} phx-disable-with="Saving...">Send</.button>
+          <.button :if={!@form.source.valid?} disabled class="opacity-25">Send</.button>
         </:actions>
       </.simple_form>
     </div>

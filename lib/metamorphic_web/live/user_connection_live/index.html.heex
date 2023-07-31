@@ -24,8 +24,8 @@
       </span>
     </.link>
     <.link
-      :if={!Enum.empty?(@streams.uconns.inserts)}
-      navigate={~p"/users/connections"}
+      :if={!Enum.empty?(@streams.arrivals.inserts)}
+      navigate={~p"/users/connections/screen"}
       class="group relative rounded-2xl px-6 py-4 text-sm font-semibold leading-6 text-zinc-900 sm:py-6"
     >
       <span class="absolute inset-0 rounded-2xl bg-zinc-50 transition group-hover:bg-zinc-100 sm:group-hover:scale-105">
@@ -49,6 +49,24 @@
     title={@page_title}
     action={@live_action}
     uconn={@uconn}
+    user={@current_user}
+    key={@key}
+    patch={~p"/users/connections"}
+  />
+</.modal>
+
+<.modal
+  :if={@live_action in [:screen]}
+  id="screen-uc-modal"
+  show
+  on_cancel={JS.patch(~p"/users/connections")}
+>
+  <.live_component
+    module={MetamorphicWeb.UserConnectionLive.ArrivalComponent}
+    id={:screen}
+    title={@page_title}
+    action={@live_action}
+    stream={@streams.arrivals}
     user={@current_user}
     key={@key}
     patch={~p"/users/connections"}

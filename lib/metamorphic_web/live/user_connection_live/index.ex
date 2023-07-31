@@ -12,7 +12,10 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
       Accounts.private_subscribe(user)
     end
 
-    {:ok, stream(socket, :uconns, Accounts.list_user_connections(user))}
+    {:ok,
+     socket
+     |> stream(:uconns, Accounts.list_user_connections(user))
+     |> stream(:arrivals, Accounts.list_user_arrival_connections(user))}
   end
 
   @impl true
@@ -22,19 +25,37 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
 
   @impl true
   def handle_info({MetamorphicWeb.UserConnectionLive.FormComponent, {:saved, uconn}}, socket) do
-    {:noreply, stream_insert(socket, :uconns, uconn)}
+    if uconn.user_id == socket.assigns.current_user.id do
+      {:noreply, stream_insert(socket, :uconns, uconn)}
+    else
+      {:noreply, socket}
+    end
   end
 
   @impl true
-  def handle_info({:uconn_created, _uconn}, socket) do
+  def handle_info({:uconn_created, uconn}, socket) do
     # WIP
-    {:noreply, socket}
+    IO.inspect(uconn, label: "UCONN HANDLE INFO")
+
+    if uconn.user_id == socket.assigns.current_user.id do
+      {:noreply, stream_insert(socket, :uconns, uconn)}
+    else
+      {:noreply, socket}
+    end
   end
 
   defp apply_action(socket, :new, _params) do
     socket
     |> assign(:page_title, "New Connection")
     |> assign(:uconn, %UserConnection{})
+  end
+
+  defp apply_action(socket, :screen, _params) do
+    user = socket.assigns.current_user
+
+    socket
+    |> assign(:page_title, "Connection Arrivals")
+    |> stream(:arrivals, Accounts.list_user_arrival_connections(user))
   end
 
   defp apply_action(socket, :index, _params) do

@@ -70,7 +70,15 @@ defmodule Metamorphic.Accounts do
   List user's user_connections.
   """
   def list_user_connections(user) do
-    Repo.all(from uc in UserConnection, where: uc.user_id == ^user.id)
+    Repo.all(
+      from uc in UserConnection, where: uc.user_id == ^user.id, where: not is_nil(uc.confirmed_at)
+    )
+  end
+
+  def list_user_arrival_connections(user) do
+    Repo.all(
+      from uc in UserConnection, where: uc.user_id == ^user.id, where: is_nil(uc.confirmed_at)
+    )
   end
 
   ## User registration
@@ -111,12 +119,12 @@ defmodule Metamorphic.Accounts do
   end
 
   def create_user_connection(attrs, opts) do
-    {:ok, user_conn} =
+    {:ok, uconn} =
       %UserConnection{}
       |> UserConnection.changeset(attrs, opts)
       |> Repo.insert()
 
-    {:ok, user_conn |> Repo.preload([:user, :connection])}
+    {:ok, uconn |> Repo.preload([:user, :connection])}
     |> broadcast(:uconn_created)
   end
 
@@ -138,12 +146,12 @@ defmodule Metamorphic.Accounts do
 
   ## Examples
 
-      iex> change_user_connection(user_conn)
+      iex> change_user_connection(uconn)
       %Ecto.Changeset{data: %UserConnection{}}
 
   """
-  def change_user_connection(%UserConnection{} = user_conn, attrs \\ %{}, opts \\ []) do
-    UserConnection.changeset(user_conn, attrs, opts)
+  def change_user_connection(%UserConnection{} = uconn, attrs \\ %{}, opts \\ []) do
+    UserConnection.changeset(uconn, attrs, opts)
   end
 
   ## Settings
@@ -510,6 +518,29 @@ defmodule Metamorphic.Accounts do
     |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, ["confirm"]))
   end
 
+  defp confirm_user_connection(uconn, attrs, opts \\ []) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:uconn, UserConnection.confirm_changeset(uconn))
+    |> Ecto.Multi.insert(:uconn, UserConnection.changeset(attrs, opts))
+
+    {:ok, uconn} =
+      %UserConnection{}
+      |> UserConnection.changeset(attrs, opts)
+      |> Repo.insert()
+
+    {:ok, uconn |> Repo.preload([:user, :connection])}
+    |> broadcast(:uconn_created)
+  end
+
+  defp negate_user_connection(uconn) do
+    {:ok, uconn} =
+      %UserConnection{}
+      |> Repo.delete()
+
+    {:ok, uconn |> Repo.preload([:user, :connection])}
+    |> broadcast(:uconn_negated)
+  end
+
   ## Reset password
 
   @doc ~S"""
@@ -583,6 +614,6 @@ defmodule Metamorphic.Accounts do
   end
 
   def private_subscribe(user) do
-    Phoenix.PubSub.subscribe(Metamorphic.PubSub, "priv_accounts:#{user.id}")
+    Phoenix.PubSub.subscribe(Metamorphic.PubSub, "accounts:#{user.id}")
   end
 end
