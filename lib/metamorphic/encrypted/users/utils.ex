@@ -35,9 +35,13 @@ defmodule Metamorphic.Encrypted.Users.Utils do
     end
   end
 
-  def decrypt_user_post(payload, user, post_key, key) do
-    with d_post_key <- decrypt_user_attrs_key(post_key, user, key),
-         {:ok, d_payload} <- decrypt_payload(d_post_key, payload) do
+  @doc """
+  Decrypts a user item, where item is a
+  struct (e.g. %Post{}, %Userconnection).
+  """
+  def decrypt_user_item(payload, user, item_key, key) do
+    with d_item_key <- decrypt_user_attrs_key(item_key, user, key),
+         {:ok, d_payload} <- decrypt_payload(d_item_key, payload) do
       d_payload
     else
       {:error_user_key, message} -> message

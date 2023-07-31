@@ -23,12 +23,8 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
       >
         <.input field={@form[:connection_id]} type="hidden" value={@user.connection.id} />
         <.input field={@form[:user_id]} type="hidden" value={@recipient_id} />
-        <.input
-          field={@form[:request_username]}
-          type="hidden"
-          value={decr(@user.username, @user, @key)}
-        />
-        <.input field={@form[:request_email]} type="hidden" value={decr(@user.email, @user, @key)} />
+        <.input field={@form[:request_username]} type="hidden" value={@request_username} />
+        <.input field={@form[:request_email]} type="hidden" value={@request_email} />
         <.input field={@form[:key]} type="hidden" value={@recipient_key} />
 
         <.input
@@ -74,6 +70,8 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
        socket
        |> assign(:recipient_key, nil)
        |> assign(:recipient_id, nil)
+       |> assign(:request_email, nil)
+       |> assign(:request_username, nil)
        |> assign(:selector, nil)
        |> assign(assigns)
        |> assign_form(changeset)}
@@ -98,6 +96,8 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
       {:noreply,
        socket
        |> assign_form(changeset)
+       |> assign(:request_email, changeset.changes.request_email)
+       |> assign(:request_username, changeset.changes.request_username)
        |> assign(:recipient_key, changeset.changes.key)
        |> assign(:recipient_id, changeset.changes.user_id)
        |> assign(:selector, uconn_params["selector"])}
@@ -113,6 +113,7 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
   def handle_event("save", %{"user_connection" => uconn_params}, socket) do
     user = socket.assigns.user
     key = socket.assigns.key
+    IO.inspect(uconn_params, label: "PARAMS BEFORE SAVE")
 
     case Accounts.create_user_connection(uconn_params, user: user, key: key) do
       {:ok, post} ->

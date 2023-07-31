@@ -20,7 +20,7 @@ defmodule MetamorphicWeb.Helpers do
     if post && post.visibility == :public do
       decr_public_post(payload, post_key)
     else
-      Encrypted.Users.Utils.decrypt_user_post(payload, user, post_key, key)
+      Encrypted.Users.Utils.decrypt_user_item(payload, user, post_key, key)
     end
   end
 
@@ -37,8 +37,13 @@ defmodule MetamorphicWeb.Helpers do
     end
   end
 
-  def decr_uconn(payload, user, key, uconn) do
-
+  def decr_uconn(payload, user, uconn_key, key) do
+    Encrypted.Users.Utils.decrypt_user_item(
+      payload,
+      user,
+      uconn_key,
+      key
+    )
   end
 
   def decr_attrs_key(payload_key, user, key) do

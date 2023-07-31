@@ -33,6 +33,38 @@ defmodule Metamorphic.Accounts do
   end
 
   @doc """
+  Get user by username. This checks to make sure
+  the current user is not the user be searched for.
+
+  This is used to send connection requests and we
+  don't want people to send themselves requests.
+  """
+  def get_user_by_username(user, username) when is_binary(username) do
+    from(u in User,
+      where: u.id != ^user.id,
+      where: u.visibility == :public,
+      or_where: u.visibility == :connections
+    )
+    |> Repo.get_by(username_hash: username)
+  end
+
+  @doc """
+  Get user by email. This checks to make sure
+  the current user is not the user be searched for.
+
+  This is used to send connection requests and we
+  don't want people to send themselves requests.
+  """
+  def get_user_by_email(user, email) when is_binary(email) do
+    from(u in User,
+      where: u.id != ^user.id,
+      where: u.visibility == :public,
+      or_where: u.visibility == :connections
+    )
+    |> Repo.get_by(email_hash: email)
+  end
+
+  @doc """
   Gets a user by email and password.
 
   ## Examples

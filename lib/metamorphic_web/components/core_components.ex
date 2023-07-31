@@ -752,31 +752,12 @@ defmodule MetamorphicWeb.CoreComponents do
     <div class="flex-auto">
       <div class="flex items-baseline justify-between gap-x-4">
         <p class="text-sm font-semibold leading-6 text-gray-900">
-          <%= decr(@uconn.request_username, @current_user, @key) %>
+          <%= decr_uconn(@uconn.request_email, @current_user, @uconn.key, @key) %>
         </p>
         <p class="flex-none text-xs text-gray-600">
           <time datetime={@uconn.inserted_at}><%= time_ago(@uconn.inserted_at) %></time>
         </p>
-      </div>
-      <p class="mt-1 line-clamp-2 text-sm leading-6 text-gray-600">
-        <%= decr_post(@uconn.body, @current_user, get_post_key(@uconn), @key, @uconn) %>
-      </p>
-      <!-- actions -->
-      <div class="inline-flex space-x-2 ml-1 text-xs align-middle">
-        <span :if={@current_user && @post.user_id == @current_user.id}>
-          <div class="sr-only">
-            <.link navigate={~p"/posts/#{@post}"}>Show</.link>
-          </div>
-          <.link patch={~p"/posts/#{@post}/edit"} class="hover:text-brand-600">Edit</.link>
-        </span>
-        <.link
-          :if={@current_user && @uconn.user_id == @current_user.id}
-          phx-click={JS.push("delete", value: %{id: @uconn.id})}
-          data-confirm="Are you sure?"
-          class="hover:text-brand-600"
-        >
-          Delete
-        </.link>
+        <%= decr_attrs_key(@uconn.key, @current_user, @key) %>
       </div>
     </div>
     """
