@@ -37,7 +37,7 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
           type="select"
           label="Notify by"
           prompt="Choose how to notify"
-          options={%{Username: "username", Email: "email"}}
+          options={[Username: "username", Email: "email"]}
         />
 
         <.input :if={@selector == "email"} field={@form[:email]} type="email" label="Email" />
@@ -81,22 +81,26 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
 
     changeset =
       socket.assigns.uconn
-      |> Accounts.change_user_connection(uconn_params, [selector: uconn_params["selector"], user: user, key: key])
+      |> Accounts.change_user_connection(uconn_params,
+        selector: uconn_params["selector"],
+        user: user,
+        key: key
+      )
       |> Map.put(:action, :validate)
       |> IO.inspect(label: "CHANGESET")
 
     if Map.has_key?(changeset.changes, :user_id) do
       {:noreply,
-     socket
-     |> assign_form(changeset)
-     |> assign(:recipient_key, changeset.changes.key)
-     |> assign(:recipient_id, changeset.changes.user_id)
-     |> assign(:selector, uconn_params["selector"])}
+       socket
+       |> assign_form(changeset)
+       |> assign(:recipient_key, changeset.changes.key)
+       |> assign(:recipient_id, changeset.changes.user_id)
+       |> assign(:selector, uconn_params["selector"])}
     else
       {:noreply,
-     socket
-     |> assign_form(changeset)
-     |> assign(:selector, uconn_params["selector"])}
+       socket
+       |> assign_form(changeset)
+       |> assign(:selector, uconn_params["selector"])}
     end
   end
 
@@ -106,7 +110,7 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
     user = socket.assigns.user
     key = socket.assigns.key
 
-    case Accounts.create_user_connection(uconn_params, [user: user, key: key]) do
+    case Accounts.create_user_connection(uconn_params, user: user, key: key) do
       {:ok, post} ->
         notify_parent({:saved, post})
 

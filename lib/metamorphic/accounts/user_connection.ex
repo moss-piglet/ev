@@ -114,12 +114,15 @@ defmodule Metamorphic.Accounts.UserConnection do
   end
 
   defp encrypt_connection_key(changeset, recipient, opts) do
-    conn_key = get_change(changeset, :key)
-
     if opts[:user] && opts[:key] do
       # We first decrypt the current_user's conn_key
       # and then encrypt it with the recipient's public key.
-      d_conn_key = Encrypted.Users.Utils.decrypt_user_attrs_key(opts[:user].conn_key, opts[:user], opts[:key])
+      d_conn_key =
+        Encrypted.Users.Utils.decrypt_user_attrs_key(
+          opts[:user].conn_key,
+          opts[:user],
+          opts[:key]
+        )
 
       changeset
       |> put_change(

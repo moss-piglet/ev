@@ -12,7 +12,7 @@ defmodule MetamorphicWeb.Endpoint do
     key: "__Host-_metamorphic_key",
     signing_salt: {Metamorphic.Encrypted.Session, :signing_salt, []},
     encryption_salt: {Metamorphic.Encrypted.Session, :encryption_salt, []},
-    same_site: "Strict"
+    same_site: "Lax"
   ]
 
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]

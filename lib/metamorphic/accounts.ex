@@ -111,7 +111,8 @@ defmodule Metamorphic.Accounts do
   end
 
   def create_user_connection(attrs, opts) do
-    IO.inspect opts, label: "OPTS"
+    IO.inspect(opts, label: "OPTS")
+
     {:ok, user_conn} =
       %UserConnection{}
       |> UserConnection.changeset(attrs, opts)

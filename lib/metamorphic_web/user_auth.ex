@@ -11,7 +11,8 @@ defmodule MetamorphicWeb.UserAuth do
   # the token expiry itself in UserToken.
   @max_age 60 * 60 * 24 * 60
   @remember_me_cookie "_Metamorphic_web_user_remember_me"
-  @remember_me_options [sign: true, max_age: @max_age, same_site: "Lax"]
+  @metamorphic_key_cookie "__Host-_metamorphic_key"
+  @remember_me_options [encrypt: true, max_age: @max_age, secure: true, same_site: "Lax"]
 
   @doc """
   Logs the user in.
@@ -100,7 +101,7 @@ defmodule MetamorphicWeb.UserAuth do
     if token = get_session(conn, :user_token) do
       {token, conn}
     else
-      conn = fetch_cookies(conn, signed: [@remember_me_cookie])
+      conn = fetch_cookies(conn, encrypted: [@remember_me_cookie, @metamorphic_key_cookie])
 
       if token = conn.cookies[@remember_me_cookie] do
         {token, put_token_in_session(conn, token)}
