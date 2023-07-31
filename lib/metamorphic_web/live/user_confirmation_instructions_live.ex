@@ -29,7 +29,11 @@ defmodule MetamorphicWeb.UserConfirmationInstructionsLive do
   end
 
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, form: to_form(%{}, as: "user"), page_title: "Resend Confirmation Instructions")}
+    {:ok,
+     assign(socket,
+       form: to_form(%{}, as: "user"),
+       page_title: "Resend Confirmation Instructions"
+     )}
   end
 
   def handle_event("send_instructions", %{"user" => %{"email" => email}}, socket) do

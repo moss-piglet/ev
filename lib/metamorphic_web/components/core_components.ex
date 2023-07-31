@@ -627,7 +627,7 @@ defmodule MetamorphicWeb.CoreComponents do
           <span class="ml-1 text-xs"><%= @post.favs_count %></span>
         </div>
 
-        <div :if={!@current_user && @post.favs_count > 0}>
+        <div :if={!@current_user && @post.favs_count > 0} class="inline-flex align-middle">
           <.icon name="hero-star-solid" class="h-4 w-4 text-brand-600" />
           <span class="ml-1 text-xs"><%= @post.favs_count %></span>
         </div>
