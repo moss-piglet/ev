@@ -26,8 +26,8 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   end
 
   @impl true
-  def handle_info({:uconn_created, uconn}, socket) do
-    IO.inspect(uconn, label: "U CONN HANDLE INFO CREATED")
+  def handle_info({:uconn_created, _uconn}, socket) do
+    # WIP
     {:noreply, socket}
   end
 

@@ -87,7 +87,6 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
         key: key
       )
       |> Map.put(:action, :validate)
-      |> IO.inspect(label: "CHANGESET")
 
     if Map.has_key?(changeset.changes, :user_id) do
       {:noreply,
@@ -106,7 +105,6 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
 
   @impl true
   def handle_event("save", %{"user_connection" => uconn_params}, socket) do
-    IO.inspect(uconn_params, label: "UCONN PARAMS")
     user = socket.assigns.user
     key = socket.assigns.key
 

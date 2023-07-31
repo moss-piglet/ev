@@ -111,12 +111,9 @@ defmodule Metamorphic.Accounts do
   end
 
   def create_user_connection(attrs, opts) do
-    IO.inspect(opts, label: "OPTS")
-
     {:ok, user_conn} =
       %UserConnection{}
       |> UserConnection.changeset(attrs, opts)
-      |> IO.inspect(label: "CHANGESET BEFORE INSERT")
       |> Repo.insert()
 
     {:ok, user_conn |> Repo.preload([:user, :connection])}
