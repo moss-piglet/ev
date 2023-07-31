@@ -45,8 +45,8 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
         <.input :if={@selector == "username"} field={@form[:username]} type="text" label="Username" />
 
         <:actions>
-          <.button :if={@form.source.valid?} phx-disable-with="Saving...">Send</.button>
-          <.button :if={!@form.source.valid?} disabled class="opacity-25">Send</.button>
+          <.button :if={@form.source.valid?} disabled phx-disable-with="Saving...">Coming soon</.button>
+          <.button :if={!@form.source.valid?} disabled class="opacity-25">Coming Soon</.button>
         </:actions>
       </.simple_form>
     </div>
