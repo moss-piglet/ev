@@ -26,23 +26,42 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
 
   @impl true
   def handle_info({MetamorphicWeb.UserConnectionLive.FormComponent, {:saved, uconn}}, socket) do
-    if uconn.user_id == socket.assigns.current_user.id do
-      {:noreply, stream_insert(socket, :uconns, uconn)}
-    else
-      {:noreply, socket}
+    cond do
+      uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
+        {:noreply, stream_insert(socket, :uconns, uconn)}
+
+      uconn.user_id == socket.assigns.current_user.id ->
+        {:noreply, stream_insert(socket, :arrivals, uconn)}
+
+      true ->
+        {:noreply, socket}
     end
   end
 
   @impl true
   def handle_info({:uconn_created, uconn}, socket) do
-    # WIP
-    IO.inspect(uconn, label: "UCONN HANDLE INFO")
+    cond do
+      uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
+        {:noreply, stream_insert(socket, :uconns, uconn)}
 
-    if uconn.user_id == socket.assigns.current_user.id do
-      {:noreply, stream_insert(socket, :uconns, uconn)}
-    else
-      {:noreply, socket}
+      uconn.user_id == socket.assigns.current_user.id ->
+        {:noreply, stream_insert(socket, :arrivals, uconn)}
+
+      true ->
+        {:noreply, socket}
     end
+  end
+
+  @impl true
+  def handle_event("accept_uconn", params, socket) do
+    IO.inspect params, label: "SAVE PARAMS"
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("decline_uconn", params, socket) do
+    IO.inspect params, label: "DELETE PARAMS"
+    {:noreply, socket}
   end
 
   defp apply_action(socket, :new, _params) do
@@ -55,8 +74,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
     user = socket.assigns.current_user
 
     socket
-    |> assign(:page_title, "Connection Arrivals")
-    |> stream(:arrivals, Accounts.list_user_arrival_connections(user, limit: 10))
+    |> assign(:page_title, "New Connection Arrivals")
   end
 
   defp apply_action(socket, :index, _params) do

@@ -3,6 +3,7 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
   use MetamorphicWeb, :live_component
 
   alias Metamorphic.Accounts
+  alias Metamorphic.Encrypted
 
   @impl true
   def render(assigns) do
@@ -100,6 +101,7 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
        |> assign(:request_username, changeset.changes.request_username)
        |> assign(:recipient_key, changeset.changes.key)
        |> assign(:recipient_id, changeset.changes.user_id)
+       |> assign(:label, changeset.changes.label)
        |> assign(:selector, uconn_params["selector"])}
     else
       {:noreply,
@@ -113,11 +115,22 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
   def handle_event("save", %{"user_connection" => uconn_params}, socket) do
     user = socket.assigns.user
     key = socket.assigns.key
+    label = socket.assigns.label
+
+    d_conn_key =
+      Encrypted.Users.Utils.decrypt_user_attrs_key(
+        user.conn_key,
+        user,
+        key
+      )
+
+    uconn_params = uconn_params |> Map.put("label", Encrypted.Utils.encrypt(%{key: d_conn_key, payload: label}))
+
     IO.inspect(uconn_params, label: "PARAMS BEFORE SAVE")
 
-    case Accounts.create_user_connection(uconn_params, user: user, key: key) do
-      {:ok, post} ->
-        notify_parent({:saved, post})
+    case Accounts.create_user_connection(uconn_params, user: user, key: key, label: label) do
+      {:ok, uconn} ->
+        notify_parent({:saved, uconn})
 
         {:noreply,
          socket

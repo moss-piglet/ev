@@ -48,9 +48,11 @@ defmodule Metamorphic.Accounts.UserConnection do
     |> cast_assoc(:connection)
     |> validate_required([:label])
     |> validate_length(:label, min: 2, max: 160)
+    |> add_label_hash()
     |> validate_request_email_and_username(opts)
     |> validate_email_or_username(opts)
-    |> add_label_hash()
+    |> unsafe_validate_unique([:connection_id, :user_id], Metamorphic.Repo.Local)
+    |> unique_constraint([:connection_id, :user_id])
   end
 
   @doc """
@@ -66,7 +68,7 @@ defmodule Metamorphic.Accounts.UserConnection do
       "" ->
         changeset
         |> add_error(:email, "can't both be blank")
-        |> add_error(:usernamem, "can't both be blank")
+        |> add_error(:username, "can't both be blank")
 
       "email" ->
         changeset
@@ -154,7 +156,6 @@ defmodule Metamorphic.Accounts.UserConnection do
   end
 
   defp add_request_username_hash(changeset, opts) do
-    IO.inspect changeset, label: "CHGNSET"
     if opts[:user] && opts[:key] do
       d_email =
         Encrypted.Users.Utils.decrypt_user_data(
@@ -162,11 +163,10 @@ defmodule Metamorphic.Accounts.UserConnection do
           opts[:user],
           opts[:key]
         )
-      IO.puts "ADDING HASH"
+
       changeset
-      |> put_change(:request_username_hash,String.downcase(d_email))
+      |> put_change(:request_username_hash, String.downcase(d_email))
     else
-      IO.puts "HERE HERE HERE"
       changeset
     end
   end

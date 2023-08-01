@@ -594,7 +594,7 @@ defmodule MetamorphicWeb.CoreComponents do
 
   slot :action, doc: "the slot for showing user actions in the last table column"
 
-  def cards_uconns(assigns) do
+  def cards_uconns_arrivals(assigns) do
     ~H"""
     <span
       :if={@page > 1}
@@ -622,10 +622,10 @@ defmodule MetamorphicWeb.CoreComponents do
         class={[
           "group flex gap-x-4 py-5 px-2",
           @card_click &&
-            "transition hover:cursor-pointer hover:bg-brand-50 sm:hover:rounded-2xl sm:hover:scale-105"
+            "transition hover:bg-brand-50 sm:hover:rounded-2xl sm:hover:scale-105"
         ]}
       >
-        <.uconn_card
+        <.uconn_card_arrival
           :if={%Metamorphic.Accounts.UserConnection{} = item}
           uconn={item}
           current_user={@current_user}
@@ -742,7 +742,7 @@ defmodule MetamorphicWeb.CoreComponents do
   attr :key, :string, required: true
   attr :uconn, Metamorphic.Accounts.UserConnection, required: true
 
-  def uconn_card(assigns) do
+  def uconn_card_arrival(assigns) do
     ~H"""
     <img
       class="h-12 w-12 flex-none rounded-full text-center"
@@ -753,11 +753,39 @@ defmodule MetamorphicWeb.CoreComponents do
       <div class="flex items-baseline justify-between gap-x-4">
         <p class="text-sm font-semibold leading-6 text-gray-900">
           <%= decr_uconn(@uconn.request_email, @current_user, @uconn.key, @key) %>
+          <span class="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10"> <%= decr_uconn(
+          @uconn.label,
+          @current_user,
+          @uconn.key,
+          @key
+        ) %></span>
         </p>
         <p class="flex-none text-xs text-gray-600">
           <time datetime={@uconn.inserted_at}><%= time_ago(@uconn.inserted_at) %></time>
         </p>
-        <%= decr_attrs_key(@uconn.key, @current_user, @key) %>
+      </div>
+      <p class="mt-1 line-clamp-2 text-sm leading-6 text-gray-600">
+        username <span class="font-medium text-gray-900"><%= decr_uconn(@uconn.request_username, @current_user, @uconn.key, @key) %></span>
+      </p>
+      <!-- actions -->
+      <div :if={@current_user && @uconn.user_id == @current_user.id} class="mt-2 flex justify-between text-xs align-middle">
+
+        <.link
+          :if={@current_user && @uconn.user_id == @current_user.id}
+          phx-click={JS.push("accept_uconn", value: %{id: @uconn.id})}
+          data-confirm="Are you sure you wish to accept this request?"
+          class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20 transition hover:cursor-pointer hover:scale-105"
+        >
+          Accept
+        </.link>
+        <.link
+          :if={@current_user && @uconn.user_id == @current_user.id}
+          phx-click={JS.push("decline_uconn", value: %{id: @uconn.id})}
+          data-confirm="Are you sure you wish to decline this request?"
+          class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20 transition hover:cursor-pointer hover:scale-105"
+        >
+          Decline
+        </.link>
       </div>
     </div>
     """

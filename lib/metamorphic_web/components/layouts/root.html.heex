@@ -13,48 +13,53 @@
   </head>
   <body class="bg-white antialiased">
     <ul class="relative z-10 flex items-center gap-4 px-4 sm:px-6 lg:px-8 justify-end">
-      <%= if @current_user && @conn.private.plug_session["key"] do %>
-        <li class="text-[0.8125rem] leading-6 text-zinc-900">
-          Hi, <.link
-            navigate={~p"/users/profile/#{@current_user}"}
-            class="text-brand-600 font-bold"
-            title="View profile"
-          ><%= decr(@current_user.username, @current_user, @conn.private.plug_session["key"]) %></.link>!
-        </li>
-        <li>
-          <.link
-            href={~p"/users/settings"}
-            class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
-          >
-            Settings
-          </.link>
-        </li>
-        <li>
-          <.link
-            href={~p"/users/log_out"}
-            method="delete"
-            class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
-          >
-            Log out
-          </.link>
-        </li>
-      <% else %>
-        <li>
-          <.link
-            href={~p"/users/register"}
-            class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
-          >
-            Register
-          </.link>
-        </li>
-        <li>
-          <.link
-            href={~p"/users/log_in"}
-            class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
-          >
-            Log in
-          </.link>
-        </li>
+      <%= cond do %>
+        <% @current_user && @conn.private.plug_session["key"] -> %>
+          <li class="text-[0.8125rem] leading-6 text-zinc-900">
+            Hi, <.link
+              navigate={~p"/users/profile/#{@current_user}"}
+              class="text-brand-600 font-bold"
+              title="View profile"
+            ><%= decr(@current_user.username, @current_user, @conn.private.plug_session["key"]) %></.link>!
+          </li>
+          <li>
+            <.link
+              href={~p"/users/settings"}
+              class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+            >
+              Settings
+            </.link>
+          </li>
+          <li>
+            <.link
+              href={~p"/users/log_out"}
+              method="delete"
+              class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+            >
+              Log out
+            </.link>
+          </li>
+        <% @current_user && !@conn.private.plug_session["key"] -> %>
+          <li>
+            key missing
+          </li>
+        <% !@current_user || true -> %>
+          <li>
+            <.link
+              href={~p"/users/register"}
+              class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+            >
+              Register
+            </.link>
+          </li>
+          <li>
+            <.link
+              href={~p"/users/log_in"}
+              class="text-[0.8125rem] leading-6 text-zinc-900 font-semibold hover:text-zinc-700"
+            >
+              Log in
+            </.link>
+          </li>
       <% end %>
     </ul>
     <%= @inner_content %>

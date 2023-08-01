@@ -13,7 +13,7 @@ defmodule MetamorphicWeb.UserConnectionLive.ArrivalComponent do
         <:subtitle :if={@action == :screen}>Use this form to screen new connections.</:subtitle>
       </.header>
 
-      <.cards_uconns
+      <.cards_uconns_arrivals
         id="arrivals_screen"
         stream={@stream}
         current_user={@user}
