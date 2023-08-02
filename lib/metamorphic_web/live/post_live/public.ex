@@ -4,6 +4,8 @@ defmodule MetamorphicWeb.PostLive.Public do
   alias Metamorphic.Timeline
   alias Metamorphic.Timeline.Post
 
+  alias MetamorphicWeb.PostLive.Components
+
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket), do: Timeline.subscribe()

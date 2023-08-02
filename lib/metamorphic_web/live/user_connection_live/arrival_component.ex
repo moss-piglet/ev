@@ -4,6 +4,8 @@ defmodule MetamorphicWeb.UserConnectionLive.ArrivalComponent do
 
   alias Metamorphic.Accounts
 
+  alias MetamorphicWeb.UserConnectionLive.Components
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -13,7 +15,7 @@ defmodule MetamorphicWeb.UserConnectionLive.ArrivalComponent do
         <:subtitle :if={@action == :screen}>Use this form to screen new connections.</:subtitle>
       </.header>
 
-      <.cards_uconns_arrivals
+      <Components.cards
         id="arrivals_screen"
         stream={@stream}
         current_user={@user}

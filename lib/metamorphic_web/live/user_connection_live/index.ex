@@ -60,7 +60,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
 
   @impl true
   def handle_event("decline_uconn", params, socket) do
-    IO.inspect params, label: "DELETE PARAMS"
+
     {:noreply, socket}
   end
 
