@@ -102,7 +102,7 @@ defmodule MetamorphicWeb.Router do
 
       live "/users/connections", UserConnectionLive.Index, :index
       live "/users/connections/new", UserConnectionLive.Index, :new
-      live "/users/connections/screen", UserConnectionLive.Index, :screen
+      live "/users/connections/greet", UserConnectionLive.Index, :greet
     end
   end
 

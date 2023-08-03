@@ -98,6 +98,8 @@ defmodule Metamorphic.Accounts do
   """
   def get_user!(id), do: Repo.get!(User, id)
 
+  def get_user_connection!(id), do: Repo.get!(UserConnection, id)
+
   @doc """
   List user's user_connections.
   """
@@ -570,16 +572,12 @@ defmodule Metamorphic.Accounts do
       |> Repo.insert()
 
     {:ok, uconn |> Repo.preload([:user, :connection])}
-    |> broadcast(:uconn_created)
+    |> broadcast(:uconn_confirmed)
   end
 
-  defp negate_user_connection(uconn) do
-    {:ok, uconn} =
-      %UserConnection{}
-      |> Repo.delete()
-
-    {:ok, uconn |> Repo.preload([:user, :connection])}
-    |> broadcast(:uconn_negated)
+  def delete_user_connection(%UserConnection{} = uconn) do
+    Repo.delete(uconn)
+    |> broadcast(:uconn_deleted)
   end
 
   ## Reset password

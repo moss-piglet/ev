@@ -11,9 +11,10 @@
   </:actions>
 </.header>
 
-<div class="w-full sm:w-auto">
-  <div class="mt-10 grid grid-cols-2 gap-x-6 gap-y-4">
+<div id="dasbhoard" class="w-full sm:w-auto">
+  <div id="uconn-grid" class="mt-10 grid grid-cols-2 gap-x-6 gap-y-4">
     <.link
+      id="create-button"
       navigate={~p"/users/connections/new"}
       class="group relative rounded-2xl px-6 py-4 text-sm font-semibold leading-6 text-zinc-900 sm:py-6"
     >
@@ -24,8 +25,9 @@
       </span>
     </.link>
     <.link
-      :if={!Enum.empty?(@streams.arrivals.inserts)}
-      navigate={~p"/users/connections/screen"}
+      :if={!@arrivals_empty? || !Enum.empty?@streams.arrivals.inserts}
+      id="arrivals-button"
+      navigate={~p"/users/connections/greet"}
       class="group relative rounded-2xl px-6 py-4 text-sm font-semibold leading-6 text-zinc-900 sm:py-6"
     >
       <span class="absolute inset-0 rounded-2xl bg-zinc-50 transition group-hover:bg-zinc-100 sm:group-hover:scale-105">
@@ -56,14 +58,14 @@
 </.modal>
 
 <.modal
-  :if={@live_action in [:screen]}
+  :if={@live_action in [:greet]}
   id="screen-uc-modal"
   show
   on_cancel={JS.patch(~p"/users/connections")}
 >
   <.live_component
     module={MetamorphicWeb.UserConnectionLive.ArrivalComponent}
-    id={:screen}
+    id={:greet}
     title={@page_title}
     action={@live_action}
     stream={@streams.arrivals}

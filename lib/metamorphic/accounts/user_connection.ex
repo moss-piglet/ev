@@ -141,22 +141,6 @@ defmodule Metamorphic.Accounts.UserConnection do
 
   defp add_request_email_hash(changeset, opts) do
     if opts[:user] && opts[:key] do
-      d_username =
-        Encrypted.Users.Utils.decrypt_user_data(
-          opts[:user].username,
-          opts[:user],
-          opts[:key]
-        )
-
-      changeset
-      |> put_change(:request_email_hash, String.downcase(d_username))
-    else
-      changeset
-    end
-  end
-
-  defp add_request_username_hash(changeset, opts) do
-    if opts[:user] && opts[:key] do
       d_email =
         Encrypted.Users.Utils.decrypt_user_data(
           opts[:user].email,
@@ -165,7 +149,23 @@ defmodule Metamorphic.Accounts.UserConnection do
         )
 
       changeset
-      |> put_change(:request_username_hash, String.downcase(d_email))
+      |> put_change(:request_email_hash, String.downcase(d_email))
+    else
+      changeset
+    end
+  end
+
+  defp add_request_username_hash(changeset, opts) do
+    if opts[:user] && opts[:key] do
+      d_username =
+        Encrypted.Users.Utils.decrypt_user_data(
+          opts[:user].username,
+          opts[:user],
+          opts[:key]
+        )
+
+      changeset
+      |> put_change(:request_username_hash, String.downcase(d_username))
     else
       changeset
     end

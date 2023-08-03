@@ -6,6 +6,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
   use MetamorphicWeb, :verified_routes
 
   alias Phoenix.LiveView.JS
+  import MetamorphicWeb.CoreComponents, only: [icon: 1, dropdown: 1]
   import MetamorphicWeb.Gettext
   import MetamorphicWeb.Helpers
 
@@ -37,7 +38,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
       class={[
         if(@end_of_timeline?, do: "pb-10", else: "pb-[calc(25vh)]"),
         if(@page == 1, do: "pt-10", else: "pt-[calc(25vh)]") &&
-          "divide-y divide-brand-100"
+          "grid grid-cols-1 gap-6 divide-y divide-brand-100"
       ]}
     >
       <li
@@ -45,7 +46,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
         id={id}
         phx-click={@card_click.(item)}
         class={[
-          "group flex gap-x-4 py-5 px-2",
+          "col-span-1 divide-y divide-brand-200 gap-x-4 py-2 px-2",
           @card_click &&
             "transition hover:bg-brand-50 sm:hover:rounded-2xl sm:hover:scale-105"
         ]}
@@ -59,7 +60,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
       </li>
     </ul>
     <div :if={@end_of_timeline?} class="mt-5 text-[50px] text-center">
-      🎉 You made it to the beginning of time 🎉
+      🎉 You greeted all your arrivals 🎉
     </div>
     """
   end
@@ -70,50 +71,29 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
 
   def arrival(assigns) do
     ~H"""
-    <img
-      class="h-12 w-12 flex-none rounded-full text-center"
-      src={~p"/images/logo.svg"}
-      alt="Metamorphic egg logo"
-    />
-    <div class="flex-auto">
-      <div class="flex items-baseline justify-between gap-x-4">
-        <p class="text-sm font-semibold leading-6 text-gray-900">
-          <%= decr_uconn(@uconn.request_email, @current_user, @uconn.key, @key) %>
-          <span class="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10"> <%= decr_uconn(
+    <div class="flex w-full items-center justify-between space-x-6 p-2">
+      <div class="flex-1 truncate">
+        <div class="flex items-center space-x-3">
+          <h3 class="truncate text-sm font-medium text-gray-900" title={"username: " <> decr_uconn(@uconn.request_username, @current_user, @uconn.key, @key)}><%= decr_uconn(@uconn.request_username, @current_user, @uconn.key, @key) %></h3>
+          <span class="inline-flex flex-shrink-0 items-center rounded-full bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20"><%= decr_uconn(
           @uconn.label,
           @current_user,
           @uconn.key,
           @key
         ) %></span>
-        </p>
-        <p class="flex-none text-xs text-gray-600">
-          <time datetime={@uconn.inserted_at}><%= time_ago(@uconn.inserted_at) %></time>
+        </div>
+        <p class="mt-1 truncate text-sm text-gray-500" title={"email: " <> decr_uconn(@uconn.request_email, @current_user, @uconn.key, @key)}><%= decr_uconn(@uconn.request_email, @current_user, @uconn.key, @key) %></p>
+        <p class="mt-1 flex justify-start text-xs space-x-4">
+        <time datetime={@uconn.inserted_at} class="hidden sm:text-xs sm:block"><%= time_ago(@uconn.inserted_at) %></time>
         </p>
       </div>
-      <p class="mt-1 line-clamp-2 text-sm leading-6 text-gray-600">
-        username <span class="font-medium text-gray-900"><%= decr_uconn(@uconn.request_username, @current_user, @uconn.key, @key) %></span>
-      </p>
-      <!-- actions -->
-      <div :if={@current_user && @uconn.user_id == @current_user.id} class="mt-2 flex justify-between text-xs align-middle">
+      <.dropdown id={"dropdown-" <> @uconn.id} svg_arrows={false}>
+        <:img src={~p"/images/logo.svg"}/>
 
-        <.link
-          :if={@current_user && @uconn.user_id == @current_user.id}
-          phx-click={JS.push("accept_uconn", value: %{id: @uconn.id})}
-          data-confirm="Are you sure you wish to accept this request?"
-          class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20 transition hover:cursor-pointer hover:scale-105"
-        >
-          Accept
-        </.link>
-        <.link
-          :if={@current_user && @uconn.user_id == @current_user.id}
-          phx-click={JS.push("decline_uconn", value: %{id: @uconn.id})}
-          data-confirm="Are you sure you wish to decline this request?"
-          class="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20 transition hover:cursor-pointer hover:scale-105"
-        >
-          Decline
-        </.link>
+        <:link :if={@current_user && @uconn.user_id == @current_user.id} phx_click={JS.push("accept_uconn", value: %{id: @uconn.id})} data_confirm={"Are you sure you wish to accept this request?"}>Accept</:link>
+        <:link :if={@current_user && @uconn.user_id == @current_user.id} phx_click={JS.push("decline_uconn", value: %{id: @uconn.id})} data_confirm={"Are you sure you wish to decline this request?"}>Decline</:link>
+      </.dropdown>
       </div>
-    </div>
     """
   end
 end

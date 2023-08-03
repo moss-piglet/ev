@@ -126,8 +126,6 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
 
     uconn_params = uconn_params |> Map.put("label", Encrypted.Utils.encrypt(%{key: d_conn_key, payload: label}))
 
-    IO.inspect(uconn_params, label: "PARAMS BEFORE SAVE")
-
     case Accounts.create_user_connection(uconn_params, user: user, key: key, label: label) do
       {:ok, uconn} ->
         notify_parent({:saved, uconn})

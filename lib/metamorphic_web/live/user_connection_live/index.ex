@@ -16,7 +16,8 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
      socket
      |> assign(page: 1, per_page: 10)
      |> stream(:uconns, Accounts.list_user_connections(user))
-     |> paginate_arrivals(1)}
+     |> paginate_arrivals(1)
+     }
   end
 
   @impl true
@@ -32,6 +33,34 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
 
       uconn.user_id == socket.assigns.current_user.id ->
         {:noreply, stream_insert(socket, :arrivals, uconn)}
+
+      true ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({MetamorphicWeb.UserConnectionLive.Index, {:deleted, uconn}}, socket) do
+    cond do
+      uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
+        {:noreply, stream_delete(socket, :uconns, uconn)}
+
+      uconn.user_id == socket.assigns.current_user.id ->
+        {:noreply, stream_delete(socket, :arrivals, uconn)}
+
+      true ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:uconn_deleted, uconn}, socket) do
+    cond do
+      uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
+        {:noreply, stream_delete(socket, :uconns, uconn)}
+
+      uconn.user_id == socket.assigns.current_user.id ->
+        {:noreply, stream_delete(socket, :arrivals, uconn)}
 
       true ->
         {:noreply, socket}
@@ -59,9 +88,20 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   end
 
   @impl true
-  def handle_event("decline_uconn", params, socket) do
+  def handle_event("decline_uconn", %{"id" => id}, socket) do
+    uconn = Accounts.get_user_connection!(id)
+    if uconn.user_id == socket.assigns.current_user.id do
+      case Accounts.delete_user_connection(uconn) do
+        {:ok, uconn} ->
+          notify_self({:deleted, uconn})
+          {:noreply, socket}
 
-    {:noreply, socket}
+        {:error, changeset} ->
+          {:noreply, put_flash(socket, :error, "#{changeset.message}")}
+      end
+    else
+      {:noreply, socket}
+    end
   end
 
   defp apply_action(socket, :new, _params) do
@@ -70,17 +110,18 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
     |> assign(:uconn, %UserConnection{})
   end
 
-  defp apply_action(socket, :screen, _params) do
+  defp apply_action(socket, :greet, _params) do
     user = socket.assigns.current_user
 
     socket
-    |> assign(:page_title, "New Connection Arrivals")
+    |> assign(:page_title, "Arrivals Greeter")
   end
 
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(:page_title, "Your Connections")
     |> assign(:uconn, nil)
+    |> paginate_arrivals(1)
   end
 
   defp paginate_arrivals(socket, new_page) when new_page >= 1 do
@@ -104,13 +145,17 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
       [] ->
         socket
         |> assign(end_of_timeline?: at == -1)
+        |> assign(:arrivals_empty?, true)
         |> stream(:arrivals, [])
 
       [_ | _] = arrivals ->
         socket
         |> assign(end_of_timeline?: false)
+        |> assign(:arrivals_empty?, false)
         |> assign(page: if(arrivals == [], do: cur_page, else: new_page))
         |> stream(:arrivals, arrivals, at: at, limit: limit)
     end
   end
+
+  defp notify_self(msg), do: send(self(), {__MODULE__, msg})
 end
