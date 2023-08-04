@@ -128,7 +128,7 @@ defmodule MetamorphicWeb.CoreComponents do
     attr :href, :string
     attr :phx_click, :any
     attr :method, :any
-    attr :data_confirm, :string
+    attr :data_confirm, :any
   end
 
   def dropdown(assigns) do

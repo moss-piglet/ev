@@ -15,14 +15,15 @@ defmodule MetamorphicWeb.UserConnectionLive.ArrivalComponent do
         <:subtitle :if={@action == :greet}>Greet your new connections! Click their avatar to accept or privately decline their request.</:subtitle>
       </.header>
 
-      <Components.cards
+      <Components.cards_greeter
         id="arrivals_greeter"
         stream={@stream}
         current_user={@user}
         key={@key}
         page={@page}
-        end_of_timeline?={@end_of_timeline?}
+        end_of_arrivals_timeline?={@end_of_arrivals_timeline?}
         card_click={fn _uconn -> nil end}
+        patch={@patch}
       />
     </div>
     """

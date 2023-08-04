@@ -98,17 +98,31 @@ defmodule Metamorphic.Accounts do
   """
   def get_user!(id), do: Repo.get!(User, id)
 
-  def get_user_connection!(id), do: Repo.get!(UserConnection, id)
+  def get_user_connection!(id), do: Repo.get!(UserConnection, id) |> Repo.preload([:connection, :user])
 
   @doc """
-  List user's user_connections.
+  List user's user_connections. These are
+  connections that have been confirmed.
   """
-  def list_user_connections(user) do
-    Repo.all(
-      from uc in UserConnection, where: uc.user_id == ^user.id, where: not is_nil(uc.confirmed_at)
+  def list_user_connections(user, opts) do
+    limit = Keyword.fetch!(opts, :limit)
+    offset = Keyword.get(opts, :offset, 0)
+
+    from(uc in UserConnection,
+      where: uc.user_id == ^user.id,
+      where: not is_nil(uc.confirmed_at),
+      offset: ^offset,
+      limit: ^limit,
+      order_by: [desc: uc.inserted_at],
+      preload: [:user, :connection]
     )
+    |> Repo.all()
   end
 
+  @doc """
+  List's the users's arrival connections. These
+  are connections that have not been confirmed.
+  """
   def list_user_arrival_connections(user, opts) do
     limit = Keyword.fetch!(opts, :limit)
     offset = Keyword.get(opts, :offset, 0)
@@ -561,18 +575,28 @@ defmodule Metamorphic.Accounts do
     |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, ["confirm"]))
   end
 
-  defp confirm_user_connection(uconn, attrs, opts \\ []) do
+  def confirm_user_connection(uconn, attrs, opts \\ []) do
+    IO.inspect attrs, label: "ATTRS TO CONFIRM NEW CONN"
+    {:ok, %{update_uconn: upd_uconn, insert_uconn: ins_uconn}} =
     Ecto.Multi.new()
-    |> Ecto.Multi.update(:uconn, UserConnection.confirm_changeset(uconn))
-    |> Ecto.Multi.insert(:uconn, UserConnection.changeset(attrs, opts))
+    |> Ecto.Multi.update(:update_uconn, UserConnection.confirm_changeset(uconn))
+    |> Ecto.Multi.insert(:insert_uconn, UserConnection.changeset(%UserConnection{}, attrs, opts))
+    |> Repo.transaction()
 
-    {:ok, uconn} =
-      %UserConnection{}
-      |> UserConnection.changeset(attrs, opts)
-      |> Repo.insert()
+    {:ok, %{upd_insert_uconn: ins_uconn}} =
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:upd_insert_uconn, UserConnection.confirm_changeset(ins_uconn))
+    |> Repo.transaction()
 
-    {:ok, uconn |> Repo.preload([:user, :connection])}
+    {:ok, ins_uconn} =
+    {:ok, ins_uconn |> Repo.preload([:user, :connection])}
     |> broadcast(:uconn_confirmed)
+
+    {:ok, upd_uconn} =
+    {:ok, upd_uconn |> Repo.preload([:user, :connection])}
+    |> broadcast(:uconn_confirmed)
+
+    {:ok, upd_uconn, ins_uconn}
   end
 
   def delete_user_connection(%UserConnection{} = uconn) do
