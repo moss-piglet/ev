@@ -269,7 +269,7 @@ defmodule Metamorphic.Accounts do
     {:ok, %{update_user: user, update_connection: conn}} =
       Ecto.Multi.new()
       |> Ecto.Multi.update(:update_user, fn _ -> User.username_changeset(user, attrs, opts) end)
-      |> Ecto.Multi.update(:update_connection, fn %{update_user: user} ->
+      |> Ecto.Multi.update(:update_connection, fn %{update_user: _user} ->
         Connection.update_username_changeset(conn, %{
           username: c_attrs.c_username,
           username_hash: c_attrs.c_username_hash
@@ -332,8 +332,9 @@ defmodule Metamorphic.Accounts do
 
     with {:ok, query} <- UserToken.verify_change_email_token_query(token, context),
          %UserToken{sent_to: email} <- Repo.one(query),
-         {:ok, %{user: _user, tokens: _tokens, connection: conn}} <- Repo.transaction(user_email_multi(user, email, context, key)) do
-          broadcast_connection(conn)
+         {:ok, %{user: _user, tokens: _tokens, connection: conn}} <-
+           Repo.transaction(user_email_multi(user, email, context, key)) do
+      broadcast_connection(conn)
       :ok
     else
       _rest -> :error
@@ -353,7 +354,7 @@ defmodule Metamorphic.Accounts do
 
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, changeset)
-    |> Ecto.Multi.update(:connection, fn %{user: user} ->
+    |> Ecto.Multi.update(:connection, fn %{user: _user} ->
       Connection.update_email_changeset(conn, %{
         email: c_attrs.c_email,
         email_hash: c_attrs.c_email_hash
@@ -710,9 +711,11 @@ defmodule Metamorphic.Accounts do
 
   defp broadcast_connection(conn) do
     conn = conn |> Repo.preload([:user_connections])
+
     Enum.each(conn.user_connections, fn uconn ->
       uconn |> Repo.preload([:user, :connection])
-      {:ok, uconn} =
+
+      {:ok, _uconn} =
         {:ok, uconn |> Repo.preload([:user, :connection])}
         |> broadcast(:uconn_email_updated)
     end)

@@ -2,8 +2,6 @@ defmodule MetamorphicWeb.UserConnectionLive.ArrivalComponent do
   @moduledoc false
   use MetamorphicWeb, :live_component
 
-  alias Metamorphic.Accounts
-
   alias MetamorphicWeb.UserConnectionLive.Components
 
   @impl true

@@ -7,8 +7,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
 
   alias Phoenix.LiveView.JS
 
-  import MetamorphicWeb.CoreComponents, only: [icon: 1, dropdown: 1]
-  import MetamorphicWeb.Gettext
+  import MetamorphicWeb.CoreComponents, only: [dropdown: 1]
   import MetamorphicWeb.Helpers
 
   attr :id, :string, required: true
@@ -188,11 +187,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
   def connection(assigns) do
     ~H"""
     <div class="flex flex-1 flex-col p-8">
-      <img
-        class="mx-auto h-32 w-32 flex-shrink-0 rounded-full"
-        src={~p"/images/logo.svg"}
-        alt=""
-      />
+      <img class="mx-auto h-32 w-32 flex-shrink-0 rounded-full" src={~p"/images/logo.svg"} alt="" />
       <h3 class="mt-6 text-sm font-medium text-gray-900">
         <%= decr_uconn(@uconn.connection.username, @current_user, @uconn.key, @key) %>
       </h3>

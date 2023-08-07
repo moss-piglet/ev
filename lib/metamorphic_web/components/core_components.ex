@@ -19,7 +19,6 @@ defmodule MetamorphicWeb.CoreComponents do
 
   alias Phoenix.LiveView.JS
   import MetamorphicWeb.Gettext
-  import MetamorphicWeb.Helpers
 
   @doc """
   Renders a modal.

@@ -7,7 +7,6 @@ defmodule MetamorphicWeb.PostLive.Components do
 
   alias Phoenix.LiveView.JS
   import MetamorphicWeb.CoreComponents, only: [icon: 1]
-  import MetamorphicWeb.Gettext
   import MetamorphicWeb.Helpers
 
   attr :id, :string, required: true

@@ -223,6 +223,7 @@ defmodule Metamorphic.Accounts.UserConnection do
             recipient,
             decrypt_requesting_data(changeset, opts)
           )
+        changeset
 
       opts[:user] && opts[:key] ->
         changeset =
@@ -231,9 +232,9 @@ defmodule Metamorphic.Accounts.UserConnection do
             recipient,
             decrypt_requesting_data(changeset, opts)
           )
+        changeset
 
       true ->
-        IO.puts("LANDED IN TRUTH HERE")
         changeset
     end
   end
@@ -305,7 +306,7 @@ defmodule Metamorphic.Accounts.UserConnection do
   end
 
   defp maybe_encrypt_label(changeset, d_conn_key, temp_label) do
-    if temp_label = get_change(changeset, :temp_label) do
+    if temp_label do
       changeset
       |> put_change(:label, Encrypted.Utils.encrypt(%{key: d_conn_key, payload: temp_label}))
     else

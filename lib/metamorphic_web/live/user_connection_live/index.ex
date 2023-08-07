@@ -170,7 +170,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   end
 
   @impl true
-  def handle_event("top", param, socket) do
+  def handle_event("top", _param, socket) do
     {:noreply, socket |> put_flash(:info, "You reached the top") |> paginate_arrivals(1)}
   end
 

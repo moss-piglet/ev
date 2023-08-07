@@ -3,7 +3,6 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
   use MetamorphicWeb, :live_component
 
   alias Metamorphic.Accounts
-  alias Metamorphic.Encrypted
 
   @impl true
   def render(assigns) do
