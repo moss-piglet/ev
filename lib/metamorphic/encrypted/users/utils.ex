@@ -184,6 +184,9 @@ defmodule Metamorphic.Encrypted.Users.Utils do
       {:ok, d_payload} ->
         {:ok, d_payload}
 
+      {:error_user_key, message} ->
+        message
+
       {:error, message} ->
         {:error_payload, message}
     end

@@ -98,7 +98,10 @@ defmodule Metamorphic.Accounts do
   """
   def get_user!(id), do: Repo.get!(User, id)
 
-  def get_user_connection!(id), do: Repo.get!(UserConnection, id) |> Repo.preload([:connection, :user])
+  def get_connection!(id), do: Repo.get!(Connection, id)
+
+  def get_user_connection!(id),
+    do: Repo.get!(UserConnection, id) |> Repo.preload([:connection, :user])
 
   @doc """
   List user's user_connections. These are
@@ -259,9 +262,24 @@ defmodule Metamorphic.Accounts do
   end
 
   def update_user_username(user, attrs \\ %{}, opts \\ []) do
-    user
-    |> User.username_changeset(attrs, opts)
-    |> Repo.update()
+    changeset = User.username_changeset(user, attrs, opts)
+    conn = get_connection!(user.connection.id)
+    c_attrs = changeset.changes.connection_map
+
+    {:ok, %{update_user: user, update_connection: conn}} =
+      Ecto.Multi.new()
+      |> Ecto.Multi.update(:update_user, fn _ -> User.username_changeset(user, attrs, opts) end)
+      |> Ecto.Multi.update(:update_connection, fn %{update_user: user} ->
+        Connection.update_username_changeset(conn, %{
+          username: c_attrs.c_username,
+          username_hash: c_attrs.c_username_hash
+        })
+      end)
+      |> Repo.transaction()
+
+    broadcast_connection(conn)
+
+    {:ok, user}
   end
 
   def update_user_visibility(user, attrs \\ %{}, opts \\ []) do
@@ -314,7 +332,8 @@ defmodule Metamorphic.Accounts do
 
     with {:ok, query} <- UserToken.verify_change_email_token_query(token, context),
          %UserToken{sent_to: email} <- Repo.one(query),
-         {:ok, _} <- Repo.transaction(user_email_multi(user, email, context, key)) do
+         {:ok, %{user: _user, tokens: _tokens, connection: conn}} <- Repo.transaction(user_email_multi(user, email, context, key)) do
+          broadcast_connection(conn)
       :ok
     else
       _rest -> :error
@@ -322,13 +341,24 @@ defmodule Metamorphic.Accounts do
   end
 
   defp user_email_multi(user, email, context, key) do
+    conn = get_connection!(user.connection.id)
+    opts = [key: key, user: user]
+
     changeset =
       user
-      |> User.email_changeset(%{email: email}, key: key, user: user)
+      |> User.email_changeset(%{email: email}, opts)
       |> User.confirm_changeset()
+
+    c_attrs = changeset.changes.connection_map
 
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, changeset)
+    |> Ecto.Multi.update(:connection, fn %{user: user} ->
+      Connection.update_email_changeset(conn, %{
+        email: c_attrs.c_email,
+        email_hash: c_attrs.c_email_hash
+      })
+    end)
     |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, [context]))
   end
 
@@ -576,25 +606,27 @@ defmodule Metamorphic.Accounts do
   end
 
   def confirm_user_connection(uconn, attrs, opts \\ []) do
-    IO.inspect attrs, label: "ATTRS TO CONFIRM NEW CONN"
     {:ok, %{update_uconn: upd_uconn, insert_uconn: ins_uconn}} =
-    Ecto.Multi.new()
-    |> Ecto.Multi.update(:update_uconn, UserConnection.confirm_changeset(uconn))
-    |> Ecto.Multi.insert(:insert_uconn, UserConnection.changeset(%UserConnection{}, attrs, opts))
-    |> Repo.transaction()
+      Ecto.Multi.new()
+      |> Ecto.Multi.update(:update_uconn, UserConnection.confirm_changeset(uconn))
+      |> Ecto.Multi.insert(
+        :insert_uconn,
+        UserConnection.changeset(%UserConnection{}, attrs, opts)
+      )
+      |> Repo.transaction()
 
     {:ok, %{upd_insert_uconn: ins_uconn}} =
-    Ecto.Multi.new()
-    |> Ecto.Multi.update(:upd_insert_uconn, UserConnection.confirm_changeset(ins_uconn))
-    |> Repo.transaction()
+      Ecto.Multi.new()
+      |> Ecto.Multi.update(:upd_insert_uconn, UserConnection.confirm_changeset(ins_uconn))
+      |> Repo.transaction()
 
     {:ok, ins_uconn} =
-    {:ok, ins_uconn |> Repo.preload([:user, :connection])}
-    |> broadcast(:uconn_confirmed)
+      {:ok, ins_uconn |> Repo.preload([:user, :connection])}
+      |> broadcast(:uconn_confirmed)
 
     {:ok, upd_uconn} =
-    {:ok, upd_uconn |> Repo.preload([:user, :connection])}
-    |> broadcast(:uconn_confirmed)
+      {:ok, upd_uconn |> Repo.preload([:user, :connection])}
+      |> broadcast(:uconn_confirmed)
 
     {:ok, upd_uconn, ins_uconn}
   end
@@ -671,9 +703,19 @@ defmodule Metamorphic.Accounts do
     end
   end
 
-  defp broadcast({:ok, uconn}, event) do
+  defp broadcast({:ok, %UserConnection{} = uconn}, event) do
     Phoenix.PubSub.broadcast(Metamorphic.PubSub, "accounts:#{uconn.user_id}", {event, uconn})
     {:ok, uconn}
+  end
+
+  defp broadcast_connection(conn) do
+    conn = conn |> Repo.preload([:user_connections])
+    Enum.each(conn.user_connections, fn uconn ->
+      uconn |> Repo.preload([:user, :connection])
+      {:ok, uconn} =
+        {:ok, uconn |> Repo.preload([:user, :connection])}
+        |> broadcast(:uconn_email_updated)
+    end)
   end
 
   def private_subscribe(user) do

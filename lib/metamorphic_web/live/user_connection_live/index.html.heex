@@ -12,41 +12,66 @@
 </.header>
 
 <div id="dasbhoard" class="w-full sm:w-auto">
-  <div id="uconn-grid" class="mt-10 grid grid-cols-2 gap-x-6 gap-y-4">
-    
+  <!-- arrivals button -->
+  <div id="uconn-grid" class="mt-10 grid grid-cols-1 gap-x-6 gap-y-4">
     <.link
-      :if={!Enum.empty?@streams.arrivals.inserts}
+      :if={!@end_of_arrivals_timeline? || !Enum.empty?(@streams.arrivals.inserts)}
       id="arrivals-button"
       navigate={~p"/users/connections/greet"}
       class="group relative rounded-2xl px-6 py-4 text-sm font-semibold leading-6 text-zinc-900 sm:py-6"
     >
-      <span class="absolute inset-0 rounded-2xl bg-zinc-50 transition group-hover:bg-zinc-100 sm:group-hover:scale-105">
+      <span class="absolute inset-0 rounded-2xl bg-brand-50 transition group-hover:bg-brand-100 sm:group-hover:scale-105">
       </span>
       <span class="relative flex items-center gap-4 sm:flex-col">
         <.icon name="hero-gift-top" class="h-6 w-6" /> Arrivals
       </span>
     </.link>
   </div>
-
-
-<!-- Connections -->
-<div class="border-b border-gray-200 pt-4 pb-5 sm:flex sm:items-center sm:justify-between">
-  <h3 class="text-base font-semibold leading-6 text-gray-900">Connections</h3>
-  <div class="mt-3 sm:ml-4 sm:mt-0">
-    <label for="mobile-search-candidate" class="sr-only">Search</label>
-    <label for="desktop-search-candidate" class="sr-only">Search</label>
-    <div class="flex rounded-md shadow-sm">
-      <div class="relative flex-grow focus-within:z-10">
-        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-          <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
-          </svg>
+  <!-- Connections -->
+  <div class="border-b border-gray-200 pt-4 pb-5 sm:flex sm:items-center sm:justify-between">
+    <h3 class="text-base font-semibold leading-6 text-gray-900">Connections</h3>
+    <div class="mt-3 sm:ml-4 sm:mt-0">
+      <label for="mobile-search-candidate" class="sr-only">Search</label>
+      <label for="desktop-search-candidate" class="sr-only">Search</label>
+      <div class="flex rounded-md shadow-sm">
+        <div class="relative flex-grow focus-within:z-10">
+          <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <svg
+              class="h-5 w-5 text-gray-400"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </div>
+          <input
+            type="text"
+            name="mobile-search-candidate"
+            id="mobile-search-candidate"
+            class="block w-full rounded-none rounded-l-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:hidden"
+            placeholder="Search"
+          />
+          <input
+            type="text"
+            name="desktop-search-candidate"
+            id="desktop-search-candidate"
+            class="hidden w-full rounded-none rounded-l-md border-0 py-1.5 pl-10 text-sm leading-6 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:block"
+            placeholder="Coming soon"
+          />
         </div>
-        <input type="text" name="mobile-search-candidate" id="mobile-search-candidate" class="block w-full rounded-none rounded-l-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:hidden" placeholder="Search">
-        <input type="text" name="desktop-search-candidate" id="desktop-search-candidate" class="hidden w-full rounded-none rounded-l-md border-0 py-1.5 pl-10 text-sm leading-6 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-600 sm:block" placeholder="Coming soon">
-      </div>
 
-        <button type="button" class="relative -ml-px inline-flex items-center gap-x-1.5 rounded-r-md px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 opacity-50" disabled>Share</button>
+        <button
+          type="button"
+          class="relative -ml-px inline-flex items-center gap-x-1.5 rounded-r-md px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 opacity-50"
+          disabled
+        >
+          Share
+        </button>
         <.link
           id="create-button"
           navigate={~p"/users/connections/new"}
@@ -54,22 +79,19 @@
         >
           Create
         </.link>
+      </div>
     </div>
   </div>
-</div>
-
-
   <div class="py-4">
-  
-  <Components.cards_connections
-    id="timeline"
-    stream={@streams.connections}
-    page={@page}
-    end_of_connections_timeline?={@end_of_connections_timeline?}
-    card_click={fn post -> JS.navigate(~p"/posts/#{post}") end}
-    current_user={@current_user}
-    key={@key}
-  />
+    <Components.cards_connections
+      id="timeline"
+      stream={@streams.connections}
+      page={@page}
+      end_of_connections_timeline?={@end_of_connections_timeline?}
+      card_click={fn _connection -> nil end}
+      current_user={@current_user}
+      key={@key}
+    />
   </div>
 </div>
 

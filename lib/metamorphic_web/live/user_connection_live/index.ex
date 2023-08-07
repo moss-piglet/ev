@@ -17,8 +17,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
 
     {:ok,
      socket
-     |> assign(page: 1, per_page: 10)
-     }
+     |> assign(page: 1, per_page: 10)}
   end
 
   @impl true
@@ -55,18 +54,18 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   end
 
   @impl true
-  def handle_info({MetamorphicWeb.UserConnectionLive.Index, {:uconn_confirmed, upd_uconn, ins_uconn}}, socket) do
+  def handle_info(
+        {MetamorphicWeb.UserConnectionLive.Index, {:uconn_confirmed, upd_uconn}},
+        socket
+      ) do
     cond do
       upd_uconn.user_id == socket.assigns.current_user.id && upd_uconn.confirmed_at ->
         {:noreply,
-        socket
-        |> stream_delete(:arrivals, upd_uconn)
-        |> stream_insert(:connections, upd_uconn)
-        |> stream_insert(:connections, ins_uconn)
-      }
+         socket
+         |> stream_delete(:arrivals, upd_uconn)
+         |> stream_insert(:connections, upd_uconn)}
 
       true ->
-        IO.puts "SOMETHING WENT WRONG"
         {:noreply, socket}
     end
   end
@@ -78,7 +77,6 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
         {:noreply, stream_delete(socket, :uconns, uconn)}
 
       uconn.user_id == socket.assigns.current_user.id ->
-        IO.inspect socket.assigns.streams.arrivals, label: "ARRIVALS DELETE"
         {:noreply, stream_delete(socket, :arrivals, uconn)}
 
       true ->
@@ -104,12 +102,24 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   def handle_info({:uconn_confirmed, uconn}, socket) do
     cond do
       uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
-        IO.inspect uconn, label: "UCONN HANDLE INFO"
         {:noreply, stream_insert(socket, :connections, uconn, at: 0)}
 
       uconn.user_id == socket.assigns.current_user.id ->
-        IO.inspect uconn, label: "UCONN ENDED IN ARRIVALS"
         {:noreply, stream_insert(socket, :arrivals, uconn, at: 0)}
+
+      true ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:uconn_email_updated, uconn}, socket) do
+    cond do
+      uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
+        {:noreply, stream_insert(socket, :connections, uconn, at: -1)}
+
+      uconn.user_id == socket.assigns.current_user.id ->
+        {:noreply, stream_insert(socket, :arrivals, uconn, at: -1)}
 
       true ->
         {:noreply, socket}
@@ -120,20 +130,20 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   def handle_event("accept_uconn", %{"id" => id}, socket) do
     uconn = Accounts.get_user_connection!(id)
     user = socket.assigns.current_user
+
     if uconn.user_id == user.id do
       key = socket.assigns.key
-      a_attrs = build_accepting_uconn_attrs(uconn, user, key)
-      case Accounts.confirm_user_connection(uconn, a_attrs, [user: user, key: key, confirm: true]) do
-        {:ok, upd_uconn, ins_uconn} ->
-          notify_self({:uconn_confirmed, upd_uconn, ins_uconn})
+      attrs = build_accepting_uconn_attrs(uconn, user, key)
+
+      case Accounts.confirm_user_connection(uconn, attrs, user: user, key: key, confirm: true) do
+        {:ok, upd_uconn, _ins_uconn} ->
+          notify_self({:uconn_confirmed, upd_uconn})
 
           {:noreply,
-          socket
-          |> put_flash(:info, "Connection accepted successfully.")
-          |> push_patch(to: socket.assigns.patch)}
+           socket
+           |> put_flash(:info, "Connection accepted successfully.")}
 
         {:error, changeset} ->
-          IO.inspect changeset, label: "ERROR"
           {:noreply, put_flash(socket, :error, changeset.msg)}
       end
     else
@@ -144,6 +154,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   @impl true
   def handle_event("decline_uconn", %{"id" => id}, socket) do
     uconn = Accounts.get_user_connection!(id)
+
     if uconn.user_id == socket.assigns.current_user.id do
       case Accounts.delete_user_connection(uconn) do
         {:ok, uconn} ->
@@ -160,7 +171,6 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
 
   @impl true
   def handle_event("top", param, socket) do
-    IO.inspect param, label: "PARAM TOP PAGE"
     {:noreply, socket |> put_flash(:info, "You reached the top") |> paginate_arrivals(1)}
   end
 
@@ -211,12 +221,10 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   end
 
   defp apply_action(socket, :greet, _params) do
-    user = socket.assigns.current_user
-
     socket
     |> assign(:page_title, "Arrivals Greeter")
     |> paginate_arrivals(1)
-     |> paginate_connections(1)
+    |> paginate_connections(1)
   end
 
   defp apply_action(socket, :index, _params) do
@@ -247,7 +255,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
     case connections do
       [] ->
         socket
-        |> assign(end_of_connections_timeline_?: at == -1)
+        |> assign(end_of_connections_timeline?: at == -1)
         |> assign(:connections_empty?, true)
         |> stream(:connections, [])
 
@@ -292,20 +300,23 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   end
 
   defp build_accepting_uconn_attrs(uconn, user, key) do
-    d_req_email = Encrypted.Users.Utils.decrypt_user_item(uconn.request_email, user, uconn.key, key)
-    d_req_username = Encrypted.Users.Utils.decrypt_user_item(uconn.request_username, user, uconn.key, key)
-    d_conn_key = Encrypted.Users.Utils.decrypt_user_attrs_key(user.conn_key, user, key)
+    d_req_email =
+      Encrypted.Users.Utils.decrypt_user_item(uconn.request_email, user, uconn.key, key)
+
+    d_req_username =
+      Encrypted.Users.Utils.decrypt_user_item(uconn.request_username, user, uconn.key, key)
+
     d_label = Encrypted.Users.Utils.decrypt_user_item(uconn.label, user, uconn.key, key)
     req_user = Accounts.get_user_by_email(d_req_email)
 
     %{
       connection_id: user.connection.id,
       user_id: req_user.id,
-      key: d_conn_key,
       email: d_req_email,
-      label: d_label,
+      username: d_req_username,
+      temp_label: d_label,
       request_username: d_req_username,
-      request_email: d_req_email,
+      request_email: d_req_email
     }
   end
 

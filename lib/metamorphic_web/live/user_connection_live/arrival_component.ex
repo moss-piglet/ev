@@ -12,7 +12,9 @@ defmodule MetamorphicWeb.UserConnectionLive.ArrivalComponent do
     <div>
       <.header>
         <%= @title %>
-        <:subtitle :if={@action == :greet}>Greet your new connections! Click their avatar to accept or privately decline their request.</:subtitle>
+        <:subtitle :if={@action == :greet}>
+          Greet your new connections! Click their avatar to accept or privately decline their request.
+        </:subtitle>
       </.header>
 
       <Components.cards_greeter
@@ -23,7 +25,6 @@ defmodule MetamorphicWeb.UserConnectionLive.ArrivalComponent do
         page={@page}
         end_of_arrivals_timeline?={@end_of_arrivals_timeline?}
         card_click={fn _uconn -> nil end}
-        patch={@patch}
       />
     </div>
     """

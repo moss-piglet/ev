@@ -27,9 +27,10 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
         <.input field={@form[:request_username]} type="hidden" value={@request_username} />
         <.input field={@form[:request_email]} type="hidden" value={@request_email} />
         <.input field={@form[:key]} type="hidden" value={@recipient_key} />
+        <.input field={@form[:label]} type="hidden" />
 
         <.input
-          field={@form[:label]}
+          field={@form[:temp_label]}
           type="text"
           label="Label"
           placeholder="Family, friend, partner, et al"
@@ -73,6 +74,7 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
        |> assign(:recipient_id, nil)
        |> assign(:request_email, nil)
        |> assign(:request_username, nil)
+       |> assign(:temp_label, nil)
        |> assign(:selector, nil)
        |> assign(assigns)
        |> assign_form(changeset)}
@@ -101,7 +103,7 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
        |> assign(:request_username, changeset.changes.request_username)
        |> assign(:recipient_key, changeset.changes.key)
        |> assign(:recipient_id, changeset.changes.user_id)
-       |> assign(:label, changeset.changes.label)
+       |> assign(:temp_label, Ecto.Changeset.get_change(changeset, :temp_label))
        |> assign(:selector, uconn_params["selector"])}
     else
       {:noreply,
@@ -115,18 +117,8 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
   def handle_event("save", %{"user_connection" => uconn_params}, socket) do
     user = socket.assigns.user
     key = socket.assigns.key
-    label = socket.assigns.label
 
-    d_conn_key =
-      Encrypted.Users.Utils.decrypt_user_attrs_key(
-        user.conn_key,
-        user,
-        key
-      )
-
-    uconn_params = uconn_params |> Map.put("label", Encrypted.Utils.encrypt(%{key: d_conn_key, payload: label}))
-
-    case Accounts.create_user_connection(uconn_params, user: user, key: key, label: label) do
+    case Accounts.create_user_connection(uconn_params, user: user, key: key) do
       {:ok, uconn} ->
         notify_parent({:saved, uconn})
 

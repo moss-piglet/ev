@@ -122,14 +122,48 @@ defmodule Metamorphic.Accounts.User do
 
   defp encrypt_email_change(changeset, opts, email) do
     changeset
+    |> encrypt_connection_map_email_change(opts, email)
     |> put_change(:email, encrypt_user_data(email, opts[:user], opts[:key]))
   end
 
   defp encrypt_username_change(changeset, opts, username) do
     changeset
+    |> encrypt_connection_map_username_change(opts, username)
     |> put_change(:username, encrypt_user_data(username, opts[:user], opts[:key]))
   end
 
+  defp encrypt_connection_map_email_change(changeset, opts, email) do
+    # decrypt the user connection key
+    # and then encrypt the email change
+    d_conn_key =
+      Encrypted.Users.Utils.decrypt_user_attrs_key(opts[:user].conn_key, opts[:user], opts[:key])
+
+    c_encrypted_email = Encrypted.Utils.encrypt(%{key: d_conn_key, payload: email})
+
+    changeset
+    |> put_change(:connection_map, %{
+      c_email: c_encrypted_email,
+      c_email_hash: email
+    })
+  end
+
+  defp encrypt_connection_map_username_change(changeset, opts, username) do
+    # decrypt the user connection key
+    # and then encrypt the username change
+    d_conn_key =
+      Encrypted.Users.Utils.decrypt_user_attrs_key(opts[:user].conn_key, opts[:user], opts[:key])
+
+    c_encrypted_username = Encrypted.Utils.encrypt(%{key: d_conn_key, payload: username})
+
+    changeset
+    |> put_change(:connection_map, %{
+      c_username: c_encrypted_username,
+      c_username_hash: username
+    })
+  end
+
+  # When registering, the email is used to
+  # create the username.
   defp validate_username(changeset, opts) do
     if email = get_change(changeset, :email) do
       changeset
