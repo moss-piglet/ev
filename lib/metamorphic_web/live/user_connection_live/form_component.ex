@@ -38,8 +38,8 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
         <.input
           field={@form[:selector]}
           type="select"
-          label="Notify by"
-          prompt="Choose how to notify"
+          label="Find by"
+          prompt="Choose how to find"
           options={[Username: "username", Email: "email"]}
         />
 
