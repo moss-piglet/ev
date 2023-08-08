@@ -1,8 +1,5 @@
 <.header class="text-center">
   Connections
-  <span class="inline-flex items-center rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800">
-    Under construction
-  </span>
   <:subtitle>This is your connections dashboard.</:subtitle>
   <:actions :if={!@current_user.confirmed_at}>
     <.button type="button" class="bg-brand-500" phx-click={JS.patch(~p"/users/confirm")}>
@@ -13,7 +10,7 @@
 
 <div id="dasbhoard" class="w-full sm:w-auto">
   <!-- arrivals button -->
-  <div id="uconn-grid" class="mt-10 grid grid-cols-1 gap-x-6 gap-y-4">
+  <div id="uconn-grid" class="my-10 grid grid-cols-1 gap-x-6 gap-y-4">
     <.link
       :if={!@end_of_arrivals_timeline? || !Enum.empty?(@streams.arrivals.inserts)}
       id="arrivals-button"

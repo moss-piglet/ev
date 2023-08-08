@@ -242,7 +242,7 @@ defmodule Metamorphic.Accounts.UserConnection do
   defp decrypt_requesting_data(changeset, opts) do
     # We first decrypt the current_user's conn_key
     # and username and email.
-    d_conn_key =
+    {:ok, d_conn_key} =
       Encrypted.Users.Utils.decrypt_user_attrs_key(
         opts[:user].conn_key,
         opts[:user],
@@ -286,7 +286,7 @@ defmodule Metamorphic.Accounts.UserConnection do
          temp_label: temp_label
        }) do
     # We next encrypt the current_user's conn key
-    # and username and email.
+    # and post key and username and email.
     changeset
     |> put_change(
       :key,

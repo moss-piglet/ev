@@ -22,7 +22,24 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 
+let execJS = (selector, attr) => {
+  document.querySelectorAll(selector).forEach(el => liveSocket.execJS(el, el.getAttribute(attr)))
+}
+
 let Hooks = {}
+
+Hooks.Flash = {
+  mounted(){
+    let hide = () => liveSocket.execJS(this.el, this.el.getAttribute("phx-click"))
+    this.timer = setTimeout(() => hide(), 8000)
+    this.el.addEventListener("phx:hide-start", () => clearTimeout(this.timer))
+    this.el.addEventListener("mouseover", () => {
+      clearTimeout(this.timer)
+      this.timer = setTimeout(() => hide(), 8000)
+    })
+  },
+  destroyed(){ clearTimeout(this.timer) }
+}
 
 Hooks.Menu = {
   getAttr(name) {
@@ -104,6 +121,8 @@ window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
 // connect if there are any LiveViews on the page
+liveSocket.getSocket().onOpen(() => execJS("#connection-status", "js-hide"))
+liveSocket.getSocket().onError(() => execJS("#connection-status", "js-show"))
 liveSocket.connect()
 
 // expose liveSocket on window for web console debug logs and latency simulation:

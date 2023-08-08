@@ -58,7 +58,7 @@ defmodule MetamorphicWeb.PostLive.Components do
         />
       </li>
     </ul>
-    <div :if={@end_of_timeline?} class="mt-5 text-[50px] text-center">
+    <div :if={@end_of_timeline?} class="mt-5 text-[50px] text-center font-thin">
       🎉 You made it to the beginning of time 🎉
     </div>
     """
@@ -84,7 +84,21 @@ defmodule MetamorphicWeb.PostLive.Components do
           <%= decr_post(@post.username, @current_user, get_post_key(@post), @key, @post) %>
         </p>
         <p class="flex-none text-xs text-gray-600">
-          <time datetime={@post.inserted_at}><%= time_ago(@post.inserted_at) %></time>
+          <time datetime={@post.inserted_at}>
+          <span :if={get_shared_post_identity_atom(@post, @current_user) == :self} class="inline-flex items-center align-middle rounded-full">
+            <svg class="h-1.5 w-1.5 fill-green-500" viewBox="0 0 6 6" aria-hidden="true">
+              <circle cx="3" cy="3" r="3" />
+            </svg>
+
+          </span>
+          <span :if={get_shared_post_identity_atom(@post, @current_user) == :connection} class="inline-flex items-center rounded-full group group-hover:bg-purple-100 group-hover:px-2 group-hover:py-1 group-hover:text-xs group-hover:font-medium group-hover:text-purple-700 group-hover:space-x-1">
+            <svg class="h-1.5 w-1.5 fill-purple-500" viewBox="0 0 6 6" aria-hidden="true">
+              <circle cx="3" cy="3" r="3" />
+            </svg>
+            <span class="hidden group-hover:flex"><%= get_shared_post_label(@post, @current_user, @key) %></span>
+          </span>
+            <%= time_ago(@post.inserted_at) %>
+          </time>
         </p>
       </div>
       <p class="mt-1 line-clamp-2 text-sm leading-6 text-gray-600">
@@ -122,7 +136,7 @@ defmodule MetamorphicWeb.PostLive.Components do
           class="inline-flex align-middle"
           phx-click="repost"
           phx-value-id={@post.id}
-          phx-value-body={decr_public_post(@post.body, get_post_key(@post))}
+          phx-value-body={decr_post(@post.body, @current_user, get_post_key(@post), @key, @post)}
           phx-value-username={decr(@current_user.username, @current_user, @key)}
         >
           <.icon name="hero-arrow-path-rounded-square" class="h-4 w-4 hover:text-brand-600" />

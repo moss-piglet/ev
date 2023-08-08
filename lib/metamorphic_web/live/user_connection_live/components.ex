@@ -60,8 +60,8 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
         />
       </li>
     </ul>
-    <div :if={@end_of_arrivals_timeline?} id="end-of-arrivals" class="mt-5 text-[50px] text-center">
-      🎉 You greeted all your arrivals 🎉
+    <div :if={@end_of_arrivals_timeline?} id="end-of-arrivals" class="mt-5 text-[42px] text-center font-thin">
+      😌 You greeted everyone 😌
     </div>
     """
   end
@@ -173,9 +173,9 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
     <div
       :if={@end_of_connections_timeline?}
       id="end-of-connections"
-      class="mt-5 text-[50px] text-center"
+      class="mt-5 text-[42px] text-center font-thin"
     >
-      🎉 You've reached the end of your connections 🎉
+      🌲 You are loved, and so are they 🌲
     </div>
     """
   end

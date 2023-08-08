@@ -26,6 +26,7 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
         <.input field={@form[:request_username]} type="hidden" value={@request_username} />
         <.input field={@form[:request_email]} type="hidden" value={@request_email} />
         <.input field={@form[:key]} type="hidden" value={@recipient_key} />
+        <.input field={@form[:post_key]} type="hidden" value={@recipient_key} />
         <.input field={@form[:label]} type="hidden" />
 
         <.input

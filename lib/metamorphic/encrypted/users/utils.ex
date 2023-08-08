@@ -35,12 +35,13 @@ defmodule Metamorphic.Encrypted.Users.Utils do
     end
   end
 
+
   @doc """
   Decrypts a user item, where item is a
   struct (e.g. %Post{}, %Userconnection).
   """
-  def decrypt_user_item(payload, user, item_key, key) do
-    with d_item_key <- decrypt_user_attrs_key(item_key, user, key),
+  def decrypt_user_item(payload, user, e_item_key, key) do
+    with {:ok, d_item_key} <- decrypt_user_attrs_key(e_item_key, user, key),
          {:ok, d_payload} <- decrypt_payload(d_item_key, payload) do
       d_payload
     else
@@ -50,9 +51,9 @@ defmodule Metamorphic.Encrypted.Users.Utils do
     end
   end
 
-  def decrypt_public_post(payload, post_key) do
+  def decrypt_public_post(payload, e_post_key) do
     with {:ok, d_post_key} <-
-           Encrypted.Utils.decrypt_message_for_user(post_key, %{
+           Encrypted.Utils.decrypt_message_for_user(e_post_key, %{
              public: Encrypted.Session.server_public_key(),
              private: Encrypted.Session.server_private_key()
            }),
@@ -84,6 +85,8 @@ defmodule Metamorphic.Encrypted.Users.Utils do
   # It is encrypted by the user's public_key.
   #
   # Used for sharing or changing the password.
+  #
+  # Returns `{:ok, key}`
   def decrypt_user_attrs_key(
         user_key,
         current_user,
@@ -93,7 +96,7 @@ defmodule Metamorphic.Encrypted.Users.Utils do
          {:ok, d_private_key} <- decrypt_private_key(current_user, session_key),
          d_user_key <-
            decrypt_user_key(current_user, user_key, d_private_key) do
-      d_user_key
+      {:ok, d_user_key}
     else
       {:error_private_key, message} -> message
       {:error_user_key, message} -> message

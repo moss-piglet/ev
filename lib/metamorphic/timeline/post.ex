@@ -112,10 +112,18 @@ defmodule Metamorphic.Timeline.Post do
           })
 
         :connections ->
-          changeset |> add_error(:body, "TODO connections")
+          changeset
+          |> put_change(:body, Utils.encrypt(%{key: post_key, payload: body}))
+          |> put_change(:username, Utils.encrypt(%{key: post_key, payload: username}))
+          |> put_change(:user_post_map, %{
+            key:
+              Encrypted.Utils.encrypt_message_for_user_with_pk(post_key, %{
+                public: opts[:user].key_pair["public"]
+              })
+          })
 
         _rest ->
-          changeset |> add_error(:body, "VISIBILITY OFF")
+          changeset |> add_error(:body, "There was an error determining the visibility.")
       end
     else
       changeset
@@ -128,14 +136,19 @@ defmodule Metamorphic.Timeline.Post do
         :public ->
           Encrypted.Users.Utils.decrypt_public_post_key(opts[:post_key])
 
-        :private ->
-          Encrypted.Users.Utils.decrypt_user_attrs_key(opts[:post_key], opts[:user], opts[:key])
-
-        :connections ->
-          :error
+        _rest ->
+          {:ok, d_post_key} = Encrypted.Users.Utils.decrypt_user_attrs_key(opts[:post_key], opts[:user], opts[:key])
+          d_post_key
       end
     else
-      Encrypted.Utils.generate_key()
+      case visibility do
+        :connections ->
+          {:ok, d_post_key} = Encrypted.Users.Utils.decrypt_user_attrs_key(opts[:user].conn_key, opts[:user], opts[:key])
+          d_post_key
+
+        _rest ->
+          Encrypted.Utils.generate_key()
+      end
     end
   end
 end

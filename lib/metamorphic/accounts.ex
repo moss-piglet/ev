@@ -103,6 +103,29 @@ defmodule Metamorphic.Accounts do
   def get_user_connection!(id),
     do: Repo.get!(UserConnection, id) |> Repo.preload([:connection, :user])
 
+  def get_user_connection_from_shared_post(post, current_user) do
+    Repo.one from uc in UserConnection,
+      join: c in Connection,
+      on: c.user_id == ^post.user_id,
+      where: uc.user_id == ^current_user.id,
+      where: uc.connection_id == c.id
+  end
+
+  def get_all_user_connections_from_shared_post(post, current_user) do
+    Repo.all from uc in UserConnection,
+      join: c in Connection,
+      on: c.user_id == ^post.user_id,
+      where: uc.user_id == ^current_user.id
+  end
+
+  def get_connection_from_post(post, _current_user) do
+    Repo.one from c in Connection,
+      join: u in User,
+      on: u.id == c.user_id,
+      where: c.user_id == ^post.user_id,
+      preload: [:user_connections]
+  end
+
   @doc """
   List user's user_connections. These are
   connections that have been confirmed.

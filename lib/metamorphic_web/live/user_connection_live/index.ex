@@ -135,7 +135,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
       key = socket.assigns.key
       attrs = build_accepting_uconn_attrs(uconn, user, key)
 
-      case Accounts.confirm_user_connection(uconn, attrs, user: user, key: key, confirm: true) do
+      case Accounts.confirm_user_connection(uconn, attrs, [user: user, key: key, confirm: true]) do
         {:ok, upd_uconn, _ins_uconn} ->
           notify_self({:uconn_confirmed, upd_uconn})
 

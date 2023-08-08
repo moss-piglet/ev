@@ -6,6 +6,7 @@ defmodule Metamorphic.Timeline do
   import Ecto.Query, warn: false
 
   alias Metamorphic.Accounts
+  alias Metamorphic.Accounts.{Connection, User, UserConnection}
   alias Metamorphic.Repo
   alias Metamorphic.Timeline.{Post, UserPost}
 
@@ -25,16 +26,25 @@ defmodule Metamorphic.Timeline do
 
     from(p in Post,
       join: up in UserPost,
-      on: up.user_id == ^user.id,
-      where: up.post_id == p.id,
-      where: p.visibility != :public,
-      where: p.user_id == ^user.id,
+      on: up.post_id == p.id,
+      join: u in User,
+      on: up.user_id == u.id,
+      join: c in Connection,
+      on: c.user_id == u.id,
+      join: uc in UserConnection,
+      on: uc.connection_id == c.id,
+      where: (uc.user_id == ^user.id or p.user_id == ^user.id),
+      where: (p.visibility == :connections),
+      or_where: (p.visibility == :private and p.user_id == ^user.id),
+      or_where: (uc.user_id == ^user.id and p.repost == true),
       offset: ^offset,
       limit: ^limit,
       order_by: [desc: p.inserted_at],
-      preload: [:user_posts]
+      preload: [:user_posts] #:user_connections]
     )
     |> Repo.all()
+    |> Enum.filter(fn post -> post.__meta__ != :deleted end)
+    |> Enum.uniq_by(fn post -> post end)
   end
 
   def list_public_posts(opts) do
@@ -49,6 +59,8 @@ defmodule Metamorphic.Timeline do
       preload: [:user_posts]
     )
     |> Repo.all()
+    |> Enum.filter(fn post -> post.__meta__ != :deleted end)
+    |> Enum.uniq_by(fn post -> post end)
   end
 
   def inc_favs(%Post{id: id}) do
@@ -120,7 +132,9 @@ defmodule Metamorphic.Timeline do
       end)
       |> Repo.transaction()
 
-    {:ok, post |> Repo.preload([:user_posts])}
+    conn = Accounts.get_connection_from_post(post, user)
+
+    {:ok, conn, post |> Repo.preload([:user_posts])}
     |> broadcast(:post_created)
   end
 
@@ -153,7 +167,9 @@ defmodule Metamorphic.Timeline do
       end)
       |> Repo.transaction()
 
-    {:ok, post |> Repo.preload([:user_posts])}
+    conn = Accounts.get_connection_from_post(post, user)
+
+    {:ok, conn, post |> Repo.preload([:user_posts])}
     |> broadcast(:post_reposted)
   end
 
@@ -186,25 +202,35 @@ defmodule Metamorphic.Timeline do
       end)
       |> Repo.transaction()
 
-    {:ok, post |> Repo.preload([:user_posts])}
+    conn = Accounts.get_connection_from_post(post, user)
+
+    {:ok, conn, post |> Repo.preload([:user_posts])}
     |> broadcast(:post_updated)
   end
 
   def update_post_fav(%Post{} = post, attrs, opts \\ []) do
+    user = Accounts.get_user!(opts[:user].id)
+
     {:ok, post} =
       Post.changeset(post, attrs, opts)
       |> Repo.update()
 
-    {:ok, post |> Repo.preload([:user_posts])}
+    conn = Accounts.get_connection_from_post(post, user)
+
+    {:ok, conn, post |> Repo.preload([:user_posts])}
     |> broadcast(:post_updated)
   end
 
   def update_post_repost(%Post{} = post, attrs, opts \\ []) do
+    user = Accounts.get_user!(opts[:user].id)
+
     {:ok, post} =
       Post.changeset(post, attrs, opts)
       |> Repo.update()
 
-    {:ok, post |> Repo.preload([:user_posts])}
+    conn = Accounts.get_connection_from_post(post, user)
+
+    {:ok, conn, post |> Repo.preload([:user_posts])}
     |> broadcast(:post_updated)
   end
 
@@ -225,8 +251,14 @@ defmodule Metamorphic.Timeline do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_post(%Post{} = post) do
-    Repo.delete(post)
+  def delete_post(%Post{} = post, opts \\ []) do
+    user = Accounts.get_user!(opts[:user].id)
+
+    conn = Accounts.get_connection_from_post(post, user)
+
+    {:ok, post} = Repo.delete(post)
+
+    {:ok, conn, post}
     |> broadcast(:post_deleted)
   end
 
@@ -251,15 +283,15 @@ defmodule Metamorphic.Timeline do
     Phoenix.PubSub.subscribe(Metamorphic.PubSub, "priv_posts:#{user.id}")
   end
 
-  def connections_subscribe(user_conn) do
-    Phoenix.PubSub.subscribe(Metamorphic.PubSub, "conn_posts:#{user_conn.id}")
+  def connections_subscribe(user) do
+    Phoenix.PubSub.subscribe(Metamorphic.PubSub, "conn_posts:#{user.id}")
   end
 
-  defp broadcast({:ok, post}, event, _user_conn \\ %{}) do
+  defp broadcast({:ok, conn, post}, event, _user_conn \\ %{}) do
     case post.visibility do
       :public -> public_broadcast({:ok, post}, event)
       :private -> private_broadcast({:ok, post}, event)
-      :connections -> connections_broadcast({:ok, post}, event)
+      :connections -> connections_broadcast({:ok, conn, post}, event)
     end
   end
 
@@ -279,8 +311,11 @@ defmodule Metamorphic.Timeline do
 
   defp connections_broadcast({:error, _reason} = error, _event), do: error
 
-  defp connections_broadcast({:ok, post}, event) do
-    Phoenix.PubSub.broadcast(Metamorphic.PubSub, "conn_posts:need_user_conn_id", {event, post})
+  defp connections_broadcast({:ok, conn, post}, event) do
+    Enum.each(conn.user_connections, fn uconn ->
+      Phoenix.PubSub.broadcast(Metamorphic.PubSub, "conn_posts:#{uconn.user_id}", {event, post})
+    end)
+
     {:ok, post}
   end
 end

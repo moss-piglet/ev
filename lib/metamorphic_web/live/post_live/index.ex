@@ -10,6 +10,7 @@ defmodule MetamorphicWeb.PostLive.Index do
   def mount(_params, _session, socket) do
     if connected?(socket) do
       Timeline.private_subscribe(socket.assigns.current_user)
+      Timeline.connections_subscribe(socket.assigns.current_user)
     end
 
     {:ok,
@@ -44,7 +45,34 @@ defmodule MetamorphicWeb.PostLive.Index do
   @impl true
   def handle_info({MetamorphicWeb.PostLive.FormComponent, {:saved, post}}, socket) do
     if post.visibility != :public do
-      {:noreply, stream_insert(socket, :posts, post)}
+      {:noreply, stream_insert(socket, :posts, post, at: 0)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({MetamorphicWeb.PostLive.FormComponent, {:updated, post}}, socket) do
+    if post.visibility != :public do
+      {:noreply, stream_insert(socket, :posts, post, at: -1)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({MetamorphicWeb.PostLive.Index, {:deleted, post}}, socket) do
+    if post.user_id == socket.assigns.current_user.id do
+      {:noreply, stream_delete(socket, :posts, post)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({MetamorphicWeb.PostLive.Index, {:reposted, post}}, socket) do
+    if post.user_id == socket.assigns.current_user.id do
+      {:noreply, stream_insert(socket, :posts, post, at: 0)}
     else
       {:noreply, socket}
     end
@@ -71,11 +99,7 @@ defmodule MetamorphicWeb.PostLive.Index do
 
   @impl true
   def handle_info({:post_deleted, post}, socket) do
-    if post.user_id == socket.assigns.current_user.id do
-      {:noreply, stream_delete(socket, :posts, post)}
-    else
-      {:noreply, socket}
-    end
+    {:noreply, stream_delete(socket, :posts, post)}
   end
 
   @impl true
@@ -105,12 +129,14 @@ defmodule MetamorphicWeb.PostLive.Index do
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     post = Timeline.get_post!(id)
+    user = socket.assigns.current_user
 
-    if post.user_id == socket.assigns.current_user.id do
-      {:ok, _} = Timeline.delete_post(post)
+    if post.user_id == user.id do
+      {:ok, post} = Timeline.delete_post(post, [user: user])
+      notify_self({:deleted, post})
 
       socket = put_flash(socket, :info, "Post deleted successfully.")
-      {:noreply, stream_delete(socket, :posts, post)}
+      {:noreply, socket}
     else
       {:noreply, socket}
     end
@@ -122,7 +148,7 @@ defmodule MetamorphicWeb.PostLive.Index do
 
     if user.id not in post.favs_list do
       {:ok, post} = Timeline.inc_favs(post)
-      Timeline.update_post_fav(post, %{favs_list: List.insert_at(post.favs_list, 0, user.id)})
+      Timeline.update_post_fav(post, %{favs_list: List.insert_at(post.favs_list, 0, user.id)}, user: user)
       {:noreply, socket}
     else
       {:noreply, socket}
@@ -135,7 +161,7 @@ defmodule MetamorphicWeb.PostLive.Index do
 
     if user.id in post.favs_list do
       {:ok, post} = Timeline.decr_favs(post)
-      Timeline.update_post_fav(post, %{favs_list: List.delete(post.favs_list, user.id)})
+      Timeline.update_post_fav(post, %{favs_list: List.delete(post.favs_list, user.id)}, user: user)
       {:noreply, socket}
     else
       {:noreply, socket}
@@ -153,7 +179,7 @@ defmodule MetamorphicWeb.PostLive.Index do
       {:ok, post} =
         Timeline.update_post_repost(post, %{
           reposts_list: List.insert_at(post.reposts_list, 0, user.id)
-        })
+        }, user: user)
 
       repost_params = %{
         body: body,
@@ -164,10 +190,12 @@ defmodule MetamorphicWeb.PostLive.Index do
         reposts_count: post.reposts_count,
         user_id: user.id,
         original_post_id: post.id,
+        visibility: post.visibility,
         repost: true
       }
 
-      Timeline.create_repost(repost_params, user: user, key: key)
+      {:ok, post} = Timeline.create_repost(repost_params, user: user, key: key)
+      notify_self({:reposted, post})
 
       socket = put_flash(socket, :info, "Post reposted successfully.")
       {:noreply, socket}
@@ -201,4 +229,6 @@ defmodule MetamorphicWeb.PostLive.Index do
         |> stream(:posts, posts, at: at, limit: limit)
     end
   end
+
+  defp notify_self(msg), do: send(self(), {__MODULE__, msg})
 end

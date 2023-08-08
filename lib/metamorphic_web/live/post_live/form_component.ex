@@ -30,20 +30,28 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
           label="Visibility"
           required
         />
+
         <.input :if={@action == :new} field={@form[:body]} type="textarea" label="Body" />
         <.input
           :if={@action == :edit && @post.visibility == :private}
           field={@form[:body]}
           type="textarea"
           label="Body"
-          value={decr_post(@post.body, @user, get_post_key(@post), @key)}
+          value={decr_post(@post.body, @user, get_post_key(@post), @key, @post)}
         />
         <.input
           :if={@action == :edit && @post.visibility == :public}
           field={@form[:body]}
           type="textarea"
           label="Body"
-          value={decr_public_post(@post.body, get_post_key(@post))}
+          value={decr_post(@post.body, @user, get_post_key(@post), @key, @post)}
+        />
+        <.input
+          :if={@action == :edit && get_shared_post_identity_atom(@post, @user) == :self}
+          field={@form[:body]}
+          type="textarea"
+          label="Body"
+          value={decr_post(@post.body, @user, get_post_key(@post), @key, @post)}
         />
         <:actions>
           <.button :if={@form.source.valid?} phx-disable-with="Saving...">Save Post</.button>
@@ -98,7 +106,7 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
              key: key
            ) do
         {:ok, post} ->
-          notify_parent({:saved, post})
+          notify_parent({:updated, post})
 
           {:noreply,
            socket
