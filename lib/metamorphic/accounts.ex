@@ -81,18 +81,18 @@ defmodule Metamorphic.Accounts do
 
   def has_user_connection?(%User{} = user, current_user) do
     query =
-      Repo.one(
+      Repo.all(
         from uc in UserConnection,
           where: uc.user_id == ^user.id and uc.reverse_user_id == ^current_user.id,
           or_where: uc.reverse_user_id == ^user.id and uc.user_id == ^current_user.id
       )
 
-    case query do
-      %UserConnection{} ->
-        true
-
-      nil ->
+    cond do
+      Enum.empty?(query) ->
         false
+
+      !Enum.empty?(query) ->
+        true
     end
   end
 

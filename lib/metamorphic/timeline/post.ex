@@ -97,7 +97,7 @@ defmodule Metamorphic.Timeline.Post do
         if Accounts.has_any_user_connections?(opts[:user]) do
           changeset
         else
-          changeset |> add_error(:body, "Woopsy, you first need to make some connections.")
+          changeset |> add_error(:body, "Woopsy, first we need to make some connections.")
         end
     end
   end

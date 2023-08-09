@@ -23,7 +23,7 @@ defmodule Metamorphic.Encrypted.Users.Utils do
       ) do
     with session_key <- current_user_session_key,
          {:ok, d_private_key} <- decrypt_private_key(current_user, session_key),
-         d_user_key <-
+         {:ok, d_user_key} <-
            decrypt_user_key(current_user, current_user.user_key, d_private_key),
          {:ok, d_payload} <- decrypt_payload(d_user_key, payload) do
       d_payload
@@ -94,7 +94,7 @@ defmodule Metamorphic.Encrypted.Users.Utils do
       ) do
     with session_key <- current_user_session_key,
          {:ok, d_private_key} <- decrypt_private_key(current_user, session_key),
-         d_user_key <-
+         {:ok, d_user_key} <-
            decrypt_user_key(current_user, user_key, d_private_key) do
       {:ok, d_user_key}
     else
@@ -115,7 +115,7 @@ defmodule Metamorphic.Encrypted.Users.Utils do
       ) do
     with session_key <- current_user_session_key,
          {:ok, d_private_key} <- decrypt_private_key(current_user, session_key),
-         d_user_key <-
+         {:ok, d_user_key} <-
            decrypt_user_key(current_user, user_key, d_private_key) do
       %{user_key: d_user_key, private_key: d_private_key}
     else
@@ -139,7 +139,7 @@ defmodule Metamorphic.Encrypted.Users.Utils do
       ) do
     with session_key <- current_user_session_key,
          {:ok, d_private_key} <- decrypt_private_key(current_user, session_key),
-         d_user_key <-
+         {:ok, d_user_key} <-
            decrypt_user_key(current_user, current_user.user_key, d_private_key),
          e_payload <- encrypt_payload(d_user_key, payload) do
       e_payload
@@ -174,7 +174,7 @@ defmodule Metamorphic.Encrypted.Users.Utils do
            private: d_private_key
          }) do
       {:ok, d_user_key} ->
-        d_user_key
+        {:ok, d_user_key}
 
       {:error, message} ->
         {:error_user_key, message}
@@ -192,6 +192,8 @@ defmodule Metamorphic.Encrypted.Users.Utils do
 
       {:error, message} ->
         {:error_payload, message}
+
+      rest -> rest
     end
   end
 
