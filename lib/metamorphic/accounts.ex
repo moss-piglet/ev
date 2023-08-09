@@ -34,18 +34,26 @@ defmodule Metamorphic.Accounts do
 
   @doc """
   Get user by username. This checks to make sure
-  the current user is not the user be searched for.
+  the current user is not the user be searched for
+  and does not having a pending UserConnection.
 
   This is used to send connection requests and we
   don't want people to send themselves requests.
   """
   def get_user_by_username(user, username) when is_binary(username) do
-    from(u in User,
+    new_user = from(u in User,
       where: u.id != ^user.id,
-      where: u.visibility == :public,
-      or_where: u.visibility == :connections
+      where: (u.visibility == :public or u.visibility == :connections)
     )
     |> Repo.get_by(username_hash: username)
+
+    cond do
+      not is_nil(new_user) && !has_user_connection?(new_user, user) ->
+        new_user
+
+      true ->
+        nil
+    end
   end
 
   @doc """
@@ -56,12 +64,55 @@ defmodule Metamorphic.Accounts do
   don't want people to send themselves requests.
   """
   def get_user_by_email(user, email) when is_binary(email) do
-    from(u in User,
+    new_user = from(u in User,
       where: u.id != ^user.id,
-      where: u.visibility == :public,
-      or_where: u.visibility == :connections
+      where: (u.visibility == :public or u.visibility == :connections)
     )
     |> Repo.get_by(email_hash: email)
+
+    cond do
+      not is_nil(new_user) && !has_user_connection?(new_user, user) ->
+        new_user
+
+      true ->
+        nil
+    end
+  end
+
+  def has_user_connection?(%User{} = user, current_user) do
+    query =
+      Repo.one(
+        from uc in UserConnection,
+          where: uc.user_id == ^user.id and uc.reverse_user_id == ^current_user.id,
+          or_where: uc.reverse_user_id == ^user.id and uc.user_id == ^current_user.id
+      )
+
+    case query do
+      %UserConnection{} ->
+        true
+
+      nil ->
+        false
+    end
+  end
+
+  def has_any_user_connections?(user) do
+    unless is_nil(user) do
+      uconns =
+        Repo.all(
+          from uc in UserConnection,
+            where: uc.user_id == ^user.id or uc.reverse_user_id == ^user.id,
+            where: not is_nil(uc.confirmed_at)
+        )
+
+      cond do
+        Enum.empty?(uconns) ->
+          false
+
+        !Enum.empty?(uconns) ->
+          true
+      end
+    end
   end
 
   @doc """
@@ -660,6 +711,21 @@ defmodule Metamorphic.Accounts do
     |> broadcast(:uconn_deleted)
   end
 
+  def delete_both_user_connections(%UserConnection{} = uconn) do
+    {_count, uconns} = Repo.delete_all (
+      from uc in UserConnection,
+        where: uc.id == ^uconn.id,
+        or_where: (uc.reverse_user_id == ^uconn.user_id and uc.user_id == ^uconn.reverse_user_id),
+        or_where: (uc.user_id == ^uconn.reverse_user_id and uc.reverse_user_id == ^uconn.user_id),
+        select: uc
+    )
+
+    uconns
+    |> broadcast_user_connections()
+
+    {:ok, uconns}
+  end
+
   ## Reset password
 
   @doc ~S"""
@@ -730,6 +796,16 @@ defmodule Metamorphic.Accounts do
   defp broadcast({:ok, %UserConnection{} = uconn}, event) do
     Phoenix.PubSub.broadcast(Metamorphic.PubSub, "accounts:#{uconn.user_id}", {event, uconn})
     {:ok, uconn}
+  end
+
+  defp broadcast_user_connections(uconns) when is_list(uconns) do
+    Enum.each(uconns, fn uconn ->
+      uconn |> Repo.preload([:user, :connection])
+
+      {:ok, _uconn} =
+        {:ok, uconn |> Repo.preload([:user, :connection])}
+        |> broadcast(:uconn_deleted)
+    end)
   end
 
   defp broadcast_connection(conn) do

@@ -27,6 +27,25 @@ defmodule Metamorphic.Timeline do
     from(p in Post,
       join: up in UserPost,
       on: up.post_id == p.id,
+      where: (p.visibility == :private and p.user_id == ^user.id),
+      offset: ^offset,
+      limit: ^limit,
+      order_by: [desc: p.inserted_at],
+      preload: [:user_posts]
+    )
+    |> Repo.all()
+    |> Enum.into(list_connection_posts(user, opts))
+    |> Enum.filter(fn post -> post.__meta__ != :deleted end)
+    |> Enum.uniq_by(fn post -> post end)
+  end
+
+  def list_connection_posts(user, opts) do
+    limit = Keyword.fetch!(opts, :limit)
+    offset = Keyword.get(opts, :offset, 0)
+
+    from(p in Post,
+      join: up in UserPost,
+      on: up.post_id == p.id,
       join: u in User,
       on: up.user_id == u.id,
       join: c in Connection,
@@ -35,16 +54,15 @@ defmodule Metamorphic.Timeline do
       on: uc.connection_id == c.id,
       where: (uc.user_id == ^user.id or p.user_id == ^user.id),
       where: (p.visibility == :connections),
+      where: not is_nil(uc.confirmed_at),
       or_where: (p.visibility == :private and p.user_id == ^user.id),
       or_where: (uc.user_id == ^user.id and p.repost == true),
       offset: ^offset,
       limit: ^limit,
       order_by: [desc: p.inserted_at],
-      preload: [:user_posts] #:user_connections]
+      preload: [:user_posts]
     )
     |> Repo.all()
-    |> Enum.filter(fn post -> post.__meta__ != :deleted end)
-    |> Enum.uniq_by(fn post -> post end)
   end
 
   def list_public_posts(opts) do

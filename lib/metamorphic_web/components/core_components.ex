@@ -114,6 +114,7 @@ defmodule MetamorphicWeb.CoreComponents do
   attr :id, :string, required: true
   attr :svg_arrows, :boolean, default: true
   attr :button_class, :string, default: ""
+  attr :connection?, :boolean, default: false
 
   slot :img do
     attr :src, :string
@@ -121,6 +122,7 @@ defmodule MetamorphicWeb.CoreComponents do
 
   slot :title
   slot :subtitle
+  slot :connection_block
 
   slot :link do
     attr :navigate, :string
@@ -133,7 +135,7 @@ defmodule MetamorphicWeb.CoreComponents do
   def dropdown(assigns) do
     ~H"""
     <!-- User account dropdown -->
-    <div class="px-3 mt-6 relative inline-block text-left">
+    <div class={if !@connection?, do: "px-3 mt-6 relative inline-block text-left"}>
       <div>
         <button
           id={@id}
@@ -144,11 +146,14 @@ defmodule MetamorphicWeb.CoreComponents do
           data-active-class="bg-gray-100"
           aria-haspopup="true"
         >
+          <div :if={@connection?} class="relative group w-full text-center">
+            <%= render_slot(@connection_block) %>
+          </div>
           <span class="flex w-full justify-between items-center">
             <span class="flex min-w-0 items-center justify-between space-x-3">
               <%= for img <- @img do %>
                 <img
-                  class="w-10 h-10  rounded-full flex-shrink-0"
+                  class="w-10 h-10 rounded-full flex-shrink-0"
                   alt=""
                   title="action dropdown"
                   {assigns_to_attributes(img)}
@@ -411,9 +416,7 @@ defmodule MetamorphicWeb.CoreComponents do
   attr :field, Phoenix.HTML.FormField,
     doc: "a form field struct retrieved from the form, for example: @form[:email]"
 
-  attr :description, :string,
-    default: nil,
-    doc: "optional description, currently only used for checkbox inputs"
+  attr :description?, :boolean, default: false
 
   attr :errors, :list, default: []
   attr :checked, :boolean, doc: "the checked flag for checkbox inputs"
@@ -426,6 +429,7 @@ defmodule MetamorphicWeb.CoreComponents do
                 multiple pattern placeholder readonly required rows size step)
 
   slot :inner_block
+  slot :description_block
 
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
     assigns
@@ -445,9 +449,9 @@ defmodule MetamorphicWeb.CoreComponents do
       <div class="relative flex items-start pb-4 pt-3.5">
         <div class="min-w-0 flex-1 text-sm leading-6">
           <label class="font-semibold text-zinc-900"><%= @label %></label>
-          <p :if={@description} id={@id <> "_description"} class="text-zinc-500">
-            <%= @description %>
-          </p>
+          <div :if={@description?} id={@id <> "_description"} class="text-zinc-500">
+            <%= render_slot(@description_block) %>
+          </div>
         </div>
         <div class="ml-3 flex h-6 items-center">
           <input type="hidden" name={@name} value="false" />
@@ -471,9 +475,9 @@ defmodule MetamorphicWeb.CoreComponents do
     ~H"""
     <div phx-feedback-for={@name}>
       <.label for={@id}><%= @label %></.label>
-      <p :if={@description} id={@id <> "_description"} class="mt-2 text-sm leading-6 text-zinc-600">
-        <%= @description %>
-      </p>
+      <div :if={@description?} id={@id <> "_description"} class="mt-2 text-sm leading-6 text-zinc-600">
+        <%= render_slot(@description_block) %>
+      </div>
       <select
         id={@id}
         name={@name}
@@ -514,9 +518,9 @@ defmodule MetamorphicWeb.CoreComponents do
     ~H"""
     <div phx-feedback-for={@name}>
       <.label for={@id}><%= @label %></.label>
-      <p :if={@description} id={@id <> "_description"} class="mt-2 text-sm leading-6 text-zinc-600">
-        <%= @description %>
-      </p>
+      <div :if={@description?} id={@id <> "_description"} class="mt-2 text-sm leading-6 text-zinc-600">
+        <%= render_slot(@description_block) %>
+      </div>
       <input
         type={@type}
         name={@name}

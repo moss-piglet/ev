@@ -27,6 +27,7 @@ defmodule Metamorphic.Accounts.UserConnection do
 
     belongs_to :connection, Connection
     belongs_to :user, User
+    belongs_to :reverse_user, User
 
     timestamps()
   end
@@ -44,9 +45,11 @@ defmodule Metamorphic.Accounts.UserConnection do
       :request_email,
       :request_username,
       :user_id,
+      :reverse_user_id,
       :connection_id
     ])
     |> cast_assoc(:user)
+    |> cast_assoc(:reverse_user)
     |> cast_assoc(:connection)
     |> validate_required([:temp_label])
     |> validate_length(:temp_label, min: 2, max: 160)
@@ -55,6 +58,10 @@ defmodule Metamorphic.Accounts.UserConnection do
     |> validate_email_or_username(opts)
     |> unsafe_validate_unique([:connection_id, :user_id], Metamorphic.Repo.Local)
     |> unique_constraint([:connection_id, :user_id])
+    |> unsafe_validate_unique([:user_id, :reverse_user_id], Metamorphic.Repo.Local)
+    |> unique_constraint([:user_id, :reverse_user_id])
+    |> unsafe_validate_unique([:reverse_user_id, :user_id], Metamorphic.Repo.Local)
+    |> unique_constraint([:reverse_user_id, :user_id])
   end
 
   @doc """

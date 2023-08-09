@@ -99,7 +99,33 @@ defmodule MetamorphicWeb.UserSettingsLive do
             options={Ecto.Enum.values(Accounts.User, :visibility)}
             label="Visibility"
             required
-          />
+            description?={true}
+          >
+          <:description_block>
+              <div class="space-y-4">
+                <dl class="divide-y divide-gray-100">
+                  <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm font-medium leading-6 text-zinc-500">Public</dt>
+                    <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                      Metamorphic users can send you connection requests and anyone can view your profile.
+                    </dd>
+                  </div>
+                  <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm font-medium leading-6 text-zinc-500">Private</dt>
+                    <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                      Nobody can send you connection requests and only you can view your profile. You can still send connection requests and make new connections.
+                    </dd>
+                  </div>
+                  <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm font-medium leading-6 text-zinc-500">Connections</dt>
+                    <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                      Metamorphic users can send you connection requests and only you and your connections can view your profile.
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </:description_block>
+          </.input>
           <:actions>
             <.button phx-disable-with="Changing...">Change Visibility</.button>
           </:actions>
@@ -123,9 +149,45 @@ defmodule MetamorphicWeb.UserSettingsLive do
           <.input
             field={@forgot_password_form[:is_forgot_pwd?]}
             type="checkbox"
-            label="Enable forgot password?"
-            description="Change whether you can reset your password if you forget it. Keep in mind, when enabled, your account is slightly less secure because we have to store your key with symmetric encryption. This means a legal authority could access your account data with the proper authorization while this setting is enabled. Disable this at any time to delete the stored encrypted record of your key and return your account to its full security (only your password can decrypt your key) — just don't forget your password."
-          />
+            label={if @current_user.is_forgot_pwd?, do: "Disable forgot password?", else: "Enable forgot password?"}
+            description?={true}
+          >
+            <:description_block>
+              <div class="space-y-4">
+                <dl class="divide-y divide-gray-100">
+                  <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm font-medium leading-6 text-zinc-500">Action</dt>
+                    <dd :if={!@current_user.is_forgot_pwd?} class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                      Enable the forgot password feature.
+                    </dd>
+                    <dd :if={@current_user.is_forgot_pwd?} class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                      Disable the forgot password feature.
+                    </dd>
+                  </div>
+                  <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm font-medium leading-6 text-zinc-500">Details</dt>
+                    <dd :if={!@current_user.is_forgot_pwd?} class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                      More convenience! Regain access to your account if you forget your password.
+                      The key to your data will be stored encrypted at-rest in the database.
+                    </dd>
+                    <dd :if={@current_user.is_forgot_pwd?} class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                      More privacy! Only you can access your account (provided you don't share your password with anyone 👀).
+                      The key to your data will be deleted from the database (currently being stored encrypted at-rest) and your account will be returned to its original asymmetric encryption.
+                    </dd>
+                  </div>
+                  <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm font-medium leading-6 text-zinc-500">Note</dt>
+                    <dd :if={!@current_user.is_forgot_pwd?} class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                      When enabled it's possible for an authorized authority to gain access to your data. This is rare, and unlikely to happen, so we recommend enabling this feature to prevent the chance of getting locked out of your account.
+                    </dd>
+                    <dd :if={@current_user.is_forgot_pwd?} class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                      When disabled it's impossible for an authorized authority to gain access to your data. But, if you forget your password there's no way we can get you back into your account.
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </:description_block>
+          </.input>
           <:actions>
             <.button phx-disable-with="Changing...">Change</.button>
           </:actions>

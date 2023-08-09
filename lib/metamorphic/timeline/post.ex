@@ -2,6 +2,7 @@ defmodule Metamorphic.Timeline.Post do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Metamorphic.Accounts
   alias Metamorphic.Accounts.User
   alias Metamorphic.Encrypted
   alias Metamorphic.Encrypted.Utils
@@ -47,6 +48,7 @@ defmodule Metamorphic.Timeline.Post do
     |> validate_required([:body, :username, :user_id])
     |> validate_length(:body, min: 2, max: 250)
     |> add_username_hash()
+    |> validate_visibility(opts)
     |> encrypt_attrs(opts)
   end
 
@@ -78,6 +80,25 @@ defmodule Metamorphic.Timeline.Post do
       |> put_change(:username_hash, String.downcase(get_field(changeset, :username)))
     else
       changeset
+    end
+  end
+
+  defp validate_visibility(changeset, opts) do
+    visibility = get_field(changeset, :visibility)
+
+    case visibility do
+      :public ->
+        changeset
+
+      :private ->
+        changeset
+
+      :connections ->
+        if Accounts.has_any_user_connections?(opts[:user]) do
+          changeset
+        else
+          changeset |> add_error(:body, "Woopsy, you first need to make some connections.")
+        end
     end
   end
 

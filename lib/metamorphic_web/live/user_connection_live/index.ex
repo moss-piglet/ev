@@ -29,7 +29,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   def handle_info({MetamorphicWeb.UserConnectionLive.FormComponent, {:saved, uconn}}, socket) do
     cond do
       uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
-        {:noreply, stream_insert(socket, :uconns, uconn)}
+        {:noreply, stream_insert(socket, :user_connections, uconn)}
 
       uconn.user_id == socket.assigns.current_user.id ->
         {:noreply, stream_insert(socket, :arrivals, uconn)}
@@ -43,7 +43,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   def handle_info({MetamorphicWeb.UserConnectionLive.Index, {:deleted, uconn}}, socket) do
     cond do
       uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
-        {:noreply, stream_delete(socket, :uconns, uconn)}
+        {:noreply, stream_delete(socket, :user_connections, uconn)}
 
       uconn.user_id == socket.assigns.current_user.id ->
         {:noreply, stream_delete(socket, :arrivals, uconn)}
@@ -63,7 +63,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
         {:noreply,
          socket
          |> stream_delete(:arrivals, upd_uconn)
-         |> stream_insert(:connections, upd_uconn)}
+         |> stream_insert(:user_connections, upd_uconn)}
 
       true ->
         {:noreply, socket}
@@ -74,7 +74,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   def handle_info({:uconn_deleted, uconn}, socket) do
     cond do
       uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
-        {:noreply, stream_delete(socket, :uconns, uconn)}
+        {:noreply, stream_delete(socket, :user_connections, uconn)}
 
       uconn.user_id == socket.assigns.current_user.id ->
         {:noreply, stream_delete(socket, :arrivals, uconn)}
@@ -88,7 +88,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   def handle_info({:uconn_created, uconn}, socket) do
     cond do
       uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
-        {:noreply, stream_insert(socket, :uconns, uconn, at: 0)}
+        {:noreply, stream_insert(socket, :user_connections, uconn, at: 0)}
 
       uconn.user_id == socket.assigns.current_user.id ->
         {:noreply, stream_insert(socket, :arrivals, uconn, at: 0)}
@@ -102,7 +102,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   def handle_info({:uconn_confirmed, uconn}, socket) do
     cond do
       uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
-        {:noreply, stream_insert(socket, :connections, uconn, at: 0)}
+        {:noreply, stream_insert(socket, :user_connections, uconn, at: 0)}
 
       uconn.user_id == socket.assigns.current_user.id ->
         {:noreply, stream_insert(socket, :arrivals, uconn, at: 0)}
@@ -116,13 +116,30 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   def handle_info({:uconn_email_updated, uconn}, socket) do
     cond do
       uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
-        {:noreply, stream_insert(socket, :connections, uconn, at: -1)}
+        {:noreply, stream_insert(socket, :user_connections, uconn, at: -1)}
 
       uconn.user_id == socket.assigns.current_user.id ->
         {:noreply, stream_insert(socket, :arrivals, uconn, at: -1)}
 
       true ->
         {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("delete", %{"id" => id}, socket) do
+    uconn = Accounts.get_user_connection!(id)
+
+    if uconn.user_id == socket.assigns.current_user.id do
+      case Accounts.delete_both_user_connections(uconn) do
+        {:ok, _uconns} ->
+          {:noreply, socket}
+
+        {:error, changeset} ->
+          {:noreply, put_flash(socket, :error, "#{changeset.message}")}
+      end
+    else
+      {:noreply, socket}
     end
   end
 
@@ -195,18 +212,18 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
 
   @impl true
   def handle_event("next-page-connections", _, socket) do
-    {:noreply, paginate_connections(socket, socket.assigns.page + 1)}
+    {:noreply, paginate_user_connections(socket, socket.assigns.page + 1)}
   end
 
   @impl true
   def handle_event("prev-page-connections", %{"_overran" => true}, socket) do
-    {:noreply, paginate_connections(socket, 1)}
+    {:noreply, paginate_user_connections(socket, 1)}
   end
 
   @impl true
   def handle_event("prev-page-connections", _, socket) do
     if socket.assigns.page > 1 do
-      {:noreply, paginate_connections(socket, socket.assigns.page - 1)}
+      {:noreply, paginate_user_connections(socket, socket.assigns.page - 1)}
     else
       {:noreply, socket}
     end
@@ -217,14 +234,14 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
     |> assign(:page_title, "New Connection")
     |> assign(:uconn, %UserConnection{})
     |> paginate_arrivals(1)
-    |> paginate_connections(1)
+    |> paginate_user_connections(1)
   end
 
   defp apply_action(socket, :greet, _params) do
     socket
     |> assign(:page_title, "Arrivals Greeter")
     |> paginate_arrivals(1)
-    |> paginate_connections(1)
+    |> paginate_user_connections(1)
   end
 
   defp apply_action(socket, :index, _params) do
@@ -232,39 +249,39 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
     |> assign(:page_title, "Your Connections")
     |> assign(:uconn, nil)
     |> paginate_arrivals(1)
-    |> paginate_connections(1)
+    |> paginate_user_connections(1)
   end
 
-  defp paginate_connections(socket, new_page) when new_page >= 1 do
+  defp paginate_user_connections(socket, new_page) when new_page >= 1 do
     %{per_page: per_page, page: cur_page} = socket.assigns
     user = socket.assigns.current_user
 
-    connections =
+    user_connections =
       Accounts.list_user_connections(user,
         offset: (new_page - 1) * per_page,
         limit: per_page
       )
 
-    {connections, at, limit} =
+    {user_connections, at, limit} =
       if new_page >= cur_page do
-        {connections, -1, per_page * 3 * -1}
+        {user_connections, -1, per_page * 3 * -1}
       else
-        {Enum.reverse(connections), 0, per_page * 3}
+        {Enum.reverse(user_connections), 0, per_page * 3}
       end
 
-    case connections do
+    case user_connections do
       [] ->
         socket
         |> assign(end_of_connections_timeline?: at == -1)
-        |> assign(:connections_empty?, true)
-        |> stream(:connections, [])
+        |> assign(:user_connections_empty?, true)
+        |> stream(:user_connections, [])
 
-      [_ | _] = connections ->
+      [_ | _] = user_connections ->
         socket
         |> assign(end_of_connections_timeline?: false)
-        |> assign(:connections_empty?, false)
-        |> assign(page: if(connections == [], do: cur_page, else: new_page))
-        |> stream(:connections, connections, at: at, limit: limit)
+        |> assign(:user_connections_empty?, false)
+        |> assign(page: if(user_connections == [], do: cur_page, else: new_page))
+        |> stream(:user_connections, user_connections, at: at, limit: limit)
     end
   end
 
@@ -307,11 +324,14 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
       Encrypted.Users.Utils.decrypt_user_item(uconn.request_username, user, uconn.key, key)
 
     d_label = Encrypted.Users.Utils.decrypt_user_item(uconn.label, user, uconn.key, key)
-    req_user = Accounts.get_user_by_email(d_req_email)
+    # TODO
+    # reverse_user_id is the requesting user when accepting
+    # req_user = Accounts.get_user_by_email(d_req_email)
 
     %{
       connection_id: user.connection.id,
-      user_id: req_user.id,
+      user_id: uconn.reverse_user_id,
+      reverse_user_id: user.id,
       email: d_req_email,
       username: d_req_username,
       temp_label: d_label,
