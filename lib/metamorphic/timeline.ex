@@ -34,9 +34,28 @@ defmodule Metamorphic.Timeline do
       preload: [:user_posts]
     )
     |> Repo.all()
+    |> Enum.into(list_own_connection_posts(user, opts))
     |> Enum.into(list_connection_posts(user, opts))
     |> Enum.filter(fn post -> post.__meta__ != :deleted end)
     |> Enum.uniq_by(fn post -> post end)
+  end
+
+  def list_own_connection_posts(user, opts) do
+    limit = Keyword.fetch!(opts, :limit)
+    offset = Keyword.get(opts, :offset, 0)
+
+    from(p in Post,
+      join: up in UserPost,
+      on: up.post_id == p.id,
+      join: u in User,
+      on: up.user_id == u.id,
+      where: (p.visibility == :connections and p.user_id == ^user.id),
+      offset: ^offset,
+      limit: ^limit,
+      order_by: [desc: p.inserted_at],
+      preload: [:user_posts]
+    )
+    |> Repo.all()
   end
 
   def list_connection_posts(user, opts) do
@@ -52,11 +71,9 @@ defmodule Metamorphic.Timeline do
       on: c.user_id == u.id,
       join: uc in UserConnection,
       on: uc.connection_id == c.id,
-      where: (uc.user_id == ^user.id or p.user_id == ^user.id),
-      where: (p.visibility == :connections),
+      where: (uc.user_id == ^user.id or uc.reverse_user_id == ^user.id),
       where: not is_nil(uc.confirmed_at),
-      or_where: (p.visibility == :private and p.user_id == ^user.id),
-      or_where: (uc.user_id == ^user.id and p.repost == true),
+      where: (p.visibility == :connections),
       offset: ^offset,
       limit: ^limit,
       order_by: [desc: p.inserted_at],
@@ -289,8 +306,8 @@ defmodule Metamorphic.Timeline do
       %Ecto.Changeset{data: %Post{}}
 
   """
-  def change_post(%Post{} = post, attrs \\ %{}) do
-    Post.changeset(post, attrs)
+  def change_post(%Post{} = post, attrs \\ %{}, opts \\ []) do
+    Post.changeset(post, attrs, opts)
   end
 
   def subscribe do

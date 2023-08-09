@@ -64,7 +64,7 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
 
   @impl true
   def update(%{post: post} = assigns, socket) do
-    changeset = Timeline.change_post(post)
+    changeset = Timeline.change_post(post, %{}, user: assigns.user)
 
     if :edit == Map.get(assigns, :action) do
       {:ok,
@@ -84,7 +84,7 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
   def handle_event("validate", %{"post" => post_params}, socket) do
     changeset =
       socket.assigns.post
-      |> Timeline.change_post(post_params)
+      |> Timeline.change_post(post_params, user: socket.assigns.user)
       |> Map.put(:action, :validate)
 
     {:noreply, assign_form(socket, changeset)}
