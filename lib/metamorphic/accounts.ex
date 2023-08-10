@@ -156,6 +156,13 @@ defmodule Metamorphic.Accounts do
   def get_user_connection!(id),
     do: Repo.get!(UserConnection, id) |> Repo.preload([:connection, :user])
 
+  def get_all_user_connections(id) do
+    Repo.all(
+      from uc in UserConnection,
+        where: uc.user_id == ^id or uc.reverse_user_id == ^id
+    )
+  end
+
   def get_user_connection_from_shared_post(post, current_user) do
     Repo.one(
       from uc in UserConnection,
@@ -388,7 +395,7 @@ defmodule Metamorphic.Accounts do
 
   ## Examples
 
-      iex> delete_user_account(user)
+      iex> change_user_delete_account(user)
       %Ecto.Changeset{data: %User{}}
 
   """
@@ -402,17 +409,24 @@ defmodule Metamorphic.Accounts do
       |> User.delete_account_changeset(attrs, opts)
       |> User.validate_current_password(password)
 
-      Ecto.Multi.new()
-      |> Ecto.Multi.delete(:user, changeset)
-      |> Repo.transaction()
-      |> case do
-        {:ok, %{user: user}} ->
-          {:ok, user |> Repo.preload(:connection)}
-          broadcast_connection(user.connection, :uconn_deleted)
-          {:ok, user}
+    uconns = get_all_user_connections(user.id)
 
-        {:error, :user, changeset, _} -> {:error, changeset}
-      end
+    Ecto.Multi.new()
+    |> Ecto.Multi.delete(:user, changeset)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user: user}} ->
+        uconns
+        |> broadcast_user_connections(:uconn_deleted)
+
+        uconns
+        |> broadcast_public_user_connections(:public_uconn_deleted)
+
+        {:ok, user}
+
+      {:error, :user, changeset, _} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
@@ -762,7 +776,7 @@ defmodule Metamorphic.Accounts do
       )
 
     uconns
-    |> broadcast_user_connections()
+    |> broadcast_user_connections(:uconn_deleted)
 
     {:ok, uconns}
   end
@@ -839,17 +853,21 @@ defmodule Metamorphic.Accounts do
     {:ok, uconn}
   end
 
-  defp broadcast_user_connections(uconns) when is_list(uconns) do
+  defp broadcast_public({:ok, struct}, event) do
+    Phoenix.PubSub.broadcast(Metamorphic.PubSub, "accounts", {event, struct})
+    {:ok, struct}
+  end
+
+  defp broadcast_user_connections(uconns, event) when is_list(uconns) do
     Enum.each(uconns, fn uconn ->
       {:ok, _uconn} =
         {:ok, uconn |> Repo.preload([:user, :connection])}
-        |> broadcast(:uconn_deleted)
+        |> broadcast(event)
     end)
   end
 
   defp broadcast_connection(conn, event) do
     conn = conn |> Repo.preload([:user_connections])
-    IO.inspect conn, label: "CONN IN BROADCAST CONN"
 
     Enum.each(conn.user_connections, fn uconn ->
       {:ok, _uconn} =
@@ -858,7 +876,19 @@ defmodule Metamorphic.Accounts do
     end)
   end
 
+  defp broadcast_public_user_connections(uconns, event) when is_list(uconns) do
+    Enum.each(uconns, fn uconn ->
+      {:ok, _uconn} =
+        {:ok, uconn |> Repo.preload([:user, :connection])}
+        |> broadcast_public(event)
+    end)
+  end
+
   def private_subscribe(user) do
     Phoenix.PubSub.subscribe(Metamorphic.PubSub, "accounts:#{user.id}")
+  end
+
+  def subscribe() do
+    Phoenix.PubSub.subscribe(Metamorphic.PubSub, "accounts")
   end
 end

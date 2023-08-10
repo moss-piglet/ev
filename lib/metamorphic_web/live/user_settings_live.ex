@@ -101,7 +101,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
             required
             description?={true}
           >
-          <:description_block>
+            <:description_block>
               <div class="space-y-4">
                 <dl class="divide-y divide-gray-100">
                   <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
@@ -149,7 +149,11 @@ defmodule MetamorphicWeb.UserSettingsLive do
           <.input
             field={@forgot_password_form[:is_forgot_pwd?]}
             type="checkbox"
-            label={if @current_user.is_forgot_pwd?, do: "Disable forgot password?", else: "Enable forgot password?"}
+            label={
+              if @current_user.is_forgot_pwd?,
+                do: "Disable forgot password?",
+                else: "Enable forgot password?"
+            }
             description?={true}
           >
             <:description_block>
@@ -157,30 +161,48 @@ defmodule MetamorphicWeb.UserSettingsLive do
                 <dl class="divide-y divide-gray-100">
                   <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                     <dt class="text-sm font-medium leading-6 text-zinc-500">Action</dt>
-                    <dd :if={!@current_user.is_forgot_pwd?} class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                    <dd
+                      :if={!@current_user.is_forgot_pwd?}
+                      class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0"
+                    >
                       Enable the forgot password feature.
                     </dd>
-                    <dd :if={@current_user.is_forgot_pwd?} class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                    <dd
+                      :if={@current_user.is_forgot_pwd?}
+                      class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0"
+                    >
                       Disable the forgot password feature.
                     </dd>
                   </div>
                   <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                     <dt class="text-sm font-medium leading-6 text-zinc-500">Details</dt>
-                    <dd :if={!@current_user.is_forgot_pwd?} class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                    <dd
+                      :if={!@current_user.is_forgot_pwd?}
+                      class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0"
+                    >
                       More convenience! Regain access to your account if you forget your password.
                       The key to your data will be stored encrypted at-rest in the database.
                     </dd>
-                    <dd :if={@current_user.is_forgot_pwd?} class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                    <dd
+                      :if={@current_user.is_forgot_pwd?}
+                      class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0"
+                    >
                       More privacy! Only you can access your account (provided you don't share your password with anyone 👀).
                       The key to your data will be deleted from the database (currently being stored encrypted at-rest) and your account will be returned to its original asymmetric encryption.
                     </dd>
                   </div>
                   <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
                     <dt class="text-sm font-medium leading-6 text-zinc-500">Note</dt>
-                    <dd :if={!@current_user.is_forgot_pwd?} class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                    <dd
+                      :if={!@current_user.is_forgot_pwd?}
+                      class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0"
+                    >
                       When enabled it's possible for an authorized authority to gain access to your data. This is rare, and unlikely to happen, so we recommend enabling this feature to prevent the chance of getting locked out of your account.
                     </dd>
-                    <dd :if={@current_user.is_forgot_pwd?} class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+                    <dd
+                      :if={@current_user.is_forgot_pwd?}
+                      class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0"
+                    >
                       When disabled it's impossible for an authorized authority to gain access to your data. But, if you forget your password there's no way we can get you back into your account.
                     </dd>
                   </div>
@@ -195,21 +217,24 @@ defmodule MetamorphicWeb.UserSettingsLive do
       </div>
 
       <div>
-        <.simple_form for={@delete_account_form} id="delete_account_form" phx-submit="delete_account" apply_classes?={true} class={"rounded-md my-12 p-10 bg-brand-50"}>
+        <.simple_form
+          for={@delete_account_form}
+          id="delete_account_form"
+          phx-submit="delete_account"
+          apply_classes?={true}
+          class="rounded-md my-12 p-10 bg-brand-50"
+        >
           <div class="mx-auto pb-6">
             <span class="inline-flex">
               <.icon name="hero-exclamation-triangle" class="text-brand-700 h-6 w-6" />
               <h2 class="ml-2 text-lg font-semibold leading-6 text-brand-700">Delete your account</h2>
             </span>
-            <p class="mt-1 text-sm text-zinc-500">Enter your current password below to delete your account and its data. This cannot be undone.</p>
+            <p class="mt-1 text-sm text-zinc-500">
+              Enter your current password below to delete your account and its data. All of your posts (private, connections, and public) and connections will be deleted in real-time. This cannot be undone.
+            </p>
           </div>
 
-          <.input
-            field={@delete_account_form[:id]}
-            type="hidden"
-            value={@current_user.id}
-            required
-          />
+          <.input field={@delete_account_form[:id]} type="hidden" value={@current_user.id} required />
           <.input
             field={@delete_account_form[:current_password]}
             name="current_password"
@@ -503,7 +528,11 @@ defmodule MetamorphicWeb.UserSettingsLive do
       |> Map.put(:action, :validate)
       |> to_form()
 
-    {:noreply, assign(socket, delete_account_form: delete_account_form, delete_account_form_current_password: password)}
+    {:noreply,
+     assign(socket,
+       delete_account_form: delete_account_form,
+       delete_account_form_current_password: password
+     )}
   end
 
   def handle_event("delete_account", params, socket) do

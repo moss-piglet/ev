@@ -72,7 +72,6 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
 
   @impl true
   def handle_info({:uconn_deleted, uconn}, socket) do
-    IO.inspect uconn, label: "UCONN"
     cond do
       uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
         {:noreply, stream_delete(socket, :user_connections, uconn)}

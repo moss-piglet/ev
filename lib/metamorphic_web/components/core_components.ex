@@ -331,6 +331,7 @@ defmodule MetamorphicWeb.CoreComponents do
   attr :rest, :global,
     include: ~w(autocomplete name rel action enctype method novalidate target multipart),
     doc: "the arbitrary HTML attributes to apply to the form tag"
+
   attr :class, :string, doc: "the optional css classes to style the form's div"
   attr :apply_classes?, :boolean, default: false
 

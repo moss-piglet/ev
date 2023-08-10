@@ -1,6 +1,7 @@
 defmodule MetamorphicWeb.PostLive.Public do
   use MetamorphicWeb, :live_view
 
+  alias Metamorphic.Accounts
   alias Metamorphic.Timeline
   alias Metamorphic.Timeline.Post
 
@@ -8,7 +9,10 @@ defmodule MetamorphicWeb.PostLive.Public do
 
   @impl true
   def mount(_params, _session, socket) do
-    if connected?(socket), do: Timeline.subscribe()
+    if connected?(socket) do
+      Accounts.subscribe()
+      Timeline.subscribe()
+    end
 
     {:ok,
      socket
@@ -62,6 +66,11 @@ defmodule MetamorphicWeb.PostLive.Public do
   @impl true
   def handle_info({:post_deleted, post}, socket) do
     {:noreply, stream_delete(socket, :posts, post)}
+  end
+
+  @impl true
+  def handle_info({:public_uconn_deleted, uconn}, socket) do
+    {:noreply, paginate_posts(socket, socket.assigns.page, true)}
   end
 
   @impl true
@@ -169,7 +178,7 @@ defmodule MetamorphicWeb.PostLive.Public do
     end
   end
 
-  defp paginate_posts(socket, new_page) when new_page >= 1 do
+  defp paginate_posts(socket, new_page, reset \\ false) when new_page >= 1 do
     %{per_page: per_page, page: cur_page} = socket.assigns
     posts = Timeline.list_public_posts(offset: (new_page - 1) * per_page, limit: per_page)
 
@@ -190,7 +199,7 @@ defmodule MetamorphicWeb.PostLive.Public do
         socket
         |> assign(end_of_timeline?: false)
         |> assign(page: if(posts == [], do: cur_page, else: new_page))
-        |> stream(:posts, posts, at: at, limit: limit)
+        |> stream(:posts, posts, at: at, limit: limit, reset: reset)
     end
   end
 end
