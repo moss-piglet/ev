@@ -415,6 +415,14 @@ defmodule Metamorphic.Accounts.User do
   end
 
   @doc """
+  A user changeset for deleting the user account.
+  """
+  def delete_account_changeset(user, attrs, _opts \\ []) do
+    user
+    |> cast(attrs, [])
+  end
+
+  @doc """
   A user changeset for changing the username.
 
   It requires the username to change otherwise an error is added.

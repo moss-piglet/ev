@@ -24,19 +24,20 @@ defmodule Metamorphic.Timeline do
     limit = Keyword.fetch!(opts, :limit)
     offset = Keyword.get(opts, :offset, 0)
 
-    post_list = from(p in Post,
-      join: up in UserPost,
-      on: up.post_id == p.id,
-      where: (p.visibility == :private and p.user_id == ^user.id),
-      offset: ^offset,
-      limit: ^limit,
-      order_by: [desc: p.inserted_at],
-      preload: [:user_posts]
-    )
-    |> Repo.all()
+    post_list =
+      from(p in Post,
+        join: up in UserPost,
+        on: up.post_id == p.id,
+        where: p.visibility == :private and p.user_id == ^user.id,
+        offset: ^offset,
+        limit: ^limit,
+        order_by: [desc: p.inserted_at],
+        preload: [:user_posts]
+      )
+      |> Repo.all()
 
     posts =
-      post_list ++ list_own_connection_posts(user, opts) ++ list_connection_posts(user, opts)
+      (post_list ++ list_own_connection_posts(user, opts) ++ list_connection_posts(user, opts))
       |> Enum.filter(fn post -> post.__meta__ != :deleted end)
       |> Enum.uniq_by(fn post -> post end)
       |> Enum.sort_by(fn p -> p.inserted_at end, :desc)
@@ -53,7 +54,7 @@ defmodule Metamorphic.Timeline do
       on: up.post_id == p.id,
       join: u in User,
       on: up.user_id == u.id,
-      where: (p.visibility == :connections and p.user_id == ^user.id),
+      where: p.visibility == :connections and p.user_id == ^user.id,
       offset: ^offset,
       limit: ^limit,
       order_by: [desc: p.inserted_at],
@@ -75,9 +76,9 @@ defmodule Metamorphic.Timeline do
       on: c.user_id == u.id,
       join: uc in UserConnection,
       on: uc.connection_id == c.id,
-      where: (uc.user_id == ^user.id or uc.reverse_user_id == ^user.id),
+      where: uc.user_id == ^user.id or uc.reverse_user_id == ^user.id,
       where: not is_nil(uc.confirmed_at),
-      where: (p.visibility == :connections),
+      where: p.visibility == :connections,
       offset: ^offset,
       limit: ^limit,
       order_by: [desc: p.inserted_at],
@@ -143,10 +144,11 @@ defmodule Metamorphic.Timeline do
   def get_post!(id), do: Repo.get!(Post, id) |> Repo.preload([:user_posts])
 
   def get_all_shared_posts(user_id) do
-    Repo.all(from p in Post,
-      where: p.user_id == ^user_id,
-      where: p.visibility == :connections,
-      preload: [:user_posts]
+    Repo.all(
+      from p in Post,
+        where: p.user_id == ^user_id,
+        where: p.visibility == :connections,
+        preload: [:user_posts]
     )
   end
 
@@ -361,7 +363,12 @@ defmodule Metamorphic.Timeline do
   defp connections_broadcast({:ok, conn, post}, event) do
     Enum.each(conn.user_connections, fn uconn ->
       Phoenix.PubSub.broadcast(Metamorphic.PubSub, "conn_posts:#{uconn.user_id}", {event, post})
-      Phoenix.PubSub.broadcast(Metamorphic.PubSub, "conn_posts:#{uconn.reverse_user_id}", {event, post})
+
+      Phoenix.PubSub.broadcast(
+        Metamorphic.PubSub,
+        "conn_posts:#{uconn.reverse_user_id}",
+        {event, post}
+      )
     end)
 
     {:ok, post}

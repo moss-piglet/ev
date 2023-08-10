@@ -35,7 +35,6 @@ defmodule Metamorphic.Encrypted.Users.Utils do
     end
   end
 
-
   @doc """
   Decrypts a user item, where item is a
   struct (e.g. %Post{}, %Userconnection).
@@ -193,7 +192,8 @@ defmodule Metamorphic.Encrypted.Users.Utils do
       {:error, message} ->
         {:error_payload, message}
 
-      rest -> rest
+      rest ->
+        rest
     end
   end
 

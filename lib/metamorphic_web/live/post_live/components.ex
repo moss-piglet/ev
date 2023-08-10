@@ -85,18 +85,25 @@ defmodule MetamorphicWeb.PostLive.Components do
         </p>
         <p class="flex-none text-xs text-gray-600">
           <time datetime={@post.inserted_at}>
-          <span :if={get_shared_post_identity_atom(@post, @current_user) == :self} class="inline-flex items-center align-middle rounded-full">
-            <svg class="h-1.5 w-1.5 fill-green-500" viewBox="0 0 6 6" aria-hidden="true">
-              <circle cx="3" cy="3" r="3" />
-            </svg>
-
-          </span>
-          <span :if={get_shared_post_identity_atom(@post, @current_user) == :connection} class="inline-flex items-center rounded-full group group-hover:bg-purple-100 group-hover:px-2 group-hover:py-1 group-hover:text-xs group-hover:font-medium group-hover:text-purple-700 group-hover:space-x-1">
-            <svg class="h-1.5 w-1.5 fill-purple-500" viewBox="0 0 6 6" aria-hidden="true">
-              <circle cx="3" cy="3" r="3" />
-            </svg>
-            <span class="hidden group-hover:flex"><%= get_shared_post_label(@post, @current_user, @key) %></span>
-          </span>
+            <span
+              :if={get_shared_post_identity_atom(@post, @current_user) == :self}
+              class="inline-flex items-center align-middle rounded-full"
+            >
+              <svg class="h-1.5 w-1.5 fill-green-500" viewBox="0 0 6 6" aria-hidden="true">
+                <circle cx="3" cy="3" r="3" />
+              </svg>
+            </span>
+            <span
+              :if={get_shared_post_identity_atom(@post, @current_user) == :connection}
+              class="inline-flex items-center rounded-full group group-hover:bg-purple-100 group-hover:px-2 group-hover:py-1 group-hover:text-xs group-hover:font-medium group-hover:text-purple-700 group-hover:space-x-1"
+            >
+              <svg class="h-1.5 w-1.5 fill-purple-500" viewBox="0 0 6 6" aria-hidden="true">
+                <circle cx="3" cy="3" r="3" />
+              </svg>
+              <span class="hidden group-hover:flex">
+                <%= get_shared_post_label(@post, @current_user, @key) %>
+              </span>
+            </span>
             <%= time_ago(@post.inserted_at) %>
           </time>
         </p>

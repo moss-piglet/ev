@@ -230,6 +230,7 @@ defmodule Metamorphic.Accounts.UserConnection do
             recipient,
             decrypt_requesting_data(changeset, opts)
           )
+
         changeset
 
       opts[:user] && opts[:key] ->
@@ -239,6 +240,7 @@ defmodule Metamorphic.Accounts.UserConnection do
             recipient,
             decrypt_requesting_data(changeset, opts)
           )
+
         changeset
 
       true ->

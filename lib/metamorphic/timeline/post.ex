@@ -158,13 +158,21 @@ defmodule Metamorphic.Timeline.Post do
           Encrypted.Users.Utils.decrypt_public_post_key(opts[:post_key])
 
         _rest ->
-          {:ok, d_post_key} = Encrypted.Users.Utils.decrypt_user_attrs_key(opts[:post_key], opts[:user], opts[:key])
+          {:ok, d_post_key} =
+            Encrypted.Users.Utils.decrypt_user_attrs_key(opts[:post_key], opts[:user], opts[:key])
+
           d_post_key
       end
     else
       case visibility do
         :connections ->
-          {:ok, d_post_key} = Encrypted.Users.Utils.decrypt_user_attrs_key(opts[:user].conn_key, opts[:user], opts[:key])
+          {:ok, d_post_key} =
+            Encrypted.Users.Utils.decrypt_user_attrs_key(
+              opts[:user].conn_key,
+              opts[:user],
+              opts[:key]
+            )
+
           d_post_key
 
         _rest ->

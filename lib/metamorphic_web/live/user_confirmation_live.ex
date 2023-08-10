@@ -32,13 +32,15 @@ defmodule MetamorphicWeb.UserConfirmationLive do
 
   # Do not log in the user after confirmation to avoid a
   # leaked token giving the user access to the account.
+  #
+  # Not currently being used.
   def handle_event("confirm_account", %{"user" => %{"token" => token}}, socket) do
     case Accounts.confirm_user(token) do
       {:ok, _} ->
         {:noreply,
          socket
-         |> put_flash(:info, "User confirmed successfully.")
-         |> redirect(to: ~p"/")}
+         |> put_flash(:info, "Account confirmed successfully.")
+         |> redirect(to: ~p"/users/dash")}
 
       :error ->
         # If there is a current user and the account was already confirmed,

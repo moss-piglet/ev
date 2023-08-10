@@ -3,7 +3,8 @@ defmodule Metamorphic.Repo.Local.Migrations.AddRequestUserIdToUserConnections do
 
   def change do
     alter table(:user_connections) do
-      add :reverse_user_id, references(:users, type: :binary_id, on_delete: :delete_all), null: false
+      add :reverse_user_id, references(:users, type: :binary_id, on_delete: :delete_all),
+        null: false
     end
 
     create unique_index(:user_connections, [:user_id, :reverse_user_id])

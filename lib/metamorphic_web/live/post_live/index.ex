@@ -107,6 +107,7 @@ defmodule MetamorphicWeb.PostLive.Index do
   @impl true
   def handle_info({:uconn_deleted, uconn}, socket) do
     user = socket.assigns.current_user
+
     cond do
       uconn.user_id == user.id || uconn.reverse_user_id == user.id ->
         {:noreply, paginate_posts(socket, socket.assigns.page, true)}
@@ -119,6 +120,7 @@ defmodule MetamorphicWeb.PostLive.Index do
   @impl true
   def handle_info({:uconn_confirmed, uconn}, socket) do
     user = socket.assigns.current_user
+
     cond do
       uconn.user_id == user.id || uconn.reverse_user_id == user.id ->
         {:noreply, paginate_posts(socket, socket.assigns.page, true)}
@@ -163,7 +165,7 @@ defmodule MetamorphicWeb.PostLive.Index do
     user = socket.assigns.current_user
 
     if post.user_id == user.id do
-      {:ok, post} = Timeline.delete_post(post, [user: user])
+      {:ok, post} = Timeline.delete_post(post, user: user)
       notify_self({:deleted, post})
 
       socket = put_flash(socket, :info, "Post deleted successfully.")
@@ -179,7 +181,11 @@ defmodule MetamorphicWeb.PostLive.Index do
 
     if user.id not in post.favs_list do
       {:ok, post} = Timeline.inc_favs(post)
-      Timeline.update_post_fav(post, %{favs_list: List.insert_at(post.favs_list, 0, user.id)}, user: user)
+
+      Timeline.update_post_fav(post, %{favs_list: List.insert_at(post.favs_list, 0, user.id)},
+        user: user
+      )
+
       {:noreply, socket}
     else
       {:noreply, socket}
@@ -192,7 +198,11 @@ defmodule MetamorphicWeb.PostLive.Index do
 
     if user.id in post.favs_list do
       {:ok, post} = Timeline.decr_favs(post)
-      Timeline.update_post_fav(post, %{favs_list: List.delete(post.favs_list, user.id)}, user: user)
+
+      Timeline.update_post_fav(post, %{favs_list: List.delete(post.favs_list, user.id)},
+        user: user
+      )
+
       {:noreply, socket}
     else
       {:noreply, socket}
@@ -208,9 +218,13 @@ defmodule MetamorphicWeb.PostLive.Index do
       {:ok, post} = Timeline.inc_reposts(post)
 
       {:ok, post} =
-        Timeline.update_post_repost(post, %{
-          reposts_list: List.insert_at(post.reposts_list, 0, user.id)
-        }, user: user)
+        Timeline.update_post_repost(
+          post,
+          %{
+            reposts_list: List.insert_at(post.reposts_list, 0, user.id)
+          },
+          user: user
+        )
 
       repost_params = %{
         body: body,

@@ -60,7 +60,11 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
         />
       </li>
     </ul>
-    <div :if={@end_of_arrivals_timeline?} id="end-of-arrivals" class="mt-5 text-[42px] text-center font-thin">
+    <div
+      :if={@end_of_arrivals_timeline?}
+      id="end-of-arrivals"
+      class="mt-5 text-[42px] text-center font-thin"
+    >
       😌 You greeted everyone 😌
     </div>
     """
@@ -188,36 +192,40 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
     ~H"""
     <div class="relative">
       <.dropdown id={"dropdown-" <> @uconn.id} svg_arrows={false} connection?={true}>
-          <:connection_block>
-            <div class="flex flex-1 flex-col p-8">
-              <img class="mx-auto h-32 w-32 flex-shrink-0 rounded-full" src={~p"/images/logo.svg"} alt="" />
-              <h3 class="mt-6 text-sm font-medium text-gray-900">
-                <%= decr_uconn(@uconn.connection.username, @current_user, @uconn.key, @key) %>
-              </h3>
-              <dl class="mt-1 flex flex-grow flex-col justify-between">
-                <dt class="sr-only">Email</dt>
-                <dd class="text-sm text-gray-500">
-                  <%= decr_uconn(@uconn.connection.email, @current_user, @uconn.key, @key) %>
-                </dd>
-                <dt class="sr-only">Label</dt>
-                <dd class="mt-3">
-                  <span class="inline-flex items-center rounded-full bg-brand-50 px-2 py-1 text-xs font-medium text-brand-700 ring-1 ring-inset ring-brand-600/20">
-                    <%= decr_uconn(@uconn.label, @current_user, @uconn.key, @key) %>
-                  </span>
-                </dd>
-              </dl>
-            </div>
-          </:connection_block>
+        <:connection_block>
+          <div class="flex flex-1 flex-col p-8">
+            <img
+              class="mx-auto h-32 w-32 flex-shrink-0 rounded-full"
+              src={~p"/images/logo.svg"}
+              alt=""
+            />
+            <h3 class="mt-6 text-sm font-medium text-gray-900">
+              <%= decr_uconn(@uconn.connection.username, @current_user, @uconn.key, @key) %>
+            </h3>
+            <dl class="mt-1 flex flex-grow flex-col justify-between">
+              <dt class="sr-only">Email</dt>
+              <dd class="text-sm text-gray-500">
+                <%= decr_uconn(@uconn.connection.email, @current_user, @uconn.key, @key) %>
+              </dd>
+              <dt class="sr-only">Label</dt>
+              <dd class="mt-3">
+                <span class="inline-flex items-center rounded-full bg-brand-50 px-2 py-1 text-xs font-medium text-brand-700 ring-1 ring-inset ring-brand-600/20">
+                  <%= decr_uconn(@uconn.label, @current_user, @uconn.key, @key) %>
+                </span>
+              </dd>
+            </dl>
+          </div>
+        </:connection_block>
 
-          <:link
-            :if={@current_user && @uconn.user_id == @current_user.id}
-            phx_click={JS.push("delete", value: %{id: @uconn.id})}
-            data_confirm="Are you sure you wish to decline this user connection?"
-          >
-            Delete
-          </:link>
-        </.dropdown>
-      </div>
+        <:link
+          :if={@current_user && @uconn.user_id == @current_user.id}
+          phx_click={JS.push("delete", value: %{id: @uconn.id})}
+          data_confirm="Are you sure you wish to decline this user connection?"
+        >
+          Delete
+        </:link>
+      </.dropdown>
+    </div>
     """
   end
 end

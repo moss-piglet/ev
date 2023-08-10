@@ -193,6 +193,37 @@ defmodule MetamorphicWeb.UserSettingsLive do
           </:actions>
         </.simple_form>
       </div>
+
+      <div>
+        <.simple_form for={@delete_account_form} id="delete_account_form" phx-submit="delete_account" apply_classes?={true} class={"rounded-md my-12 p-10 bg-brand-50"}>
+          <div class="mx-auto pb-6">
+            <span class="inline-flex">
+              <.icon name="hero-exclamation-triangle" class="text-brand-700 h-6 w-6" />
+              <h2 class="ml-2 text-lg font-semibold leading-6 text-brand-700">Delete your account</h2>
+            </span>
+            <p class="mt-1 text-sm text-zinc-500">Enter your current password below to delete your account and its data. This cannot be undone.</p>
+          </div>
+
+          <.input
+            field={@delete_account_form[:id]}
+            type="hidden"
+            value={@current_user.id}
+            required
+          />
+          <.input
+            field={@delete_account_form[:current_password]}
+            name="current_password"
+            type="password"
+            label="Current password"
+            id="current_password_for_delete_account"
+            value={@current_password}
+            required
+          />
+          <:actions>
+            <.button phx-disable-with="Deleting...">Delete Account</.button>
+          </:actions>
+        </.simple_form>
+      </div>
     </div>
     """
   end
@@ -220,6 +251,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
     username_changeset = Accounts.change_user_username(user)
     visibility_changeset = Accounts.change_user_visibility(user)
     forgot_password_changeset = Accounts.change_user_forgot_password(user)
+    delete_account_changeset = Accounts.change_user_delete_account(user)
 
     socket =
       socket
@@ -232,6 +264,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
       |> assign(:username_form, to_form(username_changeset))
       |> assign(:visibility_form, to_form(visibility_changeset))
       |> assign(:forgot_password_form, to_form(forgot_password_changeset))
+      |> assign(:delete_account_form, to_form(delete_account_changeset))
       |> assign(:trigger_submit, false)
 
     {:ok, socket}
@@ -458,6 +491,36 @@ defmodule MetamorphicWeb.UserSettingsLive do
        socket
        |> put_flash(:error, info)
        |> redirect(to: ~p"/users/settings")}
+    end
+  end
+
+  def handle_event("validate_delete_account", params, socket) do
+    %{"current_password" => password, "user" => user_params} = params
+
+    delete_account_form =
+      socket.assigns.current_user
+      |> Accounts.change_user_delete_account(user_params)
+      |> Map.put(:action, :validate)
+      |> to_form()
+
+    {:noreply, assign(socket, delete_account_form: delete_account_form, delete_account_form_current_password: password)}
+  end
+
+  def handle_event("delete_account", params, socket) do
+    %{"current_password" => password, "user" => user_params} = params
+    user = socket.assigns.current_user
+
+    case Accounts.delete_user_account(user, password, user_params) do
+      {:ok, _user} ->
+        socket =
+          socket
+          |> put_flash(:info, "Account deleted successfully.")
+          |> redirect(to: ~p"/")
+
+        {:noreply, socket}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, delete_account_form: to_form(changeset))}
     end
   end
 end

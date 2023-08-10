@@ -103,7 +103,8 @@ defmodule MetamorphicWeb.Helpers do
       post.visibility == :connections && post.user_id == user.id ->
         :self
 
-      post.visibility == :connections && post.user_id != user.id && user_in_post_connections(post, user) ->
+      post.visibility == :connections && post.user_id != user.id &&
+          user_in_post_connections(post, user) ->
         :connection
 
       true ->
@@ -146,6 +147,6 @@ defmodule MetamorphicWeb.Helpers do
 
       true ->
         false
-      end
+    end
   end
 end

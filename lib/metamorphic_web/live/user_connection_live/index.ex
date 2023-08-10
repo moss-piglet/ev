@@ -72,11 +72,18 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
 
   @impl true
   def handle_info({:uconn_deleted, uconn}, socket) do
+    IO.inspect uconn, label: "UCONN"
     cond do
       uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
         {:noreply, stream_delete(socket, :user_connections, uconn)}
 
+      uconn.reverse_user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
+        {:noreply, stream_delete(socket, :user_connections, uconn)}
+
       uconn.user_id == socket.assigns.current_user.id ->
+        {:noreply, stream_delete(socket, :arrivals, uconn)}
+
+      uconn.reverse_user_id == socket.assigns.current_user.id ->
         {:noreply, stream_delete(socket, :arrivals, uconn)}
 
       true ->
@@ -127,6 +134,20 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   end
 
   @impl true
+  def handle_info({:uconn_username_updated, uconn}, socket) do
+    cond do
+      uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
+        {:noreply, stream_insert(socket, :user_connections, uconn, at: -1)}
+
+      uconn.user_id == socket.assigns.current_user.id ->
+        {:noreply, stream_insert(socket, :arrivals, uconn, at: -1)}
+
+      true ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     uconn = Accounts.get_user_connection!(id)
 
@@ -152,7 +173,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
       key = socket.assigns.key
       attrs = build_accepting_uconn_attrs(uconn, user, key)
 
-      case Accounts.confirm_user_connection(uconn, attrs, [user: user, key: key, confirm: true]) do
+      case Accounts.confirm_user_connection(uconn, attrs, user: user, key: key, confirm: true) do
         {:ok, upd_uconn, _ins_uconn} ->
           notify_self({:uconn_confirmed, upd_uconn})
 

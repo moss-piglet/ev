@@ -41,11 +41,12 @@ defmodule Metamorphic.Accounts do
   don't want people to send themselves requests.
   """
   def get_user_by_username(user, username) when is_binary(username) do
-    new_user = from(u in User,
-      where: u.id != ^user.id,
-      where: (u.visibility == :public or u.visibility == :connections)
-    )
-    |> Repo.get_by(username_hash: username)
+    new_user =
+      from(u in User,
+        where: u.id != ^user.id,
+        where: u.visibility == :public or u.visibility == :connections
+      )
+      |> Repo.get_by(username_hash: username)
 
     cond do
       not is_nil(new_user) && !has_user_connection?(new_user, user) ->
@@ -64,11 +65,12 @@ defmodule Metamorphic.Accounts do
   don't want people to send themselves requests.
   """
   def get_user_by_email(user, email) when is_binary(email) do
-    new_user = from(u in User,
-      where: u.id != ^user.id,
-      where: (u.visibility == :public or u.visibility == :connections)
-    )
-    |> Repo.get_by(email_hash: email)
+    new_user =
+      from(u in User,
+        where: u.id != ^user.id,
+        where: u.visibility == :public or u.visibility == :connections
+      )
+      |> Repo.get_by(email_hash: email)
 
     cond do
       not is_nil(new_user) && !has_user_connection?(new_user, user) ->
@@ -155,26 +157,32 @@ defmodule Metamorphic.Accounts do
     do: Repo.get!(UserConnection, id) |> Repo.preload([:connection, :user])
 
   def get_user_connection_from_shared_post(post, current_user) do
-    Repo.one from uc in UserConnection,
-      join: c in Connection,
-      on: c.user_id == ^post.user_id,
-      where: uc.user_id == ^current_user.id,
-      where: uc.connection_id == c.id
+    Repo.one(
+      from uc in UserConnection,
+        join: c in Connection,
+        on: c.user_id == ^post.user_id,
+        where: uc.user_id == ^current_user.id,
+        where: uc.connection_id == c.id
+    )
   end
 
   def get_all_user_connections_from_shared_post(post, current_user) do
-    Repo.all from uc in UserConnection,
-      join: c in Connection,
-      on: c.user_id == ^post.user_id,
-      where: uc.user_id == ^current_user.id
+    Repo.all(
+      from uc in UserConnection,
+        join: c in Connection,
+        on: c.user_id == ^post.user_id,
+        where: uc.user_id == ^current_user.id
+    )
   end
 
   def get_connection_from_post(post, _current_user) do
-    Repo.one from c in Connection,
-      join: u in User,
-      on: u.id == c.user_id,
-      where: c.user_id == ^post.user_id,
-      preload: [:user_connections]
+    Repo.one(
+      from c in Connection,
+        join: u in User,
+        on: u.id == c.user_id,
+        where: c.user_id == ^post.user_id,
+        preload: [:user_connections]
+    )
   end
 
   @doc """
@@ -351,7 +359,7 @@ defmodule Metamorphic.Accounts do
       end)
       |> Repo.transaction()
 
-    broadcast_connection(conn)
+    broadcast_connection(conn, :uconn_username_updated)
 
     {:ok, user}
   end
@@ -373,6 +381,38 @@ defmodule Metamorphic.Accounts do
   """
   def change_user_email(user, attrs \\ %{}) do
     User.email_changeset(user, attrs, validate_email: false)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for deleting the user account.
+
+  ## Examples
+
+      iex> delete_user_account(user)
+      %Ecto.Changeset{data: %User{}}
+
+  """
+  def change_user_delete_account(user, attrs \\ %{}) do
+    User.delete_account_changeset(user, attrs, delete_account: false)
+  end
+
+  def delete_user_account(user, password, attrs \\ %{}, opts \\ []) do
+    changeset =
+      user
+      |> User.delete_account_changeset(attrs, opts)
+      |> User.validate_current_password(password)
+
+      Ecto.Multi.new()
+      |> Ecto.Multi.delete(:user, changeset)
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{user: user}} ->
+          {:ok, user |> Repo.preload(:connection)}
+          broadcast_connection(user.connection, :uconn_deleted)
+          {:ok, user}
+
+        {:error, :user, changeset, _} -> {:error, changeset}
+      end
   end
 
   @doc """
@@ -408,7 +448,7 @@ defmodule Metamorphic.Accounts do
          %UserToken{sent_to: email} <- Repo.one(query),
          {:ok, %{user: _user, tokens: _tokens, connection: conn}} <-
            Repo.transaction(user_email_multi(user, email, context, key)) do
-      broadcast_connection(conn)
+      broadcast_connection(conn, :uconn_email_updated)
       :ok
     else
       _rest -> :error
@@ -712,13 +752,14 @@ defmodule Metamorphic.Accounts do
   end
 
   def delete_both_user_connections(%UserConnection{} = uconn) do
-    {_count, uconns} = Repo.delete_all (
-      from uc in UserConnection,
-        where: uc.id == ^uconn.id,
-        or_where: (uc.reverse_user_id == ^uconn.user_id and uc.user_id == ^uconn.reverse_user_id),
-        or_where: (uc.user_id == ^uconn.reverse_user_id and uc.reverse_user_id == ^uconn.user_id),
-        select: uc
-    )
+    {_count, uconns} =
+      Repo.delete_all(
+        from uc in UserConnection,
+          where: uc.id == ^uconn.id,
+          or_where: uc.reverse_user_id == ^uconn.user_id and uc.user_id == ^uconn.reverse_user_id,
+          or_where: uc.user_id == ^uconn.reverse_user_id and uc.reverse_user_id == ^uconn.user_id,
+          select: uc
+      )
 
     uconns
     |> broadcast_user_connections()
@@ -800,23 +841,20 @@ defmodule Metamorphic.Accounts do
 
   defp broadcast_user_connections(uconns) when is_list(uconns) do
     Enum.each(uconns, fn uconn ->
-      uconn |> Repo.preload([:user, :connection])
-
       {:ok, _uconn} =
         {:ok, uconn |> Repo.preload([:user, :connection])}
         |> broadcast(:uconn_deleted)
     end)
   end
 
-  defp broadcast_connection(conn) do
+  defp broadcast_connection(conn, event) do
     conn = conn |> Repo.preload([:user_connections])
+    IO.inspect conn, label: "CONN IN BROADCAST CONN"
 
     Enum.each(conn.user_connections, fn uconn ->
-      uconn |> Repo.preload([:user, :connection])
-
       {:ok, _uconn} =
         {:ok, uconn |> Repo.preload([:user, :connection])}
-        |> broadcast(:uconn_email_updated)
+        |> broadcast(event)
     end)
   end
 
