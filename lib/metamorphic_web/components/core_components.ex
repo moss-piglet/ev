@@ -761,6 +761,39 @@ defmodule MetamorphicWeb.CoreComponents do
     """
   end
 
+  attr(:src, :string, default: nil, doc: "hosted avatar URL")
+  attr(:alt, :string, default: nil, doc: "avatar alt text")
+  attr(:size, :string, default: "h-12 w-12", doc: "the height and width sizes")
+  attr(:text_size, :string, default: "md", doc: "the text size for initials, defaults to lg")
+  attr(:class, :string, default: "", doc: "CSS class")
+  attr(:name, :string, default: nil, doc: "name for placeholder initials")
+  attr(:user, :any, default: nil, doc: "the current user struct")
+  attr(:key, :string, default: nil, doc: "the current user session key")
+
+  attr(:rest, :global)
+
+  def avatar(assigns) do
+    ~H"""
+    <%= if src_blank?(@src) && (!@name || @name == "") do %>
+      <span class={"inline-flex #{@size} items-center justify-center overflow-hidden rounded-full bg-zinc-100"}>
+        <svg class="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      </span>
+    <% else %>
+      <%= if src_blank?(@src) && @name do %>
+        <span class={"inline-flex #{@size} items-center justify-center rounded-full bg-zinc-100"}>
+          <span class={"text-#{@text_size} font-thin leading-none"}>
+            <%= generate_initials(@name) %>
+          </span>
+        </span>
+      <% else %>
+      <img class={"inline-block #{@size} rounded-full bg-zinc-100"} src={@src} alt={@alt}>
+      <% end %>
+    <% end %>
+    """
+  end
+
   @doc """
   Renders a [Heroicon](https://heroicons.com).
 
@@ -861,5 +894,31 @@ defmodule MetamorphicWeb.CoreComponents do
   """
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
+  end
+
+  defp src_blank?(src) do
+    !src || src == ""
+  end
+
+  defp generate_initials(name) when is_binary(name) do
+    word_array = String.split(name)
+
+    if length(word_array) == 1 do
+      List.first(word_array)
+      |> String.slice(0..1)
+      |> String.downcase()
+    else
+      if Enum.empty?(word_array) do
+        ""
+      else
+        initial1 = String.first(List.first(word_array))
+        initial2 = String.first(List.last(word_array))
+        String.downcase(initial1 <> initial2)
+      end
+    end
+  end
+
+  defp generate_initials(_) do
+    ""
   end
 end

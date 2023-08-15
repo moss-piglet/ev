@@ -25,12 +25,18 @@ defmodule Metamorphic.Encrypted.Utils do
   end
 
   @spec decrypt(%{key: binary, payload: binary}) :: {:error, :failed_verification} | {:ok, binary}
-  def decrypt(%{key: key, payload: payload}) do
+  def decrypt(%{key: key, payload: payload}) when is_binary(payload) do
     key = decode_key(key, :enacl.secretbox_KEYBYTES())
     nonce_size = :enacl.secretbox_NONCEBYTES()
-    {:ok, <<nonce::binary-size(nonce_size), ciphertext::binary>>} = decode(payload)
-    :enacl.secretbox_open(ciphertext, nonce, key)
+    with {:ok, <<nonce::binary-size(nonce_size), ciphertext::binary>>} <- decode(payload) do
+      :enacl.secretbox_open(ciphertext, nonce, key)
+    else
+      {:error, message} -> message
+      :error -> {:error, :failed_verification}
+    end
   end
+
+  def decrypt(_), do: nil
 
   @spec update_key_hash(binary, binary, binary) :: {:error, binary} | %{key_hash: binary}
   def update_key_hash(old_password, key_hash, new_password) do

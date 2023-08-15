@@ -69,7 +69,7 @@ defmodule MetamorphicWeb.PostLive.Public do
   end
 
   @impl true
-  def handle_info({:public_uconn_deleted, uconn}, socket) do
+  def handle_info({:public_uconn_deleted, _uconn}, socket) do
     {:noreply, paginate_posts(socket, socket.assigns.page, true)}
   end
 

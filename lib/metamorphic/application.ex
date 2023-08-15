@@ -28,6 +28,10 @@ defmodule Metamorphic.Application do
       {Finch, name: Metamorphic.Finch},
       # Start libcluster for clustering
       {Cluster.Supervisor, [topologies, [name: Metamorphic.ClusterSupervisor]]},
+      # Start ExMarcel's mime type dictionary storage
+      ExMarcel.TableWrapper,
+      # Start the ETS AvatarProcessor
+      Metamorphic.Extensions.AvatarProcessor,
       # Start the Endpoint (http/https)
       MetamorphicWeb.Endpoint
       # Start a worker by calling: Metamorphic.Worker.start_link(arg)

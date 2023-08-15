@@ -46,6 +46,7 @@ defmodule Metamorphic.Encrypted.Users.Utils do
     else
       {:error_user_key, message} -> message
       {:error_payload, message} -> message
+      {:error, message} -> message
       rest -> rest
     end
   end
@@ -186,14 +187,10 @@ defmodule Metamorphic.Encrypted.Users.Utils do
       {:ok, d_payload} ->
         {:ok, d_payload}
 
-      {:error_user_key, message} ->
+      {:error, message} ->
         message
 
-      {:error, message} ->
-        {:error_payload, message}
-
-      rest ->
-        rest
+      nil -> nil
     end
   end
 

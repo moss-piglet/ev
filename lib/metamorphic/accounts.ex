@@ -391,6 +391,19 @@ defmodule Metamorphic.Accounts do
   end
 
   @doc """
+  Returns an `%Ecto.Changeset{}` for tracking user avatar changes.
+
+  ## Examples
+
+      iex> change_user_avatar(uconn)
+      %Ecto.Changeset{data: %UserConnection{}}
+
+  """
+  def change_user_avatar(%User{} = user, attrs \\ %{}, opts \\ []) do
+    User.avatar_changeset(user, attrs, opts ++ [validate_avatar: false])
+  end
+
+  @doc """
   Returns an `%Ecto.Changeset{}` for deleting the user account.
 
   ## Examples
@@ -467,6 +480,53 @@ defmodule Metamorphic.Accounts do
     else
       _rest -> :error
     end
+  end
+
+  @doc """
+  Updates the user avatar.
+  """
+  def update_user_avatar(user, attrs, opts \\ []) do
+    conn = get_connection!(user.connection.id)
+
+    changeset =
+      cond do
+        opts[:delete_avatar] ->
+          user
+          |> User.delete_avatar_changeset(%{avatar_url: attrs[:avatar_url]}, opts)
+
+        true ->
+          user
+          |> User.avatar_changeset(%{avatar_url: attrs[:avatar_url]}, opts)
+      end
+
+    c_attrs = changeset.changes.connection_map
+
+    {:ok, %{update_user: user, update_connection: conn}} =
+      cond do
+        opts[:delete_avatar] ->
+          Ecto.Multi.new()
+          |> Ecto.Multi.update(:update_user, fn _ -> User.delete_avatar_changeset(user, attrs, opts) end)
+          |> Ecto.Multi.update(:update_connection, fn %{update_user: _user} ->
+            Connection.update_avatar_changeset(conn, %{
+              avatar_url: c_attrs.c_avatar_url,
+              avatar_url_hash: c_attrs.c_avatar_url_hash
+            }, opts)
+          end)
+          |> Repo.transaction()
+
+        true ->
+          Ecto.Multi.new()
+          |> Ecto.Multi.update(:update_user, fn _ -> User.avatar_changeset(user, attrs, opts) end)
+          |> Ecto.Multi.update(:update_connection, fn %{update_user: _user} ->
+            Connection.update_avatar_changeset(conn, %{
+              avatar_url: c_attrs.c_avatar_url,
+              avatar_url_hash: c_attrs.c_avatar_url_hash
+            })
+          end)
+          |> Repo.transaction()
+      end
+
+    {:ok, user, conn}
   end
 
   defp user_email_multi(user, email, context, key) do

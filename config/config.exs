@@ -14,7 +14,8 @@ config :metamorphic,
 config :metamorphic,
   mailer_default_from_email: "support@mail.metamorphic.app",
   server_public_key: System.get_env("SERVER_PUBLIC_KEY"),
-  server_private_key: System.get_env("SERVER_PRIVATE_KEY")
+  server_private_key: System.get_env("SERVER_PRIVATE_KEY"),
+  avatars_bucket: System.get_env("AVATARS_BUCKET")
 
 config :metamorphic, Metamorphic.Repo.Local, priv: "priv/repo"
 
@@ -77,6 +78,19 @@ config :metamorphic, Oban,
 config :ex_cldr,
   default_locale: "en",
   default_backend: Metamorphic.Cldr
+
+# Configures exaws
+config :ex_aws,
+  json_codec: Jason,
+  access_key_id: [{:system, "STORJ_ACCESS_KEY"}],
+  secret_access_key: [{:system, "STORJ_SECRET_KEY"}],
+  region: {:system, "STORJ_REGION"}
+
+config :ex_aws, :s3,
+  scheme: "https",
+  host: {:system, "STORJ_HOST"}
+
+config :ex_aws, :retries, max_attempts: 3
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

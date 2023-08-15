@@ -17,6 +17,8 @@ defmodule Metamorphic.Accounts.User do
     field :email_hash, Encrypted.HMAC
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
+    field :avatar_url, Encrypted.Binary
+    field :avatar_url_hash, Encrypted.HMAC
     field :name, Encrypted.Binary
     field :name_hash, Encrypted.HMAC
     field :username, Encrypted.Binary
@@ -120,10 +122,44 @@ defmodule Metamorphic.Accounts.User do
     end
   end
 
+  defp validate_avatar(changeset, opts) do
+    if opts[:key] && !is_nil(get_field(changeset, :avatar_url)) do
+      avatar_url = get_field(changeset, :avatar_url)
+
+      changeset
+      |> validate_required([:avatar_url])
+      |> validate_length(:avatar_url, max: 160)
+      |> add_avatar_hash()
+      |> maybe_validate_unique_avatar_hash(opts)
+      |> encrypt_avatar_change(opts, avatar_url)
+    else
+      changeset
+      |> validate_required([:avatar_url])
+      |> validate_length(:avatar_url, max: 160)
+      |> add_avatar_hash()
+      |> maybe_validate_unique_avatar_hash(opts)
+    end
+  end
+
+  defp add_avatar_hash(changeset) do
+    if Map.has_key?(changeset.changes, :avatar_url) do
+      changeset
+      |> put_change(:avatar_url_hash, String.downcase(get_field(changeset, :avatar_url)))
+    else
+      changeset
+    end
+  end
+
   defp encrypt_email_change(changeset, opts, email) do
     changeset
     |> encrypt_connection_map_email_change(opts, email)
     |> put_change(:email, encrypt_user_data(email, opts[:user], opts[:key]))
+  end
+
+  defp encrypt_avatar_change(changeset, opts, avatar_url) do
+    changeset
+    |> encrypt_connection_map_avatar_change(opts, avatar_url)
+    |> put_change(:avatar_url, encrypt_user_data(avatar_url, opts[:user], opts[:key]))
   end
 
   defp encrypt_username_change(changeset, opts, username) do
@@ -144,6 +180,21 @@ defmodule Metamorphic.Accounts.User do
     |> put_change(:connection_map, %{
       c_email: c_encrypted_email,
       c_email_hash: email
+    })
+  end
+
+  defp encrypt_connection_map_avatar_change(changeset, opts, avatar_url) do
+    # decrypt the user connection key
+    # and then encrypt the avatar change
+    {:ok, d_conn_key} =
+      Encrypted.Users.Utils.decrypt_user_attrs_key(opts[:user].conn_key, opts[:user], opts[:key])
+
+    c_encrypted_avatar_url = Encrypted.Utils.encrypt(%{key: d_conn_key, payload: avatar_url})
+
+    changeset
+    |> put_change(:connection_map, %{
+      c_avatar_url: c_encrypted_avatar_url,
+      c_avatar_url_hash: avatar_url
     })
   end
 
@@ -204,6 +255,16 @@ defmodule Metamorphic.Accounts.User do
       changeset
       |> unsafe_validate_unique(:username_hash, Metamorphic.Repo)
       |> unique_constraint(:username_hash)
+    else
+      changeset
+    end
+  end
+
+  defp maybe_validate_unique_avatar_hash(changeset, opts) do
+    if Keyword.get(opts, :validate_avatar, true) do
+      changeset
+      |> unsafe_validate_unique(:avatar_url_hash, Metamorphic.Repo)
+      |> unique_constraint(:avatar_url_hash)
     else
       changeset
     end
@@ -391,6 +452,40 @@ defmodule Metamorphic.Accounts.User do
     end
   end
 
+  @doc """
+  A user changeset for changing the avatar.
+
+  It requires the avatar to change otherwise an error is added.
+
+  Since this is not generating encryption keys from scratch,
+  like new user registration does, but rather using the
+  current_user's existing keys, we use `encrypt_user_data/3`
+  to encrypt the avatar change.
+  """
+  def avatar_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:avatar_url])
+    |> validate_avatar(opts)
+    |> case do
+      %{changes: %{avatar_url: _}} = changeset -> changeset
+      %{} = changeset -> add_error(changeset, :avatar_url, "did not change")
+    end
+  end
+
+  def delete_avatar_changeset(user, attrs, opts \\ []) do
+    if opts[:delete_avatar] do
+      user
+      |> cast(attrs, [:avatar_url])
+      |> change(connection_map: %{c_avatar_url: nil,
+      c_avatar_url_hash: nil})
+      |> change(avatar_url: nil)
+      |> change(avatar_url_hash: nil)
+    else
+      user
+      |> cast(attrs, [:avatar_url])
+      |> add_error(:avatar_url, "Error deleting avatar.")
+    end
+  end
   @doc """
   A user changeset for changing the password.
 

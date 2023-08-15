@@ -2,256 +2,9 @@ defmodule MetamorphicWeb.UserSettingsLive do
   use MetamorphicWeb, :live_view
 
   alias Metamorphic.Accounts
-
+  alias Metamorphic.Encrypted
   alias Metamorphic.Encrypted.Users.Utils
-
-  def render(assigns) do
-    ~H"""
-    <.header class="text-center">
-      Account Settings
-      <:subtitle>Manage your account email address and password settings</:subtitle>
-      <:actions :if={!@current_user.confirmed_at}>
-        <.button type="button" class="bg-brand-600" phx-click={JS.patch(~p"/users/confirm")}>
-          Confirm my account
-        </.button>
-      </:actions>
-    </.header>
-
-    <div class="space-y-12 divide-y">
-      <div>
-        <.simple_form for={@email_form} id="email_form" phx-submit="update_email">
-          <.input
-            field={@email_form[:email]}
-            type="email"
-            label="Email"
-            value={decr(@current_user.email, @current_user, @key)}
-            required
-          />
-          <.input
-            field={@email_form[:current_password]}
-            name="current_password"
-            id="current_password_for_email"
-            type="password"
-            label="Current password"
-            value={@email_form_current_password}
-            required
-          />
-          <:actions>
-            <.button phx-disable-with="Changing...">Change Email</.button>
-          </:actions>
-        </.simple_form>
-      </div>
-      <div>
-        <.simple_form
-          for={@password_form}
-          id="password_form"
-          action={~p"/users/log_in?_action=password_updated"}
-          method="post"
-          phx-change="validate_password"
-          phx-submit="update_password"
-          phx-trigger-action={@trigger_submit}
-        >
-          <.input
-            field={@password_form[:email]}
-            type="hidden"
-            id="hidden_user_email"
-            value={decr(@current_email, @current_user, @key)}
-          />
-          <.input field={@password_form[:password]} type="password" label="New password" required />
-          <.input
-            field={@password_form[:password_confirmation]}
-            type="password"
-            label="Confirm new password"
-          />
-          <.input
-            field={@password_form[:current_password]}
-            name="current_password"
-            type="password"
-            label="Current password"
-            id="current_password_for_password"
-            value={@current_password}
-            required
-          />
-          <:actions>
-            <.button phx-disable-with="Changing...">Change Password</.button>
-          </:actions>
-        </.simple_form>
-      </div>
-      <div>
-        <.simple_form for={@username_form} id="username_form" phx-submit="update_username">
-          <.input
-            field={@username_form[:username]}
-            type="text"
-            label="Username"
-            value={decr(@current_user.username, @current_user, @key)}
-            required
-          />
-          <:actions>
-            <.button phx-disable-with="Changing...">Change Username</.button>
-          </:actions>
-        </.simple_form>
-      </div>
-      <div>
-        <.simple_form for={@visibility_form} id="visibility_form" phx-submit="update_visibility">
-          <.input
-            field={@username_form[:visibility]}
-            type="select"
-            options={Ecto.Enum.values(Accounts.User, :visibility)}
-            label="Visibility"
-            required
-            description?={true}
-          >
-            <:description_block>
-              <div class="space-y-4">
-                <dl class="divide-y divide-gray-100">
-                  <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt class="text-sm font-medium leading-6 text-zinc-500">Public</dt>
-                    <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-                      Metamorphic users can send you connection requests and anyone can view your profile.
-                    </dd>
-                  </div>
-                  <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt class="text-sm font-medium leading-6 text-zinc-500">Private</dt>
-                    <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-                      Nobody can send you connection requests and only you can view your profile. You can still send connection requests and make new connections.
-                    </dd>
-                  </div>
-                  <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt class="text-sm font-medium leading-6 text-zinc-500">Connections</dt>
-                    <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-                      Metamorphic users can send you connection requests and only you and your connections can view your profile.
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-            </:description_block>
-          </.input>
-          <:actions>
-            <.button phx-disable-with="Changing...">Change Visibility</.button>
-          </:actions>
-        </.simple_form>
-      </div>
-      <div>
-        <.info_banner
-          :if={!@current_user.confirmed_at}
-          navigate={~p"/users/confirm"}
-          nav_title="Confirm"
-        >
-          Confirm your account to enable the "forgot password" feature.
-        </.info_banner>
-
-        <.simple_form
-          :if={@current_user.confirmed_at}
-          for={@forgot_password_form}
-          id="forgot_password_form"
-          phx-submit="update_forgot_password"
-        >
-          <.input
-            field={@forgot_password_form[:is_forgot_pwd?]}
-            type="checkbox"
-            label={
-              if @current_user.is_forgot_pwd?,
-                do: "Disable forgot password?",
-                else: "Enable forgot password?"
-            }
-            description?={true}
-          >
-            <:description_block>
-              <div class="space-y-4">
-                <dl class="divide-y divide-gray-100">
-                  <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt class="text-sm font-medium leading-6 text-zinc-500">Action</dt>
-                    <dd
-                      :if={!@current_user.is_forgot_pwd?}
-                      class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0"
-                    >
-                      Enable the forgot password feature.
-                    </dd>
-                    <dd
-                      :if={@current_user.is_forgot_pwd?}
-                      class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0"
-                    >
-                      Disable the forgot password feature.
-                    </dd>
-                  </div>
-                  <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt class="text-sm font-medium leading-6 text-zinc-500">Details</dt>
-                    <dd
-                      :if={!@current_user.is_forgot_pwd?}
-                      class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0"
-                    >
-                      More convenience! Regain access to your account if you forget your password.
-                      The key to your data will be stored encrypted at-rest in the database.
-                    </dd>
-                    <dd
-                      :if={@current_user.is_forgot_pwd?}
-                      class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0"
-                    >
-                      More privacy! Only you can access your account (provided you don't share your password with anyone 👀).
-                      The key to your data will be deleted from the database (currently being stored encrypted at-rest) and your account will be returned to its original asymmetric encryption.
-                    </dd>
-                  </div>
-                  <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                    <dt class="text-sm font-medium leading-6 text-zinc-500">Note</dt>
-                    <dd
-                      :if={!@current_user.is_forgot_pwd?}
-                      class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0"
-                    >
-                      When enabled it's possible for an authorized authority to gain access to your data. This is rare, and unlikely to happen, so we recommend enabling this feature to prevent the chance of getting locked out of your account.
-                    </dd>
-                    <dd
-                      :if={@current_user.is_forgot_pwd?}
-                      class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0"
-                    >
-                      When disabled it's impossible for an authorized authority to gain access to your data. But, if you forget your password there's no way we can get you back into your account.
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-            </:description_block>
-          </.input>
-          <:actions>
-            <.button phx-disable-with="Changing...">Change</.button>
-          </:actions>
-        </.simple_form>
-      </div>
-
-      <div>
-        <.simple_form
-          for={@delete_account_form}
-          id="delete_account_form"
-          phx-submit="delete_account"
-          apply_classes?={true}
-          class="rounded-md my-12 p-10 bg-brand-50"
-        >
-          <div class="mx-auto pb-6">
-            <span class="inline-flex">
-              <.icon name="hero-exclamation-triangle" class="text-brand-700 h-6 w-6" />
-              <h2 class="ml-2 text-lg font-semibold leading-6 text-brand-700">Delete your account</h2>
-            </span>
-            <p class="mt-1 text-sm text-zinc-500">
-              Enter your current password below to delete your account and its data. All of your posts (private, connections, and public) and connections will be deleted in real-time. This cannot be undone.
-            </p>
-          </div>
-
-          <.input field={@delete_account_form[:id]} type="hidden" value={@current_user.id} required />
-          <.input
-            field={@delete_account_form[:current_password]}
-            name="current_password"
-            type="password"
-            label="Current password"
-            id="current_password_for_delete_account"
-            value={@current_password}
-            required
-          />
-          <:actions>
-            <.button phx-disable-with="Deleting...">Delete Account</.button>
-          </:actions>
-        </.simple_form>
-      </div>
-    </div>
-    """
-  end
+  alias Metamorphic.Extensions.AvatarProcessor
 
   def mount(%{"token" => token}, %{"key" => key} = _session, socket) do
     user = socket.assigns.current_user
@@ -277,6 +30,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
     visibility_changeset = Accounts.change_user_visibility(user)
     forgot_password_changeset = Accounts.change_user_forgot_password(user)
     delete_account_changeset = Accounts.change_user_delete_account(user)
+    avatar_changeset = Accounts.change_user_avatar(user)
 
     socket =
       socket
@@ -290,9 +44,167 @@ defmodule MetamorphicWeb.UserSettingsLive do
       |> assign(:visibility_form, to_form(visibility_changeset))
       |> assign(:forgot_password_form, to_form(forgot_password_changeset))
       |> assign(:delete_account_form, to_form(delete_account_changeset))
+      |> assign(:avatar_form, to_form(avatar_changeset))
       |> assign(:trigger_submit, false)
+      |> allow_upload(:avatar,
+        accept: ~w(.png .jpeg .jpg),
+        max_file_size: 10_000_000,
+        auto_upload: true,
+        temporary_assigns: [uploaded_files: []]
+      )
 
     {:ok, socket}
+  end
+
+  def handle_params(%{} = _params, _url, socket) do
+    # Handle the task.async return
+    {:noreply, socket}
+  end
+
+  def handle_params(params, _url, socket) do
+    IO.inspect params, label: "HPARAMS PARAMS"
+    {:noreply, socket}
+  end
+
+  def handle_event("validate_avatar", params, socket) do
+    avatar_form =
+      socket.assigns.current_user
+      |> Accounts.change_user_avatar(params)
+      |> Map.put(:action, :validate)
+      |> to_form()
+
+    {:noreply, assign(socket, avatar_form: avatar_form)}
+  end
+
+  def handle_event("update_avatar", _params, socket) do
+    user = socket.assigns.current_user
+    key = socket.assigns.key
+    avatars_bucket = Application.get_env(:metamorphic, :avatars_bucket)
+
+    avatar_url_tuple_list =
+      consume_uploaded_entries(
+        socket,
+        :avatar,
+        fn %{path: path} = _meta, entry ->
+          # Check the mime_type to avoid malicious file naming
+          mime_type = ExMarcel.MimeType.for({:path, path})
+
+          cond do
+            mime_type in ["image/jpeg", "image/jpg", "image/png"] ->
+              with {:ok, blob} <-
+                     Image.open!(path)
+                     |> Image.avatar!()
+                     |> Image.write(:memory, suffix: ".#{file_ext(entry)}"),
+                    {:ok, e_blob} <- prepare_encrypted_blob(blob, user, key),
+                   {:ok, file_path} <- prepare_file_path(entry, user.id) do
+
+                # Handle adding the new object storage avatar async.
+                Task.async(fn ->
+                  {:ok, resp} =
+                    ExAws.S3.put_object(avatars_bucket, file_path, e_blob)
+                    |> ExAws.request()
+                end)
+
+                # Return the encrypted_blob in the tuple for putting
+                # the encrypted avatar into ets.
+                # Not currently encrypted?
+                {:ok, {entry, file_path, e_blob}}
+              end
+
+            true ->
+              {:postpone, :error}
+          end
+        end
+      )
+
+    cond do
+      :error in avatar_url_tuple_list ->
+        err_msg = "Incorrect file type."
+        {:noreply, put_flash(socket, :error, err_msg)}
+
+      :error not in avatar_url_tuple_list ->
+        # Get the file path & e_blob from the tuple.
+        [{_entry, file_path, e_blob}] = avatar_url_tuple_list
+
+        avatar_params = %{avatar_url: file_path}
+
+        case Accounts.update_user_avatar(user, avatar_params, user: user, key: key) do
+          {:ok, _user, conn} ->
+            # Put the encrypted avatar blob in ets under the
+            # user's connection id.
+            AvatarProcessor.put_ets_avatar(conn.id, e_blob)
+            info = "Your avatar has been updated successfully."
+
+            avatar_form =
+              user
+              |> Accounts.change_user_avatar(avatar_params)
+              |> to_form()
+
+            {:noreply, socket |> put_flash(:info, info) |> assign(avatar_form: avatar_form) |> push_navigate(to: ~p"/users/settings")}
+
+          _rest -> {:noreply, socket}
+        end
+    end
+  end
+
+  defp file_ext(entry) do
+    [ext | _] = MIME.extensions(entry.client_type)
+    "#{ext}"
+  end
+
+  defp filename(entry) do
+    [ext | _] = MIME.extensions(entry.client_type)
+    "#{entry.uuid}.#{ext}"
+  end
+
+  defp prepare_file_path(entry, user_id) do
+    {:ok, "uploads/user/#{user_id}/avatars/#{filename(entry)}"}
+  end
+
+  defp prepare_encrypted_blob(blob, user, key) do
+    {:ok, d_conn_key} =
+      Encrypted.Users.Utils.decrypt_user_attrs_key(user.conn_key, user, key)
+
+    encrypted_avatar_blob = Encrypted.Utils.encrypt(%{key: d_conn_key, payload: blob})
+    cond do
+      is_binary(encrypted_avatar_blob) ->
+        {:ok, encrypted_avatar_blob}
+
+      !is_binary(encrypted_avatar_blob) ->
+        {:error, encrypted_avatar_blob}
+    end
+  end
+
+  def handle_event("cancel", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :avatar, ref)}
+  end
+
+  @doc """
+  Deletes the avatar in ETS and object storage.
+  """
+  @impl true
+  def handle_event("delete_avatar", %{"url" => url}, socket) do
+    avatars_bucket = Application.get_env(:metamorphic, :avatars_bucket)
+    user = socket.assigns.current_user
+
+    with {:ok, _user, conn} <- Accounts.update_user_avatar(user, %{avatar_url: nil}, delete_avatar: true),
+         true <- AvatarProcessor.delete_ets_avatar(conn.id) do
+      # Handle deleting the object storage avatar async.
+      Task.async(fn ->
+        {:ok, _resp} =
+          ExAws.S3.delete_object(avatars_bucket, url)
+          |> ExAws.request()
+      end)
+      info = "Your avatar has been deleted successfully."
+      socket =
+        socket
+        |> put_flash(:info, info)
+
+      {:noreply, push_navigate(socket, to: ~p"/users/settings")}
+    else
+      _rest ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("validate_email", params, socket) do
