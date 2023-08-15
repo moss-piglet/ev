@@ -79,6 +79,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
     user = socket.assigns.current_user
     key = socket.assigns.key
     avatars_bucket = Application.get_env(:metamorphic, :avatars_bucket)
+    IO.inspect avatars_bucket, label: "AVATARS BUCKET"
 
     avatar_url_tuple_list =
       consume_uploaded_entries(
