@@ -28,6 +28,7 @@ defmodule Metamorphic.Encrypted.Utils do
   def decrypt(%{key: key, payload: payload}) when is_binary(payload) do
     key = decode_key(key, :enacl.secretbox_KEYBYTES())
     nonce_size = :enacl.secretbox_NONCEBYTES()
+
     with {:ok, <<nonce::binary-size(nonce_size), ciphertext::binary>>} <- decode(payload) do
       :enacl.secretbox_open(ciphertext, nonce, key)
     else

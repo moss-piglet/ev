@@ -19,25 +19,25 @@ defmodule MetamorphicWeb.Helpers do
     )
   end
 
+  def decr(_payload, _user, _key), do: nil
+
   def decr_avatar(payload, user, e_item_key, key) do
     case Encrypted.Users.Utils.decrypt_user_item(
-      payload,
-      user,
-      e_item_key,
-      key
-    ) do
-    {:error, message} ->
-      message
+           payload,
+           user,
+           e_item_key,
+           key
+         ) do
+      {:error, message} ->
+        message
 
-    :failed_verification ->
-      "failed_verification"
+      :failed_verification ->
+        "failed_verification"
 
-    payload ->
-      payload
+      payload ->
+        payload
     end
   end
-
-  def decr(payload, _user, _key), do: nil
 
   def decr_post(payload, user, post_key, key, post \\ nil) do
     cond do
@@ -193,40 +193,40 @@ defmodule MetamorphicWeb.Helpers do
         "data:image/jpg;base64," <> image
 
       is_nil(_avatar_binary = AvatarProcessor.get_ets_avatar(user.connection.id)) ->
-        IO.puts "HERE HERE HERE"
         avatars_bucket = Application.get_env(:metamorphic, :avatars_bucket)
-        with {:ok, %{body: obj}} <-
-          ExAws.S3.get_object(
-            avatars_bucket,
-            decr_avatar(
-              user.connection.avatar_url,
-              user,
-              user.conn_key,
-              key
-            )
-          )
-          |> ExAws.request(),
-        decrypted_obj <-
-          decr_avatar(
-            obj,
-            user,
-            user.conn_key,
-            key
-          ) do
-     # Put the encrypted avatar binary in ets.
-     Task.async(fn ->
-       AvatarProcessor.put_ets_avatar(user.connection.id, obj)
-     end)
 
-     image = decrypted_obj |> Base.encode64()
-     path = "data:image/jpg;base64," <> image
-     path
-   else
-     {:error, _rest} ->
-       "error"
-   end
+        with {:ok, %{body: obj}} <-
+               ExAws.S3.get_object(
+                 avatars_bucket,
+                 decr_avatar(
+                   user.connection.avatar_url,
+                   user,
+                   user.conn_key,
+                   key
+                 )
+               )
+               |> ExAws.request(),
+             decrypted_obj <-
+               decr_avatar(
+                 obj,
+                 user,
+                 user.conn_key,
+                 key
+               ) do
+          # Put the encrypted avatar binary in ets.
+          Task.async(fn ->
+            AvatarProcessor.put_ets_avatar(user.connection.id, obj)
+          end)
+
+          image = decrypted_obj |> Base.encode64()
+          path = "data:image/jpg;base64," <> image
+          path
+        else
+          {:error, _rest} ->
+            "error"
+        end
+    end
   end
-end
 
   ## Errors
 

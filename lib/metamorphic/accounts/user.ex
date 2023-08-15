@@ -476,8 +476,7 @@ defmodule Metamorphic.Accounts.User do
     if opts[:delete_avatar] do
       user
       |> cast(attrs, [:avatar_url])
-      |> change(connection_map: %{c_avatar_url: nil,
-      c_avatar_url_hash: nil})
+      |> change(connection_map: %{c_avatar_url: nil, c_avatar_url_hash: nil})
       |> change(avatar_url: nil)
       |> change(avatar_url_hash: nil)
     else
@@ -486,6 +485,7 @@ defmodule Metamorphic.Accounts.User do
       |> add_error(:avatar_url, "Error deleting avatar.")
     end
   end
+
   @doc """
   A user changeset for changing the password.
 

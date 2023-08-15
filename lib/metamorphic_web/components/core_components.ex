@@ -788,7 +788,7 @@ defmodule MetamorphicWeb.CoreComponents do
           </span>
         </span>
       <% else %>
-      <img class={"inline-block #{@size} rounded-full bg-zinc-100"} src={@src} alt={@alt}>
+        <img class={"inline-block #{@size} rounded-full bg-zinc-100"} src={@src} alt={@alt} />
       <% end %>
     <% end %>
     """

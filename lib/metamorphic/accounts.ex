@@ -505,12 +505,18 @@ defmodule Metamorphic.Accounts do
       cond do
         opts[:delete_avatar] ->
           Ecto.Multi.new()
-          |> Ecto.Multi.update(:update_user, fn _ -> User.delete_avatar_changeset(user, attrs, opts) end)
+          |> Ecto.Multi.update(:update_user, fn _ ->
+            User.delete_avatar_changeset(user, attrs, opts)
+          end)
           |> Ecto.Multi.update(:update_connection, fn %{update_user: _user} ->
-            Connection.update_avatar_changeset(conn, %{
-              avatar_url: c_attrs.c_avatar_url,
-              avatar_url_hash: c_attrs.c_avatar_url_hash
-            }, opts)
+            Connection.update_avatar_changeset(
+              conn,
+              %{
+                avatar_url: c_attrs.c_avatar_url,
+                avatar_url_hash: c_attrs.c_avatar_url_hash
+              },
+              opts
+            )
           end)
           |> Repo.transaction()
 

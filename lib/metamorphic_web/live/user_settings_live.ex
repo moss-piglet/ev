@@ -61,8 +61,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
     {:noreply, socket}
   end
 
-  def handle_params(params, _url, socket) do
-    IO.inspect params, label: "HPARAMS PARAMS"
+  def handle_params(_params, _url, socket) do
     {:noreply, socket}
   end
 
@@ -95,20 +94,9 @@ defmodule MetamorphicWeb.UserSettingsLive do
                      Image.open!(path)
                      |> Image.avatar!()
                      |> Image.write(:memory, suffix: ".#{file_ext(entry)}"),
-                    {:ok, e_blob} <- prepare_encrypted_blob(blob, user, key),
+                   {:ok, e_blob} <- prepare_encrypted_blob(blob, user, key),
                    {:ok, file_path} <- prepare_file_path(entry, user.id) do
-
-                # Handle adding the new object storage avatar async.
-                Task.async(fn ->
-                  {:ok, resp} =
-                    ExAws.S3.put_object(avatars_bucket, file_path, e_blob)
-                    |> ExAws.request()
-                end)
-
-                # Return the encrypted_blob in the tuple for putting
-                # the encrypted avatar into ets.
-                # Not currently encrypted?
-                {:ok, {entry, file_path, e_blob}}
+                make_aws_requests(entry, avatars_bucket, file_path, e_blob, user, key)
               end
 
             true ->
@@ -140,38 +128,15 @@ defmodule MetamorphicWeb.UserSettingsLive do
               |> Accounts.change_user_avatar(avatar_params)
               |> to_form()
 
-            {:noreply, socket |> put_flash(:info, info) |> assign(avatar_form: avatar_form) |> push_navigate(to: ~p"/users/settings")}
+            {:noreply,
+             socket
+             |> put_flash(:info, info)
+             |> assign(avatar_form: avatar_form)
+             |> push_navigate(to: ~p"/users/settings")}
 
-          _rest -> {:noreply, socket}
+          _rest ->
+            {:noreply, socket}
         end
-    end
-  end
-
-  defp file_ext(entry) do
-    [ext | _] = MIME.extensions(entry.client_type)
-    "#{ext}"
-  end
-
-  defp filename(entry) do
-    [ext | _] = MIME.extensions(entry.client_type)
-    "#{entry.uuid}.#{ext}"
-  end
-
-  defp prepare_file_path(entry, user_id) do
-    {:ok, "uploads/user/#{user_id}/avatars/#{filename(entry)}"}
-  end
-
-  defp prepare_encrypted_blob(blob, user, key) do
-    {:ok, d_conn_key} =
-      Encrypted.Users.Utils.decrypt_user_attrs_key(user.conn_key, user, key)
-
-    encrypted_avatar_blob = Encrypted.Utils.encrypt(%{key: d_conn_key, payload: blob})
-    cond do
-      is_binary(encrypted_avatar_blob) ->
-        {:ok, encrypted_avatar_blob}
-
-      !is_binary(encrypted_avatar_blob) ->
-        {:error, encrypted_avatar_blob}
     end
   end
 
@@ -182,25 +147,25 @@ defmodule MetamorphicWeb.UserSettingsLive do
   @doc """
   Deletes the avatar in ETS and object storage.
   """
-  @impl true
   def handle_event("delete_avatar", %{"url" => url}, socket) do
     avatars_bucket = Application.get_env(:metamorphic, :avatars_bucket)
     user = socket.assigns.current_user
 
-    with {:ok, _user, conn} <- Accounts.update_user_avatar(user, %{avatar_url: nil}, delete_avatar: true),
+    with {:ok, _user, conn} <-
+           Accounts.update_user_avatar(user, %{avatar_url: nil}, delete_avatar: true),
          true <- AvatarProcessor.delete_ets_avatar(conn.id) do
       # Handle deleting the object storage avatar async.
-      Task.async(fn ->
-        {:ok, _resp} =
-          ExAws.S3.delete_object(avatars_bucket, url)
-          |> ExAws.request()
-      end)
-      info = "Your avatar has been deleted successfully."
-      socket =
-        socket
-        |> put_flash(:info, info)
+      with {:ok, _resp} <- ex_aws_delete_request(avatars_bucket, url) do
+        info = "Your avatar has been deleted successfully."
 
-      {:noreply, push_navigate(socket, to: ~p"/users/settings")}
+        socket =
+          socket
+          |> put_flash(:info, info)
+
+        {:noreply, push_navigate(socket, to: ~p"/users/settings")}
+      else
+        _rest -> ex_aws_delete_request(avatars_bucket, url)
+      end
     else
       _rest ->
         {:noreply, socket}
@@ -462,6 +427,75 @@ defmodule MetamorphicWeb.UserSettingsLive do
 
       {:error, changeset} ->
         {:noreply, assign(socket, delete_account_form: to_form(changeset))}
+    end
+  end
+
+  ## PRIVATE & AWS
+
+  defp file_ext(entry) do
+    [ext | _] = MIME.extensions(entry.client_type)
+    "#{ext}"
+  end
+
+  defp filename(entry) do
+    [ext | _] = MIME.extensions(entry.client_type)
+    "#{entry.uuid}.#{ext}"
+  end
+
+  defp prepare_file_path(entry, user_id) do
+    {:ok, "uploads/user/#{user_id}/avatars/#{filename(entry)}"}
+  end
+
+  defp prepare_encrypted_blob(blob, user, key) do
+    {:ok, d_conn_key} =
+      Encrypted.Users.Utils.decrypt_user_attrs_key(user.conn_key, user, key)
+
+    encrypted_avatar_blob = Encrypted.Utils.encrypt(%{key: d_conn_key, payload: blob})
+
+    cond do
+      is_binary(encrypted_avatar_blob) ->
+        {:ok, encrypted_avatar_blob}
+
+      !is_binary(encrypted_avatar_blob) ->
+        {:error, encrypted_avatar_blob}
+    end
+  end
+
+  defp make_aws_requests(entry, avatars_bucket, file_path, e_blob, user, key) do
+    with {:ok, _resp} <- maybe_delete_old_avatar(avatars_bucket, user, key),
+      {:ok, _resp} <- ex_aws_put_request(avatars_bucket, file_path, e_blob) do
+        # Return the encrypted_blob in the tuple for putting
+        # the encrypted avatar into ets.
+        {:ok, {entry, file_path, e_blob}}
+    else
+      _rest ->
+        ex_aws_put_request(avatars_bucket, file_path, e_blob)
+    end
+  end
+
+  defp ex_aws_delete_request(avatars_bucket, url) do
+    ExAws.S3.delete_object(avatars_bucket, url)
+    |> ExAws.request()
+  end
+
+  defp ex_aws_put_request(avatars_bucket, file_path, e_blob) do
+    ExAws.S3.put_object(avatars_bucket, file_path, e_blob)
+    |> ExAws.request()
+  end
+
+  defp maybe_delete_old_avatar(avatars_bucket, user, key) do
+    case user.connection.avatar_url do
+      nil ->
+        {:ok, "no avatar"}
+
+      _rest ->
+        d_url = decr_avatar(user.connection.avatar_url, user, user.conn_key, key)
+
+        with {:ok, resp} <- ex_aws_delete_request(avatars_bucket, d_url) do
+          {:ok, resp}
+        else
+          _rest -> ex_aws_delete_request(avatars_bucket, d_url)
+        end
     end
   end
 end

@@ -190,7 +190,8 @@ defmodule Metamorphic.Encrypted.Users.Utils do
       {:error, message} ->
         message
 
-      nil -> nil
+      nil ->
+        nil
     end
   end
 

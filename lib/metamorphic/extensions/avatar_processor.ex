@@ -23,7 +23,7 @@ defmodule Metamorphic.Extensions.AvatarProcessor do
   end
 
   def delete_ets_avatar(key) do
-    return = :ets.delete(__MODULE__, key)
+    :ets.delete(__MODULE__, key)
   end
 
   ## Server
