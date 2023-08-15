@@ -12,18 +12,14 @@ kill_signal = "SIGTERM"
 
 [env]
   PHX_HOST = "metamorphic.app"
-  PORT = "8080"
+  PORT = "4000"
   PRIMARY_REGION="bos"
   RELEASE_COOKIE="1a3LEqcIUmDIK-GNMeH1MQGRaNvnfIny4MSmqsk85kv7Zh1Z35tVgg=="
 
 [[services]]
   protocol = "tcp"
-  internal_port = 8080
+  internal_port = 4000
   processes = ["app"]
-
-  [[services.ports]]
-    handlers = ["http"]
-    port = 80
 
   [[services.ports]]
     port = 443
