@@ -78,8 +78,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
   def handle_event("update_avatar", _params, socket) do
     user = socket.assigns.current_user
     key = socket.assigns.key
-    avatars_bucket = Application.get_env(:metamorphic, :avatars_bucket)
-    IO.inspect avatars_bucket, label: "AVATARS BUCKET"
+    avatars_bucket = Encrypted.Session.avatars_bucket()
 
     avatar_url_tuple_list =
       consume_uploaded_entries(
@@ -149,7 +148,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
   Deletes the avatar in ETS and object storage.
   """
   def handle_event("delete_avatar", %{"url" => url}, socket) do
-    avatars_bucket = Application.get_env(:metamorphic, :avatars_bucket)
+    avatars_bucket = Encrypted.Session.avatars_bucket()
     user = socket.assigns.current_user
 
     with {:ok, _user, conn} <-

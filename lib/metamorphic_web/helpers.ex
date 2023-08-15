@@ -193,7 +193,7 @@ defmodule MetamorphicWeb.Helpers do
         "data:image/jpg;base64," <> image
 
       is_nil(_avatar_binary = AvatarProcessor.get_ets_avatar(user.connection.id)) ->
-        avatars_bucket = Application.get_env(:metamorphic, :avatars_bucket)
+        avatars_bucket = Encrypted.Session.avatars_bucket()
 
         with {:ok, %{body: obj}} <-
                ExAws.S3.get_object(
