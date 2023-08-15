@@ -56,7 +56,11 @@ if config_env() == :prod do
 
   config :metamorphic, MetamorphicWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
-    force_ssl: [rewrite_on: [:x_forwarded_proto]],
+    force_ssl: [
+      host: nil,
+      rewrite_on: [:x_forwarded_port, :x_forwarded_proto],
+      hsts: true,
+      ],
     live_view: [
       signing_salt: System.get_env("LIVE_VIEW_SIGNING_SALT"),
       encryption_salt: System.get_env("LIVE_VIEW_ENCRYPTION_SALT")
