@@ -11,6 +11,7 @@ defmodule Metamorphic.Timeline.Post do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   schema "posts" do
+    field :avatar_url, Encrypted.Binary
     field :body, Encrypted.Binary
     field :username, Encrypted.Binary
     field :username_hash, Encrypted.HMAC
@@ -35,6 +36,7 @@ defmodule Metamorphic.Timeline.Post do
   def changeset(post, attrs, opts \\ []) do
     post
     |> cast(attrs, [
+      :avatar_url,
       :body,
       :username,
       :username_hash,
@@ -56,6 +58,7 @@ defmodule Metamorphic.Timeline.Post do
   def repost_changeset(post, attrs, opts \\ []) do
     post
     |> cast(attrs, [
+      :avatar_url,
       :body,
       :username,
       :favs_list,
@@ -108,10 +111,12 @@ defmodule Metamorphic.Timeline.Post do
       username = get_field(changeset, :username)
       visibility = get_field(changeset, :visibility)
       post_key = maybe_generate_post_key(opts, visibility)
+      e_avatar_url = maybe_encrypt_avatar_url(opts[:user], post_key)
 
       case visibility do
         :public ->
           changeset
+          |> put_change(:avatar_url, e_avatar_url)
           |> put_change(:body, Utils.encrypt(%{key: post_key, payload: body}))
           |> put_change(:username, Utils.encrypt(%{key: post_key, payload: username}))
           |> put_change(:user_post_map, %{
@@ -123,6 +128,7 @@ defmodule Metamorphic.Timeline.Post do
 
         :private ->
           changeset
+          |> put_change(:avatar_url, e_avatar_url)
           |> put_change(:body, Utils.encrypt(%{key: post_key, payload: body}))
           |> put_change(:username, Utils.encrypt(%{key: post_key, payload: username}))
           |> put_change(:user_post_map, %{
@@ -134,6 +140,7 @@ defmodule Metamorphic.Timeline.Post do
 
         :connections ->
           changeset
+          |> put_change(:avatar_url, e_avatar_url)
           |> put_change(:body, Utils.encrypt(%{key: post_key, payload: body}))
           |> put_change(:username, Utils.encrypt(%{key: post_key, payload: username}))
           |> put_change(:user_post_map, %{
@@ -148,6 +155,16 @@ defmodule Metamorphic.Timeline.Post do
       end
     else
       changeset
+    end
+  end
+
+  defp maybe_encrypt_avatar_url(user, post_key) do
+    case user.avatar_url do
+      nil ->
+        nil
+
+      avatar_url ->
+        Utils.encrypt(%{key: post_key, payload: avatar_url})
     end
   end
 

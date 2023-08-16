@@ -169,7 +169,8 @@ defmodule Metamorphic.Accounts do
         join: c in Connection,
         on: c.user_id == ^post.user_id,
         where: uc.user_id == ^current_user.id,
-        where: uc.connection_id == c.id
+        where: uc.connection_id == c.id,
+        preload: [:user, :connection]
     )
   end
 
@@ -531,6 +532,8 @@ defmodule Metamorphic.Accounts do
           end)
           |> Repo.transaction()
       end
+
+    broadcast_connection(conn, :uconn_avatar_updated)
 
     {:ok, user, conn}
   end

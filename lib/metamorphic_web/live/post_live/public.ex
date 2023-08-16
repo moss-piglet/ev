@@ -102,7 +102,7 @@ defmodule MetamorphicWeb.PostLive.Public do
     post = Timeline.get_post!(id)
 
     if post.user_id == socket.assigns.current_user.id do
-      {:ok, _} = Timeline.delete_post(post)
+      {:ok, _} = Timeline.delete_post(post, user: socket.assigns.current_user)
 
       {:noreply, stream_delete(socket, :posts, post)}
     else

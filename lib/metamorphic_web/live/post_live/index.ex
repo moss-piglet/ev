@@ -131,6 +131,45 @@ defmodule MetamorphicWeb.PostLive.Index do
   end
 
   @impl true
+  def handle_info({:uconn_username_updated, uconn}, socket) do
+    user = socket.assigns.current_user
+
+    cond do
+      uconn.user_id == user.id || uconn.reverse_user_id == user.id ->
+        {:noreply, paginate_posts(socket, socket.assigns.page, true)}
+
+      true ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:uconn_email_updated, uconn}, socket) do
+    user = socket.assigns.current_user
+
+    cond do
+      uconn.user_id == user.id || uconn.reverse_user_id == user.id ->
+        {:noreply, paginate_posts(socket, socket.assigns.page, true)}
+
+      true ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:uconn_avatar_updated, uconn}, socket) do
+    user = socket.assigns.current_user
+
+    cond do
+      uconn.user_id == user.id || uconn.reverse_user_id == user.id ->
+        {:noreply, paginate_posts(socket, socket.assigns.page, true)}
+
+      true ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
   def handle_info(_, socket) do
     {:noreply, socket}
   end

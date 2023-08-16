@@ -2,10 +2,11 @@ defmodule MetamorphicWeb.Helpers do
   @moduledoc false
 
   alias Metamorphic.Accounts
-  alias Metamorphic.Accounts.UserConnection
+  alias Metamorphic.Accounts.{Connection, User, UserConnection}
   alias Metamorphic.Encrypted
   alias Metamorphic.Extensions.AvatarProcessor
   alias Metamorphic.Cldr.DateTime.Relative
+  alias Metamorphic.Timeline.Post
 
   ## Encryption
 
@@ -115,8 +116,32 @@ defmodule MetamorphicWeb.Helpers do
     end
   end
 
+  def get_post_connection(post, current_user) do
+    cond do
+      post.visibility == :public ->
+        post
+
+      true ->
+        Accounts.get_connection_from_post(post, current_user)
+    end
+  end
+
   def get_post_key(post) do
     Enum.at(post.user_posts, 0).key
+  end
+
+  def get_post_key(post, current_user) do
+    cond do
+      post.visibility == :connections && current_user.id != post.user_id ->
+        uconn = get_uconn_for_shared_post(post, current_user)
+        uconn.key
+
+      post.visibility == :private ->
+        current_user.conn_key
+
+      true ->
+        Enum.at(post.user_posts, 0).key
+    end
   end
 
   def get_shared_post_identity_atom(post, user) do
@@ -152,8 +177,19 @@ defmodule MetamorphicWeb.Helpers do
   # different from the user_id of the post,
   # but the two users should have
   # user connections together.
-  defp get_uconn_for_shared_post(post, user) do
+  def get_uconn_for_shared_post(post, user) do
     Accounts.get_user_connection_from_shared_post(post, user)
+  end
+
+  # If the user (current_user) is the same as the
+  # post.user_id, then we return the user and not
+  # the uconn.
+  def get_uconn_avatar_for_shared_post(post, user) do
+    if post.user_id == user.id do
+      user
+    else
+      Accounts.get_user_connection_from_shared_post(post, user)
+    end
   end
 
   defp user_in_post_connections(post, user) do
@@ -173,9 +209,11 @@ defmodule MetamorphicWeb.Helpers do
 
   ## Avatars
 
-  def get_user_avatar(nil, _), do: ""
+  def get_user_avatar(user, key, post \\ nil, current_user \\ nil)
 
-  def get_user_avatar(user, key) do
+  def get_user_avatar(nil, _key, _post, _current_user), do: "nil"
+
+  def get_user_avatar(%User{} = user, key, _post, _current_user) do
     cond do
       is_nil(user.avatar_url) ->
         ""
@@ -225,6 +263,163 @@ defmodule MetamorphicWeb.Helpers do
           {:error, _rest} ->
             "error"
         end
+    end
+  end
+
+  def get_user_avatar(%UserConnection{} = uconn, key, post, current_user) do
+    case post do
+      nil ->
+        # Handle decrypting the avatar for the user connection.
+        cond do
+          not is_nil(avatar_binary = AvatarProcessor.get_ets_avatar(uconn.connection.id)) ->
+            image = decrypt_user_or_uconn_binary(avatar_binary, uconn, nil, key, nil)
+            "data:image/jpg;base64," <> image
+
+          is_nil(_avatar_binary = AvatarProcessor.get_ets_avatar(uconn.connection.id)) ->
+            avatars_bucket = Encrypted.Session.avatars_bucket()
+
+            with {:ok, %{body: obj}} <-
+                   ExAws.S3.get_object(
+                     avatars_bucket,
+                     decr_avatar(
+                       uconn.connection.avatar_url,
+                       uconn.user,
+                       uconn.key,
+                       key
+                     )
+                   )
+                   |> ExAws.request(),
+                 decrypted_obj <-
+                   decr_avatar(
+                     obj,
+                     uconn.user,
+                     uconn.key,
+                     key
+                   ) do
+              # Put the encrypted avatar binary in ets.
+              Task.async(fn ->
+                AvatarProcessor.put_ets_avatar(uconn.connection.id, obj)
+              end)
+
+              image = decrypted_obj |> Base.encode64()
+              path = "data:image/jpg;base64," <> image
+              path
+            else
+              {:error, _rest} ->
+                "error"
+            end
+        end
+
+      %Post{} = post ->
+        # we handle decrypting the avatar for the user connection and
+        # possibly the current user if the post is their own.
+        cond do
+          is_nil(uconn.connection.avatar_url) ->
+            ""
+
+          not is_nil(avatar_binary = AvatarProcessor.get_ets_avatar(uconn.connection.id)) ->
+            image = decrypt_user_or_uconn_binary(avatar_binary, uconn, post, key, current_user)
+            "data:image/jpg;base64," <> image
+
+          is_nil(_avatar_binary = AvatarProcessor.get_ets_avatar(uconn.connection.id)) && not is_nil(current_user) && current_user != post.user_id ->
+            avatars_bucket = Encrypted.Session.avatars_bucket()
+
+            with {:ok, %{body: obj}} <-
+                   ExAws.S3.get_object(
+                     avatars_bucket,
+                     decr_avatar(
+                       uconn.connection.avatar_url,
+                       uconn.user,
+                       uconn.key,
+                       key
+                     )
+                   )
+                   |> ExAws.request(),
+                 decrypted_obj <-
+                   decr_avatar(
+                     obj,
+                     uconn.user,
+                     uconn.key,
+                     key
+                   ) do
+              # Put the encrypted avatar binary in ets.
+              Task.async(fn ->
+                AvatarProcessor.put_ets_avatar(uconn.connection.id, obj)
+              end)
+
+              image = decrypted_obj |> Base.encode64()
+              path = "data:image/jpg;base64," <> image
+              path
+            else
+              {:error, _rest} ->
+                "error"
+            end
+
+          is_nil(_avatar_binary = AvatarProcessor.get_ets_avatar(uconn.connection.id)) && not is_nil(current_user) && current_user.id == post.user_id ->
+            avatars_bucket = Encrypted.Session.avatars_bucket()
+
+            with {:ok, %{body: obj}} <-
+                    ExAws.S3.get_object(
+                      avatars_bucket,
+                      decr_avatar(
+                        uconn.connection.avatar_url,
+                        current_user,
+                        uconn.key,
+                        key
+                      )
+                    )
+                    |> ExAws.request(),
+                  decrypted_obj <-
+                    decr_avatar(
+                      obj,
+                      current_user,
+                      uconn.key,
+                      key
+                    ) do
+              # Put the encrypted avatar binary in ets.
+              Task.async(fn ->
+                AvatarProcessor.put_ets_avatar(uconn.connection.id, obj)
+              end)
+
+              image = decrypted_obj |> Base.encode64()
+              path = "data:image/jpg;base64," <> image
+              path
+            else
+              {:error, _rest} ->
+                "error"
+            end
+        end
+    end
+  end
+
+  defp decrypt_user_or_uconn_binary(avatar_binary, uconn, post, key, current_user) do
+    cond do
+      is_nil(current_user) ->
+        decr_avatar(
+          avatar_binary,
+          uconn.user,
+          uconn.key,
+          key
+        )
+        |> Base.encode64()
+
+      not is_nil(current_user) && post.user_id != current_user.id ->
+        decr_avatar(
+          avatar_binary,
+          uconn.user,
+          uconn.key,
+          key
+        )
+        |> Base.encode64()
+
+        not is_nil(current_user) && post.user_id == current_user.id ->
+          decr_avatar(
+            avatar_binary,
+            current_user,
+            current_user.conn_key,
+            key
+          )
+          |> Base.encode64()
     end
   end
 

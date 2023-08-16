@@ -18,7 +18,7 @@
 
 <.list>
   <:item title="Username">
-    <%= decr_post(@post.username, @current_user, get_post_key(@post), @key, @post) %>
+  <%= decr_post(get_post_connection(@post, @current_user).username, @current_user, get_post_key(@post, @current_user), @key, @post) %>
   </:item>
   <:item title="Body">
     <%= decr_post(@post.body, @current_user, get_post_key(@post), @key, @post) %>

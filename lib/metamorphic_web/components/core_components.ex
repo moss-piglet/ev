@@ -775,20 +775,20 @@ defmodule MetamorphicWeb.CoreComponents do
   def avatar(assigns) do
     ~H"""
     <%= if src_blank?(@src) && (!@name || @name == "") do %>
-      <span class={"inline-flex #{@size} items-center justify-center overflow-hidden rounded-full bg-zinc-100"}>
+      <span class={if @class == "", do: "inline-flex #{@size} items-center justify-center overflow-hidden rounded-full bg-zinc-100", else: @class}>
         <svg class="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
           <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
         </svg>
       </span>
     <% else %>
       <%= if src_blank?(@src) && @name do %>
-        <span class={"inline-flex #{@size} items-center justify-center rounded-full bg-zinc-100"}>
+        <span class={if @class == "", do: "inline-flex #{@size} items-center justify-center overflow-hidden rounded-full bg-zinc-100", else: "inline-flex #{@class} #{@size} items-center justify-center overflow-hidden"}>
           <span class={"text-#{@text_size} font-thin leading-none"}>
             <%= generate_initials(@name) %>
           </span>
         </span>
       <% else %>
-        <img class={"inline-block #{@size} rounded-full bg-zinc-100"} src={@src} alt={@alt} />
+        <img class={if @class == "", do: "inline-block #{@size} rounded-full bg-zinc-100", else: @class} src={@src} alt={@alt} />
       <% end %>
     <% end %>
     """
