@@ -2,7 +2,7 @@ defmodule MetamorphicWeb.Helpers do
   @moduledoc false
 
   alias Metamorphic.Accounts
-  alias Metamorphic.Accounts.{Connection, User, UserConnection}
+  alias Metamorphic.Accounts.{User, UserConnection}
   alias Metamorphic.Encrypted
   alias Metamorphic.Extensions.AvatarProcessor
   alias Metamorphic.Cldr.DateTime.Relative
