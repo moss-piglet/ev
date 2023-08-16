@@ -7,7 +7,7 @@ defmodule MetamorphicWeb.Endpoint do
   @session_options [
     store: :cookie,
     path: "/",
-    secure: true,
+    secure: false,
     http_only: true,
     key: "__Host-_metamorphic_key",
     signing_salt: {Metamorphic.Encrypted.Session, :signing_salt, []},

@@ -321,7 +321,8 @@ defmodule MetamorphicWeb.Helpers do
             image = decrypt_user_or_uconn_binary(avatar_binary, uconn, post, key, current_user)
             "data:image/jpg;base64," <> image
 
-          is_nil(_avatar_binary = AvatarProcessor.get_ets_avatar(uconn.connection.id)) && not is_nil(current_user) && current_user != post.user_id ->
+          is_nil(_avatar_binary = AvatarProcessor.get_ets_avatar(uconn.connection.id)) &&
+            not is_nil(current_user) && current_user != post.user_id ->
             avatars_bucket = Encrypted.Session.avatars_bucket()
 
             with {:ok, %{body: obj}} <-
@@ -355,27 +356,28 @@ defmodule MetamorphicWeb.Helpers do
                 "error"
             end
 
-          is_nil(_avatar_binary = AvatarProcessor.get_ets_avatar(uconn.connection.id)) && not is_nil(current_user) && current_user.id == post.user_id ->
+          is_nil(_avatar_binary = AvatarProcessor.get_ets_avatar(uconn.connection.id)) &&
+            not is_nil(current_user) && current_user.id == post.user_id ->
             avatars_bucket = Encrypted.Session.avatars_bucket()
 
             with {:ok, %{body: obj}} <-
-                    ExAws.S3.get_object(
-                      avatars_bucket,
-                      decr_avatar(
-                        uconn.connection.avatar_url,
-                        current_user,
-                        uconn.key,
-                        key
-                      )
-                    )
-                    |> ExAws.request(),
-                  decrypted_obj <-
-                    decr_avatar(
-                      obj,
-                      current_user,
-                      uconn.key,
-                      key
-                    ) do
+                   ExAws.S3.get_object(
+                     avatars_bucket,
+                     decr_avatar(
+                       uconn.connection.avatar_url,
+                       current_user,
+                       uconn.key,
+                       key
+                     )
+                   )
+                   |> ExAws.request(),
+                 decrypted_obj <-
+                   decr_avatar(
+                     obj,
+                     current_user,
+                     uconn.key,
+                     key
+                   ) do
               # Put the encrypted avatar binary in ets.
               Task.async(fn ->
                 AvatarProcessor.put_ets_avatar(uconn.connection.id, obj)
@@ -412,14 +414,14 @@ defmodule MetamorphicWeb.Helpers do
         )
         |> Base.encode64()
 
-        not is_nil(current_user) && post.user_id == current_user.id ->
-          decr_avatar(
-            avatar_binary,
-            current_user,
-            current_user.conn_key,
-            key
-          )
-          |> Base.encode64()
+      not is_nil(current_user) && post.user_id == current_user.id ->
+        decr_avatar(
+          avatar_binary,
+          current_user,
+          current_user.conn_key,
+          key
+        )
+        |> Base.encode64()
     end
   end
 

@@ -463,10 +463,10 @@ defmodule MetamorphicWeb.UserSettingsLive do
 
   defp make_aws_requests(entry, avatars_bucket, file_path, e_blob, user, key) do
     with {:ok, _resp} <- maybe_delete_old_avatar(avatars_bucket, user, key),
-      {:ok, _resp} <- ex_aws_put_request(avatars_bucket, file_path, e_blob) do
-        # Return the encrypted_blob in the tuple for putting
-        # the encrypted avatar into ets.
-        {:ok, {entry, file_path, e_blob}}
+         {:ok, _resp} <- ex_aws_put_request(avatars_bucket, file_path, e_blob) do
+      # Return the encrypted_blob in the tuple for putting
+      # the encrypted avatar into ets.
+      {:ok, {entry, file_path, e_blob}}
     else
       _rest ->
         ex_aws_put_request(avatars_bucket, file_path, e_blob)

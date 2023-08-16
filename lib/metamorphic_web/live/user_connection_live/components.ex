@@ -194,7 +194,10 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
       <.dropdown id={"dropdown-" <> @uconn.id} svg_arrows={false} connection?={true}>
         <:connection_block>
           <div class="flex flex-1 flex-col p-8">
-            <.avatar class="mx-auto h-32 w-32 flex-shrink-0 rounded-full" src={get_user_avatar(@uconn, @key)} />
+            <.avatar
+              class="mx-auto h-32 w-32 flex-shrink-0 rounded-full"
+              src={get_user_avatar(@uconn, @key)}
+            />
             <h3 class="mt-6 text-sm font-medium text-gray-900">
               <%= decr_uconn(@uconn.connection.username, @current_user, @uconn.key, @key) %>
             </h3>

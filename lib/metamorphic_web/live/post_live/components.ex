@@ -73,12 +73,25 @@ defmodule MetamorphicWeb.PostLive.Components do
     <div class="sr-only">
       <.link navigate={~p"/posts/#{@post}"}>Show</.link>
     </div>
-    <.avatar src={get_user_avatar(get_uconn_avatar_for_shared_post(@post, @current_user), @key, @post, @current_user)} />
+    <.avatar src={
+      get_user_avatar(
+        get_uconn_avatar_for_shared_post(@post, @current_user),
+        @key,
+        @post,
+        @current_user
+      )
+    } />
 
     <div class="flex-auto">
       <div class="flex items-baseline justify-between gap-x-4">
         <p class="text-sm font-semibold leading-6 text-gray-900">
-          <%= decr_post(get_post_connection(@post, @current_user).username, @current_user, get_post_key(@post, @current_user), @key, @post) %>
+          <%= decr_post(
+            get_post_connection(@post, @current_user).username,
+            @current_user,
+            get_post_key(@post, @current_user),
+            @key,
+            @post
+          ) %>
         </p>
         <p class="flex-none text-xs text-gray-600">
           <time datetime={@post.inserted_at}>
