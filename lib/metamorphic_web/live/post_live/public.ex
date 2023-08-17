@@ -74,6 +74,11 @@ defmodule MetamorphicWeb.PostLive.Public do
   end
 
   @impl true
+  def handle_info({_event, _data}, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_event("top", _, socket) do
     {:noreply, socket |> put_flash(:info, "You reached the top") |> paginate_posts(1)}
   end
