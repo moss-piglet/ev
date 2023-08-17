@@ -56,10 +56,7 @@ if config_env() == :prod do
 
   config :metamorphic, MetamorphicWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
-    check_origin: [
-      "https://metamorphic.app",
-      "//*.metamorphic.app"
-    ],
+    check_origin: :conn,
     force_ssl: [rewrite_on: [:x_forwarded_proto], host: nil, hsts: false],
     server_ip: System.get_env("METAMORPHIC_SERVER_IP"),
     live_view: [
