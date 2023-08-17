@@ -83,7 +83,7 @@ defmodule MetamorphicWeb.PostLive.Components do
       )
     } />
 
-    <image :if={is_nil(@current_user)} src={~p"/images/logo.svg"} class="inline-block h-12 w-12 rounded-full bg-zinc-100" />
+    <image :if={is_nil(@current_user)} src={~p"/images/logo.svg"} class="inline-block h-12 w-12 rounded-md bg-zinc-100" />
 
     <div class="flex-auto">
       <div class="flex items-baseline justify-between gap-x-4">
