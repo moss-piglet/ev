@@ -781,10 +781,10 @@ defmodule MetamorphicWeb.CoreComponents do
             "inline-flex #{@size} items-center justify-center overflow-hidden rounded-md bg-zinc-100",
           else: @class
       }>
-      <img
+        <img
           class={if @class == "", do: "inline-block #{@size} rounded-md bg-zinc-100", else: @class}
           src={~p"/images/logo.svg"}
-          alt={"Metamorphic egg logo"}
+          alt="Metamorphic egg logo"
         />
       </span>
     <% else %>

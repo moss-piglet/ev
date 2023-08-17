@@ -27,6 +27,8 @@ defmodule MetamorphicWeb.Router do
         {MetamorphicWeb.UserAuth, :mount_current_user},
         {MetamorphicWeb.UserAuth, :mount_current_user_session_key}
       ] do
+      live "/about", PublicLive.About, :about
+      live "/privacy", PublicLive.Privacy, :privacy
       live "/public/posts", PostLive.Public, :index
       live "/public/posts/:id", PostLive.PublicShow, :show
     end

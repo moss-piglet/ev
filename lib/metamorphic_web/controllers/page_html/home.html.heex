@@ -89,6 +89,17 @@
         </div>
         <div class="mt-10 grid grid-cols-1 gap-y-4 text-sm leading-6 text-zinc-700 sm:grid-cols-2">
           <div>
+            <.link
+              navigate={~p"/about"}
+              class="group -mx-2 -my-0.5 inline-flex items-center gap-3 rounded-lg px-2 py-0.5 hover:bg-zinc-50 hover:text-zinc-900"
+            >
+              <.icon
+                name="hero-information-circle-solid"
+                class="h-4 w-4 text-zinc-400 group-hover:text-zinc-600"
+              /> About us
+            </.link>
+          </div>
+          <div>
             <a
               href="https://podcast.metamorphic.app/"
               class="group -mx-2 -my-0.5 inline-flex items-center gap-3 rounded-lg px-2 py-0.5 hover:bg-zinc-50 hover:text-zinc-900"
@@ -96,7 +107,7 @@
               <.icon
                 name="hero-microphone-solid"
                 class="h-4 w-4 text-zinc-400 group-hover:text-zinc-600"
-              /> Listen to our Podcast
+              /> Listen to our podcast
             </a>
           </div>
           <div>
@@ -139,23 +150,30 @@
             </a>
           </div>
           <div>
-            <a
-              href="https://elixirforum.com/t/metamorphic-early-access-is-using-elixir/41021"
+            <.link
+              navigate={~p"/privacy"}
               class="group -mx-2 -my-0.5 inline-flex items-center gap-3 rounded-lg px-2 py-0.5 hover:bg-zinc-50 hover:text-zinc-900"
             >
               <.icon
-                name="hero-chat-bubble-oval-left-solid"
+                name="hero-eye-slash-solid"
                 class="h-4 w-4 text-zinc-400 group-hover:text-zinc-600"
-              /> Discuss on Elixir forum
-            </a>
+              /> Privacy policy
+            </.link>
           </div>
           <div>
-            <a href="https://www.iubenda.com/terms-and-conditions/47528515" class="iubenda-nostyle iubenda-noiframe iubenda-embed iubenda-noiframe group -mx-2 -my-0.5 inline-flex items-center gap-3 rounded-lg px-2 py-0.5 hover:bg-zinc-50 hover:text-zinc-900" title="Terms and Conditions ">
-            <.icon
+            <a
+              href="https://www.iubenda.com/terms-and-conditions/47528515"
+              class="iubenda-nostyle iubenda-noiframe iubenda-embed iubenda-noiframe group -mx-2 -my-0.5 inline-flex items-center gap-3 rounded-lg px-2 py-0.5 hover:bg-zinc-50 hover:text-zinc-900"
+              title="Terms and Conditions "
+            >
+              <.icon
                 name="hero-document-text-solid"
                 class="h-4 w-4 text-zinc-400 group-hover:text-zinc-600"
-              /> Terms and Conditions
-            </a><script type="text/javascript">(function (w,d) {var loader = function () {var s = d.createElement("script"), tag = d.getElementsByTagName("script")[0]; s.src="https://cdn.iubenda.com/iubenda.js"; tag.parentNode.insertBefore(s,tag);}; if(w.addEventListener){w.addEventListener("load", loader, false);}else if(w.attachEvent){w.attachEvent("onload", loader);}else{w.onload = loader;}})(window, document);</script>
+              /> Terms and conditions
+            </a>
+            <script type="text/javascript">
+              (function (w,d) {var loader = function () {var s = d.createElement("script"), tag = d.getElementsByTagName("script")[0]; s.src="https://cdn.iubenda.com/iubenda.js"; tag.parentNode.insertBefore(s,tag);}; if(w.addEventListener){w.addEventListener("load", loader, false);}else if(w.attachEvent){w.attachEvent("onload", loader);}else{w.onload = loader;}})(window, document);
+            </script>
           </div>
         </div>
       </div>

@@ -74,16 +74,23 @@ defmodule MetamorphicWeb.PostLive.Components do
       <.link navigate={~p"/posts/#{@post}"}>Show</.link>
     </div>
 
-    <.avatar :if={not is_nil(@current_user)} src={
-      get_user_avatar(
-        get_uconn_avatar_for_shared_post(@post, @current_user),
-        @key,
-        @post,
-        @current_user
-      )
-    } />
+    <.avatar
+      :if={not is_nil(@current_user)}
+      src={
+        get_user_avatar(
+          get_uconn_avatar_for_shared_post(@post, @current_user),
+          @key,
+          @post,
+          @current_user
+        )
+      }
+    />
 
-    <image :if={is_nil(@current_user)} src={~p"/images/logo.svg"} class="inline-block h-12 w-12 rounded-md bg-zinc-100" />
+    <image
+      :if={is_nil(@current_user)}
+      src={~p"/images/logo.svg"}
+      class="inline-block h-12 w-12 rounded-md bg-zinc-100"
+    />
 
     <div class="flex-auto">
       <div class="flex items-baseline justify-between gap-x-4">
