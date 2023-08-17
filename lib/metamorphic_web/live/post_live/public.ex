@@ -49,6 +49,11 @@ defmodule MetamorphicWeb.PostLive.Public do
   end
 
   @impl true
+  def handle_info({MetamorphicWeb.PostLive.FormComponent, _message}, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_info({:post_created, post}, socket) do
     {:noreply, stream_insert(socket, :posts, post, at: 0)}
   end
@@ -74,7 +79,7 @@ defmodule MetamorphicWeb.PostLive.Public do
   end
 
   @impl true
-  def handle_info({_event, _data}, socket) do
+  def handle_info(_message, socket) do
     {:noreply, socket}
   end
 
