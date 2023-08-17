@@ -73,7 +73,8 @@ defmodule MetamorphicWeb.PostLive.Components do
     <div class="sr-only">
       <.link navigate={~p"/posts/#{@post}"}>Show</.link>
     </div>
-    <.avatar src={
+
+    <.avatar :if={not is_nil(@current_user)} src={
       get_user_avatar(
         get_uconn_avatar_for_shared_post(@post, @current_user),
         @key,
@@ -81,6 +82,8 @@ defmodule MetamorphicWeb.PostLive.Components do
         @current_user
       )
     } />
+
+    <image :if={is_nil(@current_user)} src={~p"/images/logo.svg"} class="inline-block h-12 w-12 rounded-full bg-zinc-100" />
 
     <div class="flex-auto">
       <div class="flex items-baseline justify-between gap-x-4">
