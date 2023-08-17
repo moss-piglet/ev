@@ -778,11 +778,11 @@ defmodule MetamorphicWeb.CoreComponents do
       <span class={
         if @class == "",
           do:
-            "inline-flex #{@size} items-center justify-center overflow-hidden rounded-full bg-zinc-100",
+            "inline-flex #{@size} items-center justify-center overflow-hidden rounded-md bg-zinc-100",
           else: @class
       }>
       <img
-          class={if @class == "", do: "inline-block #{@size} rounded-full bg-zinc-100", else: @class}
+          class={if @class == "", do: "inline-block #{@size} rounded-md bg-zinc-100", else: @class}
           src={~p"/images/logo.svg"}
           alt={"Metamorphic egg logo"}
         />
@@ -792,7 +792,7 @@ defmodule MetamorphicWeb.CoreComponents do
         <span class={
           if @class == "",
             do:
-              "inline-flex #{@size} items-center justify-center overflow-hidden rounded-full bg-zinc-100",
+              "inline-flex #{@size} items-center justify-center overflow-hidden rounded-md bg-zinc-100",
             else: "inline-flex #{@class} #{@size} items-center justify-center overflow-hidden"
         }>
           <span class={"text-#{@text_size} font-thin leading-none"}>
