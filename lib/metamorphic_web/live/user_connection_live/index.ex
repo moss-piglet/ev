@@ -161,6 +161,11 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   end
 
   @impl true
+  def handle_info(_message, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     uconn = Accounts.get_user_connection!(id)
 
