@@ -211,7 +211,7 @@ defmodule MetamorphicWeb.Helpers do
 
   def get_user_avatar(user, key, post \\ nil, current_user \\ nil)
 
-  def get_user_avatar(nil, _key, _post, _current_user), do: "nil"
+  def get_user_avatar(nil, _key, _post, _current_user), do: nil
 
   def get_user_avatar(%User{} = user, key, _post, _current_user) do
     cond do
