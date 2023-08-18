@@ -12,31 +12,15 @@ kill_signal = "SIGTERM"
 
 [env]
   PHX_HOST = "metamorphic.app"
-  PORT = "4000"
-  PRIMARY_REGION="bos"
   RELEASE_COOKIE="1a3LEqcIUmDIK-GNMeH1MQGRaNvnfIny4MSmqsk85kv7Zh1Z35tVgg=="
 
-[[services]]
-  protocol = "tcp"
-  internal_port = 4000
-  processes = ["app"]
-
-  [[services.ports]]
-    handlers = ["http"]
-    port = 80
-    force_https = true
-
-  [[services.ports]]
-    port = 443
-    handlers = ["tls", "http"]
-
-  [services.concurrency]
-    type = "connections"
-    hard_limit = 2500
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  [http_service.concurrency]
+    type = "requests"
     soft_limit = 2000
-
-  [[services.tcp_checks]]
-    interval = "15s"
-    timeout = "2s"
-    grace_period = "20s"
-    restart_limit = 0
+    hard_limit = 2500
