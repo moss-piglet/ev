@@ -48,8 +48,8 @@ if config_env() == :prod do
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "metamorphic.app"
-  port = String.to_integer(System.get_env("PORT") || "8080")
+  host = System.get_env("PHX_HOST") || "example.com"
+  port = String.to_integer(System.get_env("PORT") || "4000")
 
   # Configure the canonical host for redirects.
   config :metamorphic, canonical_host: host
@@ -57,8 +57,6 @@ if config_env() == :prod do
   config :metamorphic, MetamorphicWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     check_origin: true,
-    force_ssl: [rewrite_on: [:x_forwarded_proto], host: nil, hsts: true],
-    server_ip: System.get_env("METAMORPHIC_SERVER_IP"),
     live_view: [
       signing_salt: System.get_env("LIVE_VIEW_SIGNING_SALT"),
       encryption_salt: System.get_env("LIVE_VIEW_ENCRYPTION_SALT")
