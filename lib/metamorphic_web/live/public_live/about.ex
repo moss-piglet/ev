@@ -10,7 +10,7 @@ defmodule MetamorphicWeb.PublicLive.About do
         <div class="mx-auto max-w-2xl space-y-16 divide-y divide-gray-100 lg:mx-0 lg:max-w-none">
           <div class="grid grid-cols-1 gap-x-8 gap-y-10">
             <div>
-              <h2 class="text-3xl font-bold tracking-tight text-zinc-900">About Us</h2>
+              <h2 class="text-3xl font-bold tracking-tight text-zinc-900">About us</h2>
               <p class="mt-4 leading-7 text-zinc-600">We're a small, people focused team dedicated to providing a (better) way to connect and share online.</p>
             </div>
             <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:col-span-2 lg:gap-8">
