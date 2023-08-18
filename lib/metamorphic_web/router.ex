@@ -18,7 +18,7 @@ defmodule MetamorphicWeb.Router do
   end
 
   scope "/", MetamorphicWeb do
-    pipe_through :browser
+    pipe_through [:browser]
 
     get "/", PageController, :home
 
