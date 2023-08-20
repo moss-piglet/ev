@@ -271,6 +271,9 @@ defmodule MetamorphicWeb.Helpers do
       nil ->
         # Handle decrypting the avatar for the user connection.
         cond do
+          is_nil(uconn.connection.avatar_url) ->
+            ""
+
           not is_nil(avatar_binary = AvatarProcessor.get_ets_avatar(uconn.connection.id)) ->
             image = decrypt_user_or_uconn_binary(avatar_binary, uconn, nil, key, nil)
             "data:image/jpg;base64," <> image
