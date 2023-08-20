@@ -216,7 +216,7 @@ defmodule MetamorphicWeb.Helpers do
   def get_user_avatar(%User{} = user, key, _post, _current_user) do
     cond do
       is_nil(user.avatar_url) ->
-        ""
+        nil
 
       not is_nil(avatar_binary = AvatarProcessor.get_ets_avatar(user.connection.id)) ->
         image =

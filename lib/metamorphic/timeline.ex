@@ -179,7 +179,7 @@ defmodule Metamorphic.Timeline do
         |> Ecto.Changeset.put_assoc(:post, post)
         |> Ecto.Changeset.put_assoc(:user, user)
       end)
-      |> Repo.transaction()
+      |> Repo.transaction_on_primary()
 
     conn = Accounts.get_connection_from_post(post, user)
 
@@ -214,7 +214,7 @@ defmodule Metamorphic.Timeline do
         |> Ecto.Changeset.put_assoc(:post, post)
         |> Ecto.Changeset.put_assoc(:user, user)
       end)
-      |> Repo.transaction()
+      |> Repo.transaction_on_primary()
 
     conn = Accounts.get_connection_from_post(post, user)
 
@@ -249,7 +249,7 @@ defmodule Metamorphic.Timeline do
         |> Ecto.Changeset.put_assoc(:post, post)
         |> Ecto.Changeset.put_assoc(:user, user)
       end)
-      |> Repo.transaction()
+      |> Repo.transaction_on_primary()
 
     conn = Accounts.get_connection_from_post(post, user)
 
