@@ -247,24 +247,26 @@ defmodule Metamorphic.Accounts do
 
   """
   def register_user(attrs) do
-    user = User.registration_changeset(%User{}, attrs)
+    {:ok, {:ok, user}} = Repo.transaction(fn ->
+      user = User.registration_changeset(%User{}, attrs)
 
-    c_attrs = user.changes.connection_map
+      c_attrs = user.changes.connection_map
 
-    {:ok, %{insert_user: user, insert_connection: _conn}} =
-      Ecto.Multi.new()
-      |> Ecto.Multi.insert(:insert_user, user)
-      |> Ecto.Multi.insert(:insert_connection, fn %{insert_user: user} ->
-        Connection.register_changeset(%Connection{}, %{
-          email: c_attrs.c_email,
-          email_hash: c_attrs.c_email_hash,
-          username: c_attrs.c_username,
-          username_hash: c_attrs.c_username_hash
-        })
-        |> Ecto.Changeset.put_assoc(:user, user)
-      end)
-      |> Repo.transaction()
-
+      {:ok, %{insert_user: user, insert_connection: _conn}} =
+        Ecto.Multi.new()
+        |> Ecto.Multi.insert(:insert_user, user)
+        |> Ecto.Multi.insert(:insert_connection, fn %{insert_user: user} ->
+          Connection.register_changeset(%Connection{}, %{
+            email: c_attrs.c_email,
+            email_hash: c_attrs.c_email_hash,
+            username: c_attrs.c_username,
+            username_hash: c_attrs.c_username_hash
+          })
+          |> Ecto.Changeset.put_assoc(:user, user)
+        end)
+        |> Repo.transaction()
+        {:ok, user}
+    end)
     {:ok, user}
   end
 
