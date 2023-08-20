@@ -11,7 +11,9 @@ defmodule MetamorphicWeb.PublicLive.About do
           <div class="grid grid-cols-1 gap-x-8 gap-y-10">
             <div>
               <h2 class="text-3xl font-bold tracking-tight text-zinc-900">About us</h2>
-              <p class="mt-4 leading-7 text-zinc-600">We're a small, people focused team dedicated to providing a (better) way to connect and share online.</p>
+              <p class="mt-4 leading-7 text-zinc-600">
+                We're a small, people focused team dedicated to providing a (better) way to connect and share online.
+              </p>
             </div>
             <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:col-span-2 lg:gap-8">
               <span class="group">
@@ -52,21 +54,32 @@ defmodule MetamorphicWeb.PublicLive.About do
 
         <h2 class="mt-16 text-2xl font-bold tracking-tight text-gray-900">Our story (so far)</h2>
         <span class="space-y-6 leading-6">
-          <p class="mt-6">Metamorphic started with Mark and is supported by parent company Moss Piglet Corporation (co-founded by Mark, Ryan, and Mark's dad), with the goal to provide an uncompromisingly simple way to connect and share online — free from the surveillance world of today.</p>
+          <p class="mt-6">
+            Metamorphic started with Mark and is supported by parent company Moss Piglet Corporation (co-founded by Mark, Ryan, and Mark's dad), with the goal to provide an uncompromisingly simple way to connect and share online — free from the surveillance world of today.
+          </p>
 
-          <p>We felt that you shouldn't have to be marginalized, harvested, drained, or otherwise rendered <em>less</em> just to get online and connect with others. So after several years of iterations, we've finally launched with the streamlined version you see here today.</p>
+          <p>
+            We felt that you shouldn't have to be marginalized, harvested, drained, or otherwise rendered
+            <em>less</em>
+            just to get online and connect with others. So after several years of iterations, we've finally launched with the streamlined version you see here today.
+          </p>
 
-          <p>And while it's currently free, we will probably have to come up with a way to cover the costs of building and maintaining this service — like a subscription or something (we won't ever sell your data).</p>
+          <p>
+            And while it's currently free, we will probably have to come up with a way to cover the costs of building and maintaining this service — like a subscription or something (we won't ever sell your data).
+          </p>
 
-          <p>It's been a transformative experience pushing back against big tech and building what we believe to be a better alternative for people.</p>
+          <p>
+            It's been a transformative experience pushing back against big tech and building what we believe to be a better alternative for people.
+          </p>
 
-          <p class="text-zinc-500"><em>We hope you join us on this road to a better (online) life.</em></p>
+          <p class="text-zinc-500">
+            <em>We hope you join us on this road to a better (online) life.</em>
+          </p>
 
           <p>Mark & Ryan</p>
           Creator & Co-founders of Metamorphic / Moss Piglet
         </span>
       </div>
-
     </div>
     """
   end

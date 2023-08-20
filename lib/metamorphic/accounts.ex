@@ -247,35 +247,40 @@ defmodule Metamorphic.Accounts do
 
   """
   def register_user(attrs) do
-    {:ok, {:ok, user}} = Repo.transaction_on_primary(fn ->
-      user = User.registration_changeset(%User{}, attrs)
+    {:ok, {:ok, user}} =
+      Repo.transaction_on_primary(fn ->
+        user = User.registration_changeset(%User{}, attrs)
 
-      c_attrs = user.changes.connection_map
+        c_attrs = user.changes.connection_map
 
-      {:ok, %{insert_user: user, insert_connection: _conn}} =
-        Ecto.Multi.new()
-        |> Ecto.Multi.insert(:insert_user, user)
-        |> Ecto.Multi.insert(:insert_connection, fn %{insert_user: user} ->
-          Connection.register_changeset(%Connection{}, %{
-            email: c_attrs.c_email,
-            email_hash: c_attrs.c_email_hash,
-            username: c_attrs.c_username,
-            username_hash: c_attrs.c_username_hash
-          })
-          |> Ecto.Changeset.put_assoc(:user, user)
-        end)
-        |> Repo.transaction_on_primary()
+        {:ok, %{insert_user: user, insert_connection: _conn}} =
+          Ecto.Multi.new()
+          |> Ecto.Multi.insert(:insert_user, user)
+          |> Ecto.Multi.insert(:insert_connection, fn %{insert_user: user} ->
+            Connection.register_changeset(%Connection{}, %{
+              email: c_attrs.c_email,
+              email_hash: c_attrs.c_email_hash,
+              username: c_attrs.c_username,
+              username_hash: c_attrs.c_username_hash
+            })
+            |> Ecto.Changeset.put_assoc(:user, user)
+          end)
+          |> Repo.transaction_on_primary()
 
         {:ok, user}
-    end)
+      end)
+
     {:ok, user}
   end
 
   def create_user_connection(attrs, opts) do
-    {:ok, uconn} =
-      %UserConnection{}
-      |> UserConnection.changeset(attrs, opts)
-      |> Repo.insert()
+    {:ok, {:ok, uconn}} =
+      Repo.transaction_on_primary(fn ->
+        {:ok, uconn} =
+          %UserConnection{}
+          |> UserConnection.changeset(attrs, opts)
+          |> Repo.insert()
+      end)
 
     {:ok, uconn |> Repo.preload([:user, :connection])}
     |> broadcast(:uconn_created)
@@ -355,22 +360,29 @@ defmodule Metamorphic.Accounts do
   end
 
   def update_user_username(user, attrs \\ %{}, opts \\ []) do
-    changeset = User.username_changeset(user, attrs, opts)
-    conn = get_connection!(user.connection.id)
-    c_attrs = changeset.changes.connection_map
+    {:ok, {:ok, user}} =
+      Repo.transaction_on_primary(fn ->
+        changeset = User.username_changeset(user, attrs, opts)
+        conn = get_connection!(user.connection.id)
+        c_attrs = changeset.changes.connection_map
 
-    {:ok, %{update_user: user, update_connection: conn}} =
-      Ecto.Multi.new()
-      |> Ecto.Multi.update(:update_user, fn _ -> User.username_changeset(user, attrs, opts) end)
-      |> Ecto.Multi.update(:update_connection, fn %{update_user: _user} ->
-        Connection.update_username_changeset(conn, %{
-          username: c_attrs.c_username,
-          username_hash: c_attrs.c_username_hash
-        })
+        {:ok, %{update_user: user, update_connection: conn}} =
+          Ecto.Multi.new()
+          |> Ecto.Multi.update(:update_user, fn _ ->
+            User.username_changeset(user, attrs, opts)
+          end)
+          |> Ecto.Multi.update(:update_connection, fn %{update_user: _user} ->
+            Connection.update_username_changeset(conn, %{
+              username: c_attrs.c_username,
+              username_hash: c_attrs.c_username_hash
+            })
+          end)
+          |> Repo.transaction_on_primary()
+
+        broadcast_connection(conn, :uconn_username_updated)
+
+        {:ok, user}
       end)
-      |> Repo.transaction()
-
-    broadcast_connection(conn, :uconn_username_updated)
 
     {:ok, user}
   end
@@ -430,7 +442,7 @@ defmodule Metamorphic.Accounts do
 
     Ecto.Multi.new()
     |> Ecto.Multi.delete(:user, changeset)
-    |> Repo.transaction()
+    |> Repo.transaction_on_primary()
     |> case do
       {:ok, %{user: user}} ->
         uconns
@@ -478,7 +490,7 @@ defmodule Metamorphic.Accounts do
     with {:ok, query} <- UserToken.verify_change_email_token_query(token, context),
          %UserToken{sent_to: email} <- Repo.one(query),
          {:ok, %{user: _user, tokens: _tokens, connection: conn}} <-
-           Repo.transaction(user_email_multi(user, email, context, key)) do
+           Repo.transaction_on_primary(user_email_multi(user, email, context, key)) do
       broadcast_connection(conn, :uconn_email_updated)
       :ok
     else
@@ -490,53 +502,60 @@ defmodule Metamorphic.Accounts do
   Updates the user avatar.
   """
   def update_user_avatar(user, attrs, opts \\ []) do
-    conn = get_connection!(user.connection.id)
+    {:ok, {:ok, user, conn}} =
+      Repo.transaction_on_primary(fn ->
+        conn = get_connection!(user.connection.id)
 
-    changeset =
-      cond do
-        opts[:delete_avatar] ->
-          user
-          |> User.delete_avatar_changeset(%{avatar_url: attrs[:avatar_url]}, opts)
+        changeset =
+          cond do
+            opts[:delete_avatar] ->
+              user
+              |> User.delete_avatar_changeset(%{avatar_url: attrs[:avatar_url]}, opts)
 
-        true ->
-          user
-          |> User.avatar_changeset(%{avatar_url: attrs[:avatar_url]}, opts)
-      end
+            true ->
+              user
+              |> User.avatar_changeset(%{avatar_url: attrs[:avatar_url]}, opts)
+          end
 
-    c_attrs = changeset.changes.connection_map
+        c_attrs = changeset.changes.connection_map
 
-    {:ok, %{update_user: user, update_connection: conn}} =
-      cond do
-        opts[:delete_avatar] ->
-          Ecto.Multi.new()
-          |> Ecto.Multi.update(:update_user, fn _ ->
-            User.delete_avatar_changeset(user, attrs, opts)
-          end)
-          |> Ecto.Multi.update(:update_connection, fn %{update_user: _user} ->
-            Connection.update_avatar_changeset(
-              conn,
-              %{
-                avatar_url: c_attrs.c_avatar_url,
-                avatar_url_hash: c_attrs.c_avatar_url_hash
-              },
-              opts
-            )
-          end)
-          |> Repo.transaction()
+        {:ok, %{update_user: user, update_connection: conn}} =
+          cond do
+            opts[:delete_avatar] ->
+              Ecto.Multi.new()
+              |> Ecto.Multi.update(:update_user, fn _ ->
+                User.delete_avatar_changeset(user, attrs, opts)
+              end)
+              |> Ecto.Multi.update(:update_connection, fn %{update_user: _user} ->
+                Connection.update_avatar_changeset(
+                  conn,
+                  %{
+                    avatar_url: c_attrs.c_avatar_url,
+                    avatar_url_hash: c_attrs.c_avatar_url_hash
+                  },
+                  opts
+                )
+              end)
+              |> Repo.transaction_on_primary()
 
-        true ->
-          Ecto.Multi.new()
-          |> Ecto.Multi.update(:update_user, fn _ -> User.avatar_changeset(user, attrs, opts) end)
-          |> Ecto.Multi.update(:update_connection, fn %{update_user: _user} ->
-            Connection.update_avatar_changeset(conn, %{
-              avatar_url: c_attrs.c_avatar_url,
-              avatar_url_hash: c_attrs.c_avatar_url_hash
-            })
-          end)
-          |> Repo.transaction()
-      end
+            true ->
+              Ecto.Multi.new()
+              |> Ecto.Multi.update(:update_user, fn _ ->
+                User.avatar_changeset(user, attrs, opts)
+              end)
+              |> Ecto.Multi.update(:update_connection, fn %{update_user: _user} ->
+                Connection.update_avatar_changeset(conn, %{
+                  avatar_url: c_attrs.c_avatar_url,
+                  avatar_url_hash: c_attrs.c_avatar_url_hash
+                })
+              end)
+              |> Repo.transaction_on_primary()
+          end
 
-    broadcast_connection(conn, :uconn_avatar_updated)
+        broadcast_connection(conn, :uconn_avatar_updated)
+
+        {:ok, user, conn}
+      end)
 
     {:ok, user, conn}
   end
@@ -625,7 +644,7 @@ defmodule Metamorphic.Accounts do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, changeset)
     |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, :all))
-    |> Repo.transaction()
+    |> Repo.transaction_on_primary()
     |> case do
       {:ok, %{user: user}} -> {:ok, user}
       {:error, :user, changeset, _} -> {:error, changeset}
@@ -793,7 +812,7 @@ defmodule Metamorphic.Accounts do
   def confirm_user(token) do
     with {:ok, query} <- UserToken.verify_email_token_query(token, "confirm"),
          %User{} = user <- Repo.one(query),
-         {:ok, %{user: user}} <- Repo.transaction(confirm_user_multi(user)) do
+         {:ok, %{user: user}} <- Repo.transaction_on_primary(confirm_user_multi(user)) do
       {:ok, user}
     else
       _ -> :error
@@ -807,27 +826,32 @@ defmodule Metamorphic.Accounts do
   end
 
   def confirm_user_connection(uconn, attrs, opts \\ []) do
-    {:ok, %{update_uconn: upd_uconn, insert_uconn: ins_uconn}} =
-      Ecto.Multi.new()
-      |> Ecto.Multi.update(:update_uconn, UserConnection.confirm_changeset(uconn))
-      |> Ecto.Multi.insert(
-        :insert_uconn,
-        UserConnection.changeset(%UserConnection{}, attrs, opts)
-      )
-      |> Repo.transaction()
+    {:ok, {:ok, upd_uconn, ins_uconn}} =
+      Repo.transaction_on_primary(fn ->
+        {:ok, %{update_uconn: upd_uconn, insert_uconn: ins_uconn}} =
+          Ecto.Multi.new()
+          |> Ecto.Multi.update(:update_uconn, UserConnection.confirm_changeset(uconn))
+          |> Ecto.Multi.insert(
+            :insert_uconn,
+            UserConnection.changeset(%UserConnection{}, attrs, opts)
+          )
+          |> Repo.transaction_on_primary()
 
-    {:ok, %{upd_insert_uconn: ins_uconn}} =
-      Ecto.Multi.new()
-      |> Ecto.Multi.update(:upd_insert_uconn, UserConnection.confirm_changeset(ins_uconn))
-      |> Repo.transaction()
+        {:ok, %{upd_insert_uconn: ins_uconn}} =
+          Ecto.Multi.new()
+          |> Ecto.Multi.update(:upd_insert_uconn, UserConnection.confirm_changeset(ins_uconn))
+          |> Repo.transaction_on_primary()
 
-    {:ok, ins_uconn} =
-      {:ok, ins_uconn |> Repo.preload([:user, :connection])}
-      |> broadcast(:uconn_confirmed)
+        {:ok, ins_uconn} =
+          {:ok, ins_uconn |> Repo.preload([:user, :connection])}
+          |> broadcast(:uconn_confirmed)
 
-    {:ok, upd_uconn} =
-      {:ok, upd_uconn |> Repo.preload([:user, :connection])}
-      |> broadcast(:uconn_confirmed)
+        {:ok, upd_uconn} =
+          {:ok, upd_uconn |> Repo.preload([:user, :connection])}
+          |> broadcast(:uconn_confirmed)
+
+        {:ok, upd_uconn, ins_uconn}
+      end)
 
     {:ok, upd_uconn, ins_uconn}
   end
@@ -913,7 +937,7 @@ defmodule Metamorphic.Accounts do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:user, User.password_changeset(user, attrs, opts))
     |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, :all))
-    |> Repo.transaction()
+    |> Repo.transaction_on_primary()
     |> case do
       {:ok, %{user: user}} -> {:ok, user}
       {:error, :user, changeset, _} -> {:error, changeset}
