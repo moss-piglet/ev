@@ -247,7 +247,7 @@ defmodule Metamorphic.Accounts do
 
   """
   def register_user(attrs) do
-    {:ok, {:ok, user}} = Repo.transaction(fn ->
+    {:ok, {:ok, user}} = Repo.transaction_on_primary(fn ->
       user = User.registration_changeset(%User{}, attrs)
 
       c_attrs = user.changes.connection_map
@@ -264,7 +264,8 @@ defmodule Metamorphic.Accounts do
           })
           |> Ecto.Changeset.put_assoc(:user, user)
         end)
-        |> Repo.transaction()
+        |> Repo.transaction_on_primary()
+
         {:ok, user}
     end)
     {:ok, user}

@@ -14,4 +14,8 @@ end
 
 defmodule Metamorphic.Repo do
   use Fly.Repo, local_repo: Metamorphic.Repo.Local
+
+  def transaction_on_primary(tx_fun) do
+    Fly.Postgres.rpc_and_wait(__MODULE__, :transaction, [tx_fun])
+  end
 end
