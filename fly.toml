@@ -43,4 +43,4 @@ swap_size_mb = 512
      grace_period = "20s"
      interval = "15s"
      restart_limit = 0
-     timeout = "2s
+     timeout = "2s"
