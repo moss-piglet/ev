@@ -260,9 +260,11 @@ defmodule Metamorphic.Timeline do
   def update_post_fav(%Post{} = post, attrs, opts \\ []) do
     user = Accounts.get_user!(opts[:user].id)
 
-    {:ok, post} =
-      Post.changeset(post, attrs, opts)
-      |> Repo.update()
+    {:ok, {:ok, post}} =
+      Repo.transaction_on_primary(fn ->
+        Post.changeset(post, attrs, opts)
+        |> Repo.update()
+      end)
 
     conn = Accounts.get_connection_from_post(post, user)
 
@@ -273,9 +275,11 @@ defmodule Metamorphic.Timeline do
   def update_post_repost(%Post{} = post, attrs, opts \\ []) do
     user = Accounts.get_user!(opts[:user].id)
 
-    {:ok, post} =
-      Post.changeset(post, attrs, opts)
-      |> Repo.update()
+    {:ok, {:ok, post}} =
+      Repo.transaction_on_primary(fn ->
+        Post.changeset(post, attrs, opts)
+        |> Repo.update()
+      end)
 
     conn = Accounts.get_connection_from_post(post, user)
 
