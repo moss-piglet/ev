@@ -77,19 +77,6 @@ if config_env() == :prod do
     System.get_env("FLY_APP_NAME") ||
       raise "FLY_APP_NAME not available"
 
-  config :libcluster,
-    debug: true,
-    topologies: [
-      fly6pn: [
-        strategy: Cluster.Strategy.DNSPoll,
-        config: [
-          polling_interval: 5_000,
-          query: "#{app_name}.internal",
-          node_basename: app_name
-        ]
-      ]
-    ]
-
   config :metamorphic,
     server_public_key: System.get_env("SERVER_PUBLIC_KEY"),
     server_private_key: System.get_env("SERVER_PRIVATE_KEY")
