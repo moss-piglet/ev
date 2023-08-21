@@ -146,7 +146,7 @@ defmodule MetamorphicWeb.CoreComponents do
           data-active-class="bg-gray-100"
           aria-haspopup="true"
         >
-          <div :if={@connection?} class="relative group w-full text-center">
+          <div :if={@connection?} class="flex flex-col group text-center items-center">
             <%= render_slot(@connection_block) %>
           </div>
           <span class="flex w-full justify-between items-center">
