@@ -294,6 +294,17 @@ defmodule Metamorphic.Accounts do
     User.registration_changeset(user, attrs, hash_password: false, validate_email: false)
   end
 
+  def update_user_onboarding(user, attrs \\ %{}, opts \\ []) do
+    {:ok, {:ok, user}} =
+      Repo.transaction_on_primary(fn ->
+        user
+        |> User.onboarding_changeset(attrs, opts)
+        |> Repo.update()
+      end)
+
+    {:ok, user}
+  end
+
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking user_connection changes.
 
@@ -349,9 +360,14 @@ defmodule Metamorphic.Accounts do
   end
 
   def update_user_forgot_password(user, attrs \\ %{}, opts \\ []) do
-    user
-    |> User.forgot_password_changeset(attrs, opts)
-    |> Repo.update()
+    {:ok, {:ok, user}} =
+      Repo.transaction_on_primary(fn ->
+        user
+        |> User.forgot_password_changeset(attrs, opts)
+        |> Repo.update()
+      end)
+
+    {:ok, user}
   end
 
   def update_user_username(user, attrs \\ %{}, opts \\ []) do
@@ -383,9 +399,14 @@ defmodule Metamorphic.Accounts do
   end
 
   def update_user_visibility(user, attrs \\ %{}, opts \\ []) do
-    user
-    |> User.visibility_changeset(attrs, opts)
-    |> Repo.update()
+    {:ok, {:ok, user}} =
+      Repo.transaction_on_primary(fn ->
+        user
+        |> User.visibility_changeset(attrs, opts)
+        |> Repo.update()
+      end)
+
+    {:ok, user}
   end
 
   @doc """

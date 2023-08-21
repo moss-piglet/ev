@@ -570,6 +570,18 @@ defmodule Metamorphic.Accounts.User do
     end
   end
 
+  @doc """
+  A user changeset for changing the `is_onboarded?` boolean.
+  """
+  def onboarding_changeset(user, attrs, _opts \\ []) do
+    user
+    |> cast(attrs, [:is_onboarded?])
+    |> case do
+      %{changes: %{is_onboarded?: _}} = changeset -> changeset
+      %{} = changeset -> add_error(changeset, :is_onboarded?, "did not change")
+    end
+  end
+
   # We store the session key in an
   # encrypted binary (Cloak) to enable
   # the ability to reset your password

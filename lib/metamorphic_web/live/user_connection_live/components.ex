@@ -191,12 +191,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
   def connection(assigns) do
     ~H"""
     <div class="relative">
-      <.dropdown
-        id={"dropdown-" <> @uconn.id}
-        svg_arrows={false}
-        connection?={true}
-        class="col-span-1 flex flex-col"
-      >
+      <.dropdown id={"dropdown-" <> @uconn.id} svg_arrows={false} connection?={true}>
         <:connection_block>
           <div class="flex flex-1 flex-col p-8">
             <.avatar
