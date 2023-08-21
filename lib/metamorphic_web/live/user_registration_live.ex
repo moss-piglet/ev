@@ -75,17 +75,12 @@ defmodule MetamorphicWeb.UserRegistrationLive do
         {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
 
       false ->
-        IO.puts("CHANGESET IS NOT VALID")
-
         changeset =
           Accounts.change_user_registration(%User{}, user_params)
 
-        IO.inspect(changeset, label: "CHANGESET")
-
         {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
 
-      error ->
-        IO.inspect(error, label: "ERROR")
+      _error ->
         socket = put_flash(socket, :error, "There was an unexpected error trying to register.")
         {:noreply, push_patch(socket, to: ~p"/users/register")}
     end
