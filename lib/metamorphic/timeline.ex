@@ -309,7 +309,10 @@ defmodule Metamorphic.Timeline do
 
     conn = Accounts.get_connection_from_post(post, user)
 
-    {:ok, post} = Repo.delete(post)
+    {:ok, {:ok, post}} =
+      Repo.transaction_on_primary(fn ->
+        Repo.delete(post)
+      end)
 
     {:ok, conn, post}
     |> broadcast(:post_deleted)

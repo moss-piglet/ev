@@ -738,7 +738,10 @@ defmodule Metamorphic.Accounts do
   Disables the TOTP configuration for the given user.
   """
   def delete_user_totp(user_totp) do
-    Repo.delete!(user_totp)
+    {:ok, {:ok, _user_totp}} =
+      Repo.transaction_on_primary(fn ->
+        Repo.delete!(user_totp)
+      end)
   end
 
   @doc """
@@ -785,7 +788,11 @@ defmodule Metamorphic.Accounts do
   Deletes the signed token with the given context.
   """
   def delete_user_session_token(token) do
-    Repo.delete_all(UserToken.token_and_context_query(token, "session"))
+    {:ok, {_count, _user_tokens}} =
+      Repo.transaction_on_primary(fn ->
+        Repo.delete_all(UserToken.token_and_context_query(token, "session"))
+      end)
+
     :ok
   end
 
@@ -873,19 +880,28 @@ defmodule Metamorphic.Accounts do
   end
 
   def delete_user_connection(%UserConnection{} = uconn) do
-    Repo.delete(uconn)
+    {:ok, {:ok, uconn}} =
+      Repo.transaction_on_primary(fn ->
+        Repo.delete(uconn)
+      end)
+
+    {:ok, uconn}
     |> broadcast(:uconn_deleted)
   end
 
   def delete_both_user_connections(%UserConnection{} = uconn) do
-    {_count, uconns} =
-      Repo.delete_all(
-        from uc in UserConnection,
-          where: uc.id == ^uconn.id,
-          or_where: uc.reverse_user_id == ^uconn.user_id and uc.user_id == ^uconn.reverse_user_id,
-          or_where: uc.user_id == ^uconn.reverse_user_id and uc.reverse_user_id == ^uconn.user_id,
-          select: uc
-      )
+    {:ok, {_count, uconns}} =
+      Repo.transaction_on_primary(fn ->
+        Repo.delete_all(
+          from uc in UserConnection,
+            where: uc.id == ^uconn.id,
+            or_where:
+              uc.reverse_user_id == ^uconn.user_id and uc.user_id == ^uconn.reverse_user_id,
+            or_where:
+              uc.user_id == ^uconn.reverse_user_id and uc.reverse_user_id == ^uconn.user_id,
+            select: uc
+        )
+      end)
 
     uconns
     |> broadcast_user_connections(:uconn_deleted)
