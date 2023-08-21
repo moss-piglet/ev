@@ -32,6 +32,7 @@ defmodule MetamorphicWeb.UserRegistrationLive do
         </.error>
 
         <.input field={@form[:email]} type="email" label="Email" required />
+        <.input field={@form[:username_hash]} type="hidden" />
         <.input field={@form[:email_hash]} type="hidden" />
         <.input field={@form[:password]} type="password" label="Password" required />
 
@@ -56,20 +57,33 @@ defmodule MetamorphicWeb.UserRegistrationLive do
   end
 
   def handle_event("save", %{"user" => %{"email" => email} = user_params}, socket) do
-    case Accounts.register_user(user_params) do
-      {:ok, user} ->
-        {:ok, _} =
-          Accounts.deliver_user_confirmation_instructions(
-            user,
-            email,
-            &url(~p"/users/confirm/#{&1}")
-          )
+    with user_changeset <- User.registration_changeset(%User{}, user_params),
+         true <- user_changeset.valid?,
+         %{} = c_attrs <- user_changeset.changes.connection_map,
+         {:ok, user} <- Accounts.register_user(user_changeset, c_attrs) do
+      {:ok, _} =
+        Accounts.deliver_user_confirmation_instructions(
+          user,
+          email,
+          &url(~p"/users/confirm/#{&1}")
+        )
 
-        changeset = Accounts.change_user_registration(user)
-        {:noreply, socket |> assign(trigger_submit: true) |> assign_form(changeset)}
-
+      changeset = Accounts.change_user_registration(user)
+      {:noreply, socket |> assign(trigger_submit: true) |> assign_form(changeset)}
+    else
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
+
+      false ->
+        changeset =
+          Accounts.change_user_registration(%User{}, user_params)
+
+        {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
+
+      error ->
+        IO.inspect(error, label: "ERROR")
+        socket = put_flash(socket, :error, "There was an unexpected error trying to register.")
+        {:noreply, push_patch(socket, to: ~p"/users/register")}
     end
   end
 

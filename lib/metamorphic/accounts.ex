@@ -246,13 +246,9 @@ defmodule Metamorphic.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def register_user(attrs) do
+  def register_user(%Ecto.Changeset{} = user, c_attrs \\ %{}) do
     {:ok, {:ok, user}} =
       Repo.transaction_on_primary(fn ->
-        user = User.registration_changeset(%User{}, attrs)
-
-        c_attrs = user.changes.connection_map
-
         {:ok, %{insert_user: user, insert_connection: _conn}} =
           Ecto.Multi.new()
           |> Ecto.Multi.insert(:insert_user, user)
@@ -276,10 +272,9 @@ defmodule Metamorphic.Accounts do
   def create_user_connection(attrs, opts) do
     {:ok, {:ok, uconn}} =
       Repo.transaction_on_primary(fn ->
-        {:ok, uconn} =
-          %UserConnection{}
-          |> UserConnection.changeset(attrs, opts)
-          |> Repo.insert()
+        %UserConnection{}
+        |> UserConnection.changeset(attrs, opts)
+        |> Repo.insert()
       end)
 
     {:ok, uconn |> Repo.preload([:user, :connection])}

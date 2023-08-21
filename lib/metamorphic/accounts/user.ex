@@ -72,7 +72,7 @@ defmodule Metamorphic.Accounts.User do
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password])
+    |> cast(attrs, [:email, :password, :username])
     |> validate_email(opts)
     |> validate_username(opts)
     |> validate_password(opts)
@@ -115,7 +115,9 @@ defmodule Metamorphic.Accounts.User do
   defp maybe_validate_unique_email_hash(changeset, opts) do
     if Keyword.get(opts, :validate_email, true) do
       changeset
-      |> unsafe_validate_unique(:email_hash, Metamorphic.Repo)
+      |> unsafe_validate_unique(:email_hash, Metamorphic.Repo,
+        message: "invalid or already taken"
+      )
       |> unique_constraint(:email_hash)
     else
       changeset
@@ -253,7 +255,9 @@ defmodule Metamorphic.Accounts.User do
   defp maybe_validate_unique_username_hash(changeset, opts) do
     if Keyword.get(opts, :validate_username, true) do
       changeset
-      |> unsafe_validate_unique(:username_hash, Metamorphic.Repo)
+      |> unsafe_validate_unique(:username_hash, Metamorphic.Repo,
+        message: "invalid or already taken"
+      )
       |> unique_constraint(:username_hash)
     else
       changeset
