@@ -125,7 +125,7 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
 
         {:noreply,
          socket
-         |> put_flash(:info, "Connection request sent successfully.")
+         |> put_flash(:success, "Connection request sent successfully.")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->

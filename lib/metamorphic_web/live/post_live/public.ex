@@ -85,7 +85,7 @@ defmodule MetamorphicWeb.PostLive.Public do
 
   @impl true
   def handle_event("top", _, socket) do
-    {:noreply, socket |> put_flash(:info, "You reached the top") |> paginate_posts(1)}
+    {:noreply, socket |> put_flash(:success, "You reached the top") |> paginate_posts(1)}
   end
 
   @impl true
@@ -181,7 +181,7 @@ defmodule MetamorphicWeb.PostLive.Public do
 
       Timeline.create_repost(repost_params, user: user, key: key)
 
-      socket = put_flash(socket, :info, "Post reposted successfully.")
+      socket = put_flash(socket, :success, "Post reposted successfully.")
       {:noreply, socket}
     else
       {:noreply, socket}

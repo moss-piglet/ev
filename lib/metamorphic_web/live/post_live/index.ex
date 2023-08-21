@@ -176,7 +176,7 @@ defmodule MetamorphicWeb.PostLive.Index do
 
   @impl true
   def handle_event("top", _, socket) do
-    {:noreply, socket |> put_flash(:info, "You reached the top") |> paginate_posts(1)}
+    {:noreply, socket |> put_flash(:success, "You reached the top") |> paginate_posts(1)}
   end
 
   @impl true
@@ -207,7 +207,7 @@ defmodule MetamorphicWeb.PostLive.Index do
       {:ok, post} = Timeline.delete_post(post, user: user)
       notify_self({:deleted, post})
 
-      socket = put_flash(socket, :info, "Post deleted successfully.")
+      socket = put_flash(socket, :success, "Post deleted successfully.")
       {:noreply, socket}
     else
       {:noreply, socket}
@@ -281,7 +281,7 @@ defmodule MetamorphicWeb.PostLive.Index do
       {:ok, post} = Timeline.create_repost(repost_params, user: user, key: key)
       notify_self({:reposted, post})
 
-      socket = put_flash(socket, :info, "Post reposted successfully.")
+      socket = put_flash(socket, :success, "Post reposted successfully.")
       {:noreply, socket}
     else
       {:noreply, socket}

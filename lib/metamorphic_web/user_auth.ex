@@ -184,7 +184,7 @@ defmodule MetamorphicWeb.UserAuth do
       socket =
         socket
         |> Phoenix.LiveView.put_flash(
-          :error,
+          :info,
           "Please check your email to confirm your account before accessing this page."
         )
         |> Phoenix.LiveView.redirect(to: ~p"/users/log_in")
@@ -259,7 +259,7 @@ defmodule MetamorphicWeb.UserAuth do
     else
       conn
       |> put_flash(
-        :error,
+        :info,
         "Please check your email to confirm your account before accessing this page."
       )
       |> maybe_store_return_to()

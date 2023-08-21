@@ -13,7 +13,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
     socket =
       case Accounts.update_user_email(user, email, token, key) do
         :ok ->
-          put_flash(socket, :info, "Email changed successfully.")
+          put_flash(socket, :success, "Email changed successfully.")
 
         :error ->
           put_flash(socket, :error, "Email change link is invalid or it has expired.")
@@ -130,7 +130,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
 
             {:noreply,
              socket
-             |> put_flash(:info, info)
+             |> put_flash(:success, info)
              |> assign(avatar_form: avatar_form)
              |> push_navigate(to: ~p"/users/settings")}
 
@@ -160,7 +160,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
 
         socket =
           socket
-          |> put_flash(:info, info)
+          |> put_flash(:success, info)
 
         {:noreply, push_navigate(socket, to: ~p"/users/settings")}
       else
@@ -204,7 +204,9 @@ defmodule MetamorphicWeb.UserSettingsLive do
         )
 
         info = "A link to confirm your email change has been sent to the new address."
-        {:noreply, socket |> put_flash(:info, info) |> assign(email_form_current_password: nil)}
+
+        {:noreply,
+         socket |> put_flash(:success, info) |> assign(email_form_current_password: nil)}
 
       {:error, changeset} ->
         {:noreply, assign(socket, :email_form, to_form(Map.put(changeset, :action, :insert)))}
@@ -278,7 +280,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
 
         {:noreply,
          socket
-         |> put_flash(:info, info)
+         |> put_flash(:success, info)
          |> assign(username_form: username_form)
          |> redirect(to: ~p"/users/settings")}
 
@@ -320,7 +322,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
 
         {:noreply,
          socket
-         |> put_flash(:info, info)
+         |> put_flash(:success, info)
          |> assign(visibility_form: visibility_form)
          |> redirect(to: ~p"/users/settings")}
 
@@ -368,7 +370,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
 
           {:noreply,
            socket
-           |> put_flash(:info, info)
+           |> put_flash(:success, info)
            |> assign(forgot_password_form: forgot_password_form)
            |> redirect(to: ~p"/users/settings")}
 
@@ -420,7 +422,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
       {:ok, _user} ->
         socket =
           socket
-          |> put_flash(:info, "Account deleted successfully.")
+          |> put_flash(:success, "Account deleted successfully.")
           |> redirect(to: ~p"/")
 
         {:noreply, socket}

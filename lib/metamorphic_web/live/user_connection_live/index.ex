@@ -197,7 +197,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
 
           {:noreply,
            socket
-           |> put_flash(:info, "Connection accepted successfully.")}
+           |> put_flash(:success, "Connection accepted successfully.")}
 
         {:error, changeset} ->
           {:noreply, put_flash(socket, :error, changeset.msg)}
@@ -227,7 +227,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
 
   @impl true
   def handle_event("top", _param, socket) do
-    {:noreply, socket |> put_flash(:info, "You reached the top") |> paginate_arrivals(1)}
+    {:noreply, socket |> put_flash(:success, "You reached the top") |> paginate_arrivals(1)}
   end
 
   @impl true

@@ -39,7 +39,7 @@ defmodule MetamorphicWeb.UserConfirmationLive do
       {:ok, _} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Account confirmed successfully.")
+         |> put_flash(:success, "Account confirmed successfully.")
          |> redirect(to: ~p"/users/dash")}
 
       :error ->

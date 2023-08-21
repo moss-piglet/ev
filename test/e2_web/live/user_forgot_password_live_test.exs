@@ -41,7 +41,7 @@ defmodule MetamorphicWeb.UserForgotPasswordLiveTest do
         |> render_submit()
         |> follow_redirect(conn, "/")
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
+      assert Phoenix.Flash.get(conn.assigns.flash, :success) =~ "If your email is in our system"
 
       assert Repo.get_by!(Accounts.UserToken, user_id: user.id).context ==
                "reset_password"
@@ -56,7 +56,7 @@ defmodule MetamorphicWeb.UserForgotPasswordLiveTest do
         |> render_submit()
         |> follow_redirect(conn, "/")
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
+      assert Phoenix.Flash.get(conn.assigns.flash, :success) =~ "If your email is in our system"
       assert Repo.all(Accounts.UserToken) == []
     end
   end

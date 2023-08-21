@@ -110,7 +110,7 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
 
           {:noreply,
            socket
-           |> put_flash(:info, "Post updated successfully")
+           |> put_flash(:success, "Post updated successfully")
            |> push_patch(to: socket.assigns.patch)}
 
         {:error, %Ecto.Changeset{} = changeset} ->
@@ -132,7 +132,7 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
 
           {:noreply,
            socket
-           |> put_flash(:info, "Post created successfully")
+           |> put_flash(:success, "Post created successfully")
            |> push_patch(to: socket.assigns.patch)}
 
         {:error, %Ecto.Changeset{} = changeset} ->
