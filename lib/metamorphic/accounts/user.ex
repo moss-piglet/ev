@@ -308,7 +308,7 @@ defmodule Metamorphic.Accounts.User do
         Map.get(password_strength.crack_times_display, :offline_slow_hashing_1e4_per_second)
 
       cond do
-        password_strength.score === 4 && offline_fast_hashing === "centuries" ->
+        password_strength.score >= 4 || offline_fast_hashing === "centuries" ->
           changeset
 
         password_strength.score <= 4 ->

@@ -4,7 +4,7 @@ defmodule Metamorphic.MixProject do
   def project do
     [
       app: :metamorphic,
-      version: "0.1.20",
+      version: "0.1.21",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -35,7 +35,6 @@ defmodule Metamorphic.MixProject do
       {:argon2_elixir, "~> 3.0"},
       {:cloak, "~> 1.1"},
       {:cloak_ecto, "~> 1.2"},
-      {:dns_cluster, "~> 0.1.0"},
       {:ecto_sql, "~> 3.10"},
       {:enacl, "~> 1.2"},
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
@@ -51,6 +50,7 @@ defmodule Metamorphic.MixProject do
       {:hackney, "~> 1.18"},
       {:image, "~> 0.36.2"},
       {:jason, "~> 1.2"},
+      {:libcluster, "~> 3.3"},
       {:nimble_totp, "~> 1.0"},
       {:oban, "~> 2.15"},
       {:phoenix, "~> 1.7.7"},

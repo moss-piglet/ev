@@ -7,6 +7,8 @@ defmodule Metamorphic.Application do
 
   @impl true
   def start(_type, _args) do
+    topologies = Application.get_env(:libcluster, :topologies) || []
+
     children = [
       # Start the RPC server
       {Fly.RPC, []},
@@ -22,10 +24,10 @@ defmodule Metamorphic.Application do
       MetamorphicWeb.Telemetry,
       # Start the PubSub system
       {Phoenix.PubSub, name: Metamorphic.PubSub},
-      # Start DNS Cluster
-      {DNSCluster, query: Application.get_env(:metamorphic, :dns_cluster_query) || :ignore},
       # Start Finch
       {Finch, name: Metamorphic.Finch},
+      # Start libcluster for clustering
+      {Cluster.Supervisor, [topologies, [name: Metamorphic.ClusterSupervisor]]},
       # Start ExMarcel's mime type dictionary storage
       ExMarcel.TableWrapper,
       # Start the ETS AvatarProcessor
