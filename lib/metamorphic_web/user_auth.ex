@@ -193,6 +193,27 @@ defmodule MetamorphicWeb.UserAuth do
     end
   end
 
+  def on_mount(:ensure_session_key, _params, session, socket) do
+    socket =
+      socket
+      |> mount_current_user(session)
+      |> mount_current_user_session_key(session)
+
+    if socket.assigns.current_user && socket.assigns.key do
+      {:cont, socket}
+    else
+      socket =
+        socket
+        |> Phoenix.LiveView.put_flash(
+          :info,
+          "Your session key has expired, please log in again."
+        )
+        |> Phoenix.LiveView.redirect(to: ~p"/users/log_in")
+
+      {:halt, socket}
+    end
+  end
+
   def on_mount(:ensure_connection, params, _session, socket) do
     IO.inspect(params, label: "ENSURE CONNECTION PARAMS ON MOUNT")
     {:cont, socket}
@@ -274,7 +295,9 @@ defmodule MetamorphicWeb.UserAuth do
     if (conn.assigns[:current_user] && conn.assigns[:key]) || conn.private.plug_session["key"] do
       conn
     else
-      log_out_user(conn)
+      conn
+      |> put_flash(:info, "Your session key has expired, please log in again.")
+      |> log_out_user()
     end
   end
 

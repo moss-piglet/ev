@@ -77,7 +77,8 @@ defmodule MetamorphicWeb.Router do
 
     live_session :require_authenticated_user,
       on_mount: [
-        {MetamorphicWeb.UserAuth, :ensure_authenticated}
+        {MetamorphicWeb.UserAuth, :ensure_authenticated},
+        {MetamorphicWeb.UserAuth, :ensure_session_key}
       ] do
       live "/users/dash", UserDashLive, :index
 
@@ -99,7 +100,8 @@ defmodule MetamorphicWeb.Router do
     live_session :require_authenticated_and_confirmed_user,
       on_mount: [
         {MetamorphicWeb.UserAuth, :ensure_authenticated},
-        {MetamorphicWeb.UserAuth, :ensure_confirmed}
+        {MetamorphicWeb.UserAuth, :ensure_confirmed},
+        {MetamorphicWeb.UserAuth, :ensure_session_key}
       ] do
       live "/posts", PostLive.Index, :index
       live "/posts/new", PostLive.Index, :new
