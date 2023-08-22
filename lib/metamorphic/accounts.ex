@@ -156,10 +156,19 @@ defmodule Metamorphic.Accounts do
   def get_user_connection!(id),
     do: Repo.get!(UserConnection, id) |> Repo.preload([:connection, :user])
 
-  def get_user_connection_between_users(user, current_user) do
-    IO.inspect(user.id, label: "USER ID")
-    IO.inspect(current_user.id, label: "CURRENT USER ID")
+  def get_user_connection_between_users!(user_id, current_user_id) do
+    unless is_nil(user_id) do
+      Repo.one(
+        from uc in UserConnection,
+          where: uc.user_id == ^current_user_id,
+          where: uc.user_id == ^user_id and uc.reverse_user_id == ^current_user_id,
+          or_where: uc.user_id == ^current_user_id and uc.reverse_user_id == ^user_id,
+          preload: [:user, :connection]
+      )
+    end
+  end
 
+  def get_user_connection_between_users(user, current_user) do
     Repo.one(
       from uc in UserConnection,
         where: uc.user_id == ^current_user.id,

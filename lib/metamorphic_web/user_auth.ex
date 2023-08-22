@@ -214,11 +214,6 @@ defmodule MetamorphicWeb.UserAuth do
     end
   end
 
-  def on_mount(:ensure_connection, params, _session, socket) do
-    IO.inspect(params, label: "ENSURE CONNECTION PARAMS ON MOUNT")
-    {:cont, socket}
-  end
-
   def on_mount(:redirect_if_user_is_authenticated, _params, session, socket) do
     socket =
       socket
@@ -268,18 +263,6 @@ defmodule MetamorphicWeb.UserAuth do
   they use the application at all, here would be a good place.
   """
   def require_authenticated_user(conn, _opts) do
-    if conn.assigns[:current_user] do
-      conn
-    else
-      conn
-      |> put_flash(:error, "You must log in to access this page.")
-      |> maybe_store_return_to()
-      |> redirect(to: ~p"/users/log_in")
-      |> halt()
-    end
-  end
-
-  def require_connection(conn, _opts) do
     if conn.assigns[:current_user] do
       conn
     else
