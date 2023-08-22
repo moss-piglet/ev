@@ -4,7 +4,7 @@ defmodule Metamorphic.MixProject do
   def project do
     [
       app: :metamorphic,
-      version: "0.2.3",
+      version: "0.2.4",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
