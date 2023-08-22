@@ -73,7 +73,7 @@ defmodule MetamorphicWeb.Router do
   end
 
   scope "/", MetamorphicWeb do
-    pipe_through [:browser, :require_authenticated_user]
+    pipe_through [:browser, :require_authenticated_user, :require_session_key]
 
     live_session :require_authenticated_user,
       on_mount: [
@@ -89,7 +89,12 @@ defmodule MetamorphicWeb.Router do
   end
 
   scope "/", MetamorphicWeb do
-    pipe_through [:browser, :require_authenticated_user, :require_confirmed_user]
+    pipe_through [
+      :browser,
+      :require_authenticated_user,
+      :require_confirmed_user,
+      :require_session_key
+    ]
 
     live_session :require_authenticated_and_confirmed_user,
       on_mount: [

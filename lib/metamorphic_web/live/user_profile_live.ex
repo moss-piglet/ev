@@ -6,7 +6,17 @@ defmodule MetamorphicWeb.UserProfileLive do
   def render(%{live_action: :show} = assigns) do
     ~H"""
     <.header>
-      User <%= @user.id %>
+      <div :if={@user.id != @current_user.id}>
+        User <%= decr_uconn(
+          get_uconn_for_users(@user, @current_user).connection.username,
+          @current_user,
+          get_uconn_for_users(@user, @current_user).key,
+          @key
+        ) %>
+      </div>
+      <div :if={@user.id == @current_user.id}>
+        User <%= decr(@user.username, @current_user, @key) %>
+      </div>
       <:subtitle :if={@current_user.id == @user.id}>
         This is your user profile on <%= now() %>.
       </:subtitle>

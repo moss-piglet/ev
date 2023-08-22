@@ -207,6 +207,12 @@ defmodule MetamorphicWeb.Helpers do
     end
   end
 
+  ## UserConnections
+
+  def get_uconn_for_users(user, current_user) do
+    Accounts.get_user_connection_between_users(user, current_user)
+  end
+
   ## Avatars
 
   def get_user_avatar(user, key, post \\ nil, current_user \\ nil)
