@@ -162,6 +162,15 @@ defmodule Metamorphic.Accounts do
   def get_user_connection!(id),
     do: Repo.get!(UserConnection, id) |> Repo.preload([:connection, :user])
 
+  def get_both_user_connections_between_users!(user_id, reverse_user_id) do
+    Repo.all(
+      from uc in UserConnection,
+        where: uc.user_id == ^user_id and uc.reverse_user_id == ^reverse_user_id,
+        or_where: uc.user_id == ^reverse_user_id and uc.reverse_user_id == ^user_id,
+        preload: [:user, :connection]
+    )
+  end
+
   def get_user_connection_between_users!(user_id, current_user_id) do
     unless is_nil(user_id) do
       Repo.one(
@@ -309,6 +318,18 @@ defmodule Metamorphic.Accounts do
     |> broadcast(:uconn_created)
   end
 
+  def update_user_connection(uconn, attrs, opts) do
+    {:ok, {:ok, uconn}} =
+      Repo.transaction_on_primary(fn ->
+        uconn
+        |> UserConnection.edit_changeset(attrs, opts)
+        |> Repo.update()
+      end)
+
+    {:ok, uconn |> Repo.preload([:user, :connection])}
+    |> broadcast(:uconn_updated)
+  end
+
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking user changes.
 
@@ -344,6 +365,10 @@ defmodule Metamorphic.Accounts do
   """
   def change_user_connection(%UserConnection{} = uconn, attrs \\ %{}, opts \\ []) do
     UserConnection.changeset(uconn, attrs, opts)
+  end
+
+  def edit_user_connection(%UserConnection{} = uconn, attrs \\ %{}, opts \\ []) do
+    UserConnection.edit_changeset(uconn, attrs, opts)
   end
 
   ## Settings

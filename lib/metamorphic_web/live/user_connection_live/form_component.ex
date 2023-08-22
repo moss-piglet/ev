@@ -15,6 +15,7 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
       </.header>
 
       <.simple_form
+        :if={@action == :new}
         for={@form}
         id="uconn-form"
         phx-target={@myself}
@@ -27,7 +28,6 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
         <.input field={@form[:request_username]} type="hidden" value={@request_username} />
         <.input field={@form[:request_email]} type="hidden" value={@request_email} />
         <.input field={@form[:key]} type="hidden" value={@recipient_key} />
-        <.input field={@form[:post_key]} type="hidden" value={@recipient_key} />
         <.input field={@form[:label]} type="hidden" />
 
         <div class="inline-flex items-center space-x-4">
@@ -72,6 +72,47 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
           <.button :if={!@form.source.valid?} disabled class="opacity-25">Send</.button>
         </:actions>
       </.simple_form>
+
+      <.simple_form
+        :if={@action == :edit}
+        for={@form}
+        id="uconn-edit-form"
+        phx-target={@myself}
+        phx-change="validate_update"
+        phx-submit="update"
+      >
+        <div class="inline-flex items-center space-x-4">
+          <.input
+            field={@form[:temp_label]}
+            type="text"
+            label="New label"
+            placeholder="Family, friend, partner, et al"
+          />
+
+          <.input
+            field={@form[:color]}
+            type="select"
+            label="Color"
+            prompt="Choose label color"
+            options={
+              Enum.map(Ecto.Enum.values(Accounts.UserConnection, :color), fn x ->
+                [
+                  key: x |> Atom.to_string() |> String.capitalize(),
+                  value: x
+                ]
+              end)
+            }
+            data-label="label"
+          />
+        </div>
+        <.input field={@form[:label]} type="hidden" />
+        <.input field={@form[:id]} type="hidden" value={@uconn.id} />
+
+        <:actions>
+          <.button :if={@form.source.valid?} phx-disable-with="Updating...">Send</.button>
+          <.button :if={!@form.source.valid?} disabled class="opacity-25">Send</.button>
+        </:actions>
+      </.simple_form>
     </div>
     """
   end
@@ -83,7 +124,7 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
     if :edit == Map.get(assigns, :action) do
       {:ok,
        socket
-       # |> assign(:uconn_key, get_uconn_key(uconn))
+       |> assign(:temp_label, nil)
        |> assign(assigns)
        |> assign_form(changeset)}
     else
@@ -96,6 +137,33 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
        |> assign(:temp_label, nil)
        |> assign(:selector, nil)
        |> assign(assigns)
+       |> assign_form(changeset)}
+    end
+  end
+
+  @impl true
+  def handle_event("validate_update", %{"user_connection" => uconn_params}, socket) do
+    user = socket.assigns.user
+    key = socket.assigns.key
+
+    changeset =
+      socket.assigns.uconn
+      |> Accounts.edit_user_connection(uconn_params,
+        selector: nil,
+        user: user,
+        key: key,
+        conn_key: decr_attrs_key(user.conn_key, user, socket.assigns.key)
+      )
+      |> Map.put(:action, :validate)
+
+    if Map.has_key?(changeset.changes, :user_id) do
+      {:noreply,
+       socket
+       |> assign_form(changeset)
+       |> assign(:temp_label, Ecto.Changeset.get_change(changeset, :temp_label))}
+    else
+      {:noreply,
+       socket
        |> assign_form(changeset)}
     end
   end
@@ -144,6 +212,32 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
         {:noreply,
          socket
          |> put_flash(:success, "Connection request sent successfully.")
+         |> push_patch(to: socket.assigns.patch)}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign_form(socket, changeset)}
+    end
+  end
+
+  @impl true
+  def handle_event("update", %{"user_connection" => uconn_params}, socket) do
+    user = socket.assigns.user
+    key = socket.assigns.key
+    uconn = Accounts.get_user_connection!(uconn_params["id"])
+    d_conn_key = decr_attrs_key(uconn.key, user, key)
+
+    case Accounts.update_user_connection(uconn, uconn_params,
+           user: user,
+           key: key,
+           conn_key: d_conn_key,
+           temp_label: uconn_params["temp_label"]
+         ) do
+      {:ok, uconn} ->
+        notify_parent({:updated, uconn})
+
+        {:noreply,
+         socket
+         |> put_flash(:success, "Connection updated successfully.")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->

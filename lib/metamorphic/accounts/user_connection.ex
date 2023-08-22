@@ -68,6 +68,19 @@ defmodule Metamorphic.Accounts.UserConnection do
     |> unique_constraint([:reverse_user_id, :user_id])
   end
 
+  def edit_changeset(uconn, attrs \\ %{}, opts \\ []) do
+    uconn
+    |> cast(attrs, [
+      :label,
+      :temp_label,
+      :color
+    ])
+    |> validate_required([:temp_label])
+    |> validate_length(:temp_label, min: 2, max: 160)
+    |> add_label_hash()
+    |> maybe_encrypt_label(opts[:conn_key], opts[:temp_label])
+  end
+
   @doc """
   Confirms the user_connection by setting `confirmed_at`.
   """

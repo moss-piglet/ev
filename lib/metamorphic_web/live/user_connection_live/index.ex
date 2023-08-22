@@ -40,6 +40,20 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   end
 
   @impl true
+  def handle_info({MetamorphicWeb.UserConnectionLive.FormComponent, {:updated, uconn}}, socket) do
+    cond do
+      uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
+        {:noreply, stream_insert(socket, :user_connections, uconn)}
+
+      uconn.user_id == socket.assigns.current_user.id ->
+        {:noreply, stream_insert(socket, :arrivals, uconn)}
+
+      true ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
   def handle_info({MetamorphicWeb.UserConnectionLive.Index, {:deleted, uconn}}, socket) do
     cond do
       uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
@@ -274,6 +288,14 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
     |> assign(:uconn, %UserConnection{})
     |> paginate_arrivals(1)
     |> paginate_user_connections(1)
+  end
+
+  defp apply_action(socket, :edit, %{"id" => id}) do
+    socket
+    |> assign(:page_title, "Edit Connection")
+    |> assign(:uconn, Accounts.get_user_connection!(id))
+    |> paginate_arrivals(socket.assigns.page)
+    |> paginate_user_connections(socket.assigns.page)
   end
 
   defp apply_action(socket, :greet, _params) do

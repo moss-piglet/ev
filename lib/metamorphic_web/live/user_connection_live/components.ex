@@ -225,6 +225,14 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
             </dl>
           </div>
         </:connection_block>
+        <:link
+          :if={@current_user && @uconn.user_id == @current_user.id}
+          phx_click={nil}
+          data_confirm={nil}
+          navigate={~p"/users/connections/#{@uconn}/edit"}
+        >
+          Edit
+        </:link>
 
         <:link
           :if={@current_user && @uconn.user_id == @current_user.id}
