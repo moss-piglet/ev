@@ -2,6 +2,7 @@
 // https://tailwindcss.com/docs/configuration
 
 const plugin = require("tailwindcss/plugin")
+const colors = require('tailwindcss/colors')
 const fs = require("fs")
 const path = require("path")
 
@@ -25,7 +26,21 @@ module.exports = {
           "700": "#326b93",
           "800": "#224762",
           "900": "#112431"
-        }
+        },
+        transparent: 'transparent',
+        current: 'currentColor',
+        black: colors.black,
+        white: colors.white,
+        gray: colors.gray,
+        emerald: colors.emerald,
+        orange: colors.orange,
+        indigo: colors.indigo,
+        purple: colors.purple,
+        pink: colors.pink,
+        red: colors.red,
+        rose: colors.rose,
+        yellow: colors.yellow,
+        zinc: colors.zinc
       }
     },
   },

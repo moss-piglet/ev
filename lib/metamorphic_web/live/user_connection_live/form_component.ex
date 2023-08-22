@@ -30,12 +30,30 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
         <.input field={@form[:post_key]} type="hidden" value={@recipient_key} />
         <.input field={@form[:label]} type="hidden" />
 
-        <.input
-          field={@form[:temp_label]}
-          type="text"
-          label="Label"
-          placeholder="Family, friend, partner, et al"
-        />
+        <div class="inline-flex items-center space-x-4">
+          <.input
+            field={@form[:temp_label]}
+            type="text"
+            label="Label"
+            placeholder="Family, friend, partner, et al"
+          />
+
+          <.input
+            field={@form[:color]}
+            type="select"
+            label="Color"
+            prompt="Choose label color"
+            options={
+              Enum.map(Ecto.Enum.values(Accounts.UserConnection, :color), fn x ->
+                [
+                  key: x |> Atom.to_string() |> String.capitalize(),
+                  value: x
+                ]
+              end)
+            }
+            data-label="label"
+          />
+        </div>
 
         <.input
           field={@form[:selector]}

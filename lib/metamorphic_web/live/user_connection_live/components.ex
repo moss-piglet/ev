@@ -57,6 +57,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
           current_user={@current_user}
           key={@key}
           list_id={id}
+          color={item.color || :purple}
         />
       </li>
     </ul>
@@ -75,6 +76,10 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
   attr :uconn, Metamorphic.Accounts.UserConnection, required: true
   attr :list_id, :string
 
+  attr :color, :atom,
+    default: :purple,
+    values: [:emerald, :orange, :pink, :purple, :rose, :yellow, :zinc]
+
   def arrival(assigns) do
     ~H"""
     <div class="flex w-full items-center justify-between space-x-6 p-2">
@@ -86,7 +91,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
           >
             <%= decr_uconn(@uconn.request_username, @current_user, @uconn.key, @key) %>
           </h3>
-          <span class="inline-flex flex-shrink-0 items-center rounded-full bg-brand-50 px-1.5 py-0.5 text-xs font-medium text-brand-700 ring-1 ring-inset ring-brand-600/20">
+          <span class={"inline-flex flex-shrink-0 items-center rounded-full #{badge_color(@color)} px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset"}>
             <%= decr_uconn(@uconn.label, @current_user, @uconn.key, @key) %>
           </span>
         </div>
@@ -170,6 +175,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
           uconn={item}
           current_user={@current_user}
           key={@key}
+          color={item.color || :purple}
         />
       </li>
     </ul>
@@ -187,6 +193,10 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
   attr :current_user, :string, required: true
   attr :key, :string, required: true
   attr :uconn, Metamorphic.Accounts.UserConnection, required: true
+
+  attr :color, :atom,
+    default: :purple,
+    values: [:emerald, :orange, :pink, :purple, :rose, :yellow, :zinc]
 
   def connection(assigns) do
     ~H"""
@@ -208,7 +218,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
               </dd>
               <dt class="sr-only">Label</dt>
               <dd class="mt-3">
-                <span class="inline-flex items-center rounded-full bg-brand-50 px-2 py-1 text-xs font-medium text-brand-700 ring-1 ring-inset ring-brand-600/20">
+                <span class={"inline-flex items-center rounded-full #{badge_color(@color)} px-2 py-1 text-xs font-medium  ring-1 ring-inset"}>
                   <%= decr_uconn(@uconn.label, @current_user, @uconn.key, @key) %>
                 </span>
               </dd>

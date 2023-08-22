@@ -375,7 +375,8 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
       username: d_req_username,
       temp_label: d_label,
       request_username: d_req_username,
-      request_email: d_req_email
+      request_email: d_req_email,
+      color: uconn.color
     }
   end
 

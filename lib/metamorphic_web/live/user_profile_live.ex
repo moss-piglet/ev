@@ -5,33 +5,75 @@ defmodule MetamorphicWeb.UserProfileLive do
 
   def render(%{live_action: :show} = assigns) do
     ~H"""
-    <.header>
-      <div :if={@user.id != @current_user.id}>
-        User <%= decr_uconn(
-          get_uconn_for_users(@user, @current_user).connection.username,
-          @current_user,
-          get_uconn_for_users(@user, @current_user).key,
-          @key
-        ) %>
-      </div>
-      <div :if={@user.id == @current_user.id}>
-        User <%= decr(@user.username, @current_user, @key) %>
-      </div>
-      <:subtitle :if={@current_user.id == @user.id}>
-        This is your user profile on <%= now() %>.
-      </:subtitle>
-      <:subtitle :if={@current_user.id != @user.id}>
-        This is their user profile on <%= now() %>.
-      </:subtitle>
-    </.header>
+    <div :if={@user.visibility == :public || @user.visibility == :connections}>
+      <.header :if={@user.id != @current_user.id}>
+        <div class="flex items-center gap-x-6">
+          <.avatar
+            :if={@user.id != @current_user.id}
+            src={get_user_avatar(get_uconn_for_users(@user, @current_user), @user.conn_key)}
+            alt=""
+            class="h-16 w-16 flex-none rounded-full ring-1 ring-gray-900/10"
+          />
+          <h1>
+            <div class="text-sm leading-6 text-gray-500">
+              Profile
+              <span class="text-gray-700">
+                <%= decr_uconn(
+                  get_uconn_for_users(@user, @current_user).label,
+                  @current_user,
+                  get_uconn_for_users(@user, @current_user).key,
+                  @key
+                ) %>
+              </span>
+            </div>
+            <div class="mt-1 text-base font-semibold leading-6 text-gray-900">
+              <%= decr_uconn(
+                get_uconn_for_users(@user, @current_user).connection.email,
+                @current_user,
+                get_uconn_for_users(@user, @current_user).key,
+                @key
+              ) %>
+            </div>
+          </h1>
+        </div>
 
-    <.list>
-      <:item title="Username"><%= decr(@user.username, @current_user, @key) %></:item>
-      <:item title="Email"><%= decr(@user.email, @current_user, @key) %></:item>
-      <:item title="Joined"><%= time_ago(@user.inserted_at) %></:item>
-    </.list>
+        <:subtitle>
+          This is their user profile on <%= now() %>.
+        </:subtitle>
+      </.header>
 
-    <.back navigate={~p"/users/dash"}>Back to dash</.back>
+      <.header :if={@user.id == @current_user.id}>
+        <div class="flex items-center gap-x-6">
+          <.avatar
+            :if={@user.id == @current_user.id}
+            src={get_user_avatar(@user, @key)}
+            alt=""
+            class="h-16 w-16 flex-none rounded-full ring-1 ring-gray-900/10"
+          />
+          <h1>
+            <div class="text-sm leading-6 text-gray-500">
+              Profile
+              <span class="text-gray-700"><%= decr(@user.username, @current_user, @key) %></span>
+            </div>
+            <div class="mt-1 text-base font-semibold leading-6 text-gray-900">
+              <%= decr(@user.email, @current_user, @key) %>
+            </div>
+          </h1>
+        </div>
+
+        <:subtitle>
+          This is your user profile on <%= now() %>.
+        </:subtitle>
+      </.header>
+
+      <.list>
+        <:item title="Username"><%= decr(@user.username, @current_user, @key) %></:item>
+        <:item title="Email"><%= decr(@user.email, @current_user, @key) %></:item>
+        <:item title="Joined"><%= time_ago(@user.inserted_at) %></:item>
+      </.list>
+
+      <.back navigate={~p"/users/dash"}>Back to dash</.back>
+    </div>
     """
   end
 

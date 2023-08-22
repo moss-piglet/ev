@@ -8,6 +8,8 @@ defmodule Metamorphic.Accounts.UserConnection do
 
   alias Metamorphic.Encrypted
 
+  @color_values [:emerald, :orange, :pink, :purple, :rose, :yellow, :zinc]
+
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   schema "user_connections" do
@@ -24,6 +26,7 @@ defmodule Metamorphic.Accounts.UserConnection do
     field :request_email, Encrypted.Binary
     field :request_username_hash, Encrypted.HMAC
     field :request_email_hash, Encrypted.HMAC
+    field :color, Ecto.Enum, values: @color_values
 
     belongs_to :connection, Connection
     belongs_to :user, User
@@ -46,7 +49,8 @@ defmodule Metamorphic.Accounts.UserConnection do
       :request_username,
       :user_id,
       :reverse_user_id,
-      :connection_id
+      :connection_id,
+      :color
     ])
     |> cast_assoc(:user)
     |> cast_assoc(:reverse_user)

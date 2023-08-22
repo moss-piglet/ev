@@ -55,6 +55,7 @@ defmodule MetamorphicWeb.PostLive.Components do
           post={item}
           current_user={@current_user}
           key={@key}
+          color={get_uconn_color_for_shared_post(item, @current_user) || :purple}
         />
       </li>
     </ul>
@@ -67,6 +68,10 @@ defmodule MetamorphicWeb.PostLive.Components do
   attr :current_user, :string, required: true
   attr :key, :string, required: true
   attr :post, Metamorphic.Timeline.Post, required: true
+
+  attr :color, :atom,
+    default: :purple,
+    values: [:emerald, :orange, :pink, :purple, :rose, :yellow, :zinc]
 
   def post(assigns) do
     ~H"""
@@ -109,15 +114,19 @@ defmodule MetamorphicWeb.PostLive.Components do
               :if={get_shared_post_identity_atom(@post, @current_user) == :self}
               class="inline-flex items-center align-middle rounded-full"
             >
-              <svg class="h-1.5 w-1.5 fill-green-500" viewBox="0 0 6 6" aria-hidden="true">
+              <svg class="h-1.5 w-1.5 fill-brand-500" viewBox="0 0 6 6" aria-hidden="true">
                 <circle cx="3" cy="3" r="3" />
               </svg>
             </span>
             <span
               :if={get_shared_post_identity_atom(@post, @current_user) == :connection}
-              class="inline-flex items-center rounded-full group group-hover:bg-purple-100 group-hover:px-2 group-hover:py-1 group-hover:text-xs group-hover:font-medium group-hover:text-purple-700 group-hover:space-x-1"
+              class={"inline-flex items-center rounded-full group group-hover:bg-purple-100 group-hover:px-2 group-hover:py-1 group-hover:text-xs group-hover:font-medium #{badge_group_hover_color(@color)} group-hover:space-x-1"}
             >
-              <svg class="h-1.5 w-1.5 fill-purple-500" viewBox="0 0 6 6" aria-hidden="true">
+              <svg
+                class={"h-1.5 w-1.5 #{badge_svg_fill_color(@color)}"}
+                viewBox="0 0 6 6"
+                aria-hidden="true"
+              >
                 <circle cx="3" cy="3" r="3" />
               </svg>
               <span class="hidden group-hover:flex">

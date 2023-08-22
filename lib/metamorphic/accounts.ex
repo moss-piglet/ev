@@ -10,6 +10,12 @@ defmodule Metamorphic.Accounts do
 
   alias Metamorphic.Accounts.{Connection, User, UserConnection, UserToken, UserNotifier, UserTOTP}
 
+  ## Preloads
+
+  def preload_connection(%User{} = user) do
+    user |> Repo.preload([:connection])
+  end
+
   ## Database getters
 
   @doc """

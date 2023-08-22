@@ -181,6 +181,16 @@ defmodule MetamorphicWeb.Helpers do
     Accounts.get_user_connection_from_shared_post(post, user)
   end
 
+  def get_uconn_color_for_shared_post(post, user) do
+    case Accounts.get_user_connection_from_shared_post(post, user) do
+      %UserConnection{} = uconn ->
+        uconn.color
+
+      nil ->
+        nil
+    end
+  end
+
   # If the user (current_user) is the same as the
   # post.user_id, then we return the user and not
   # the uconn.
@@ -220,6 +230,8 @@ defmodule MetamorphicWeb.Helpers do
   def get_user_avatar(nil, _key, _post, _current_user), do: nil
 
   def get_user_avatar(%User{} = user, key, _post, _current_user) do
+    user = preload_connection(user)
+
     cond do
       is_nil(user.avatar_url) ->
         nil
@@ -434,6 +446,10 @@ defmodule MetamorphicWeb.Helpers do
     end
   end
 
+  defp preload_connection(user) do
+    Accounts.preload_connection(user)
+  end
+
   ## Errors
 
   def error_to_string(:too_large),
@@ -444,4 +460,45 @@ defmodule MetamorphicWeb.Helpers do
 
   def error_to_string(:not_accepted),
     do: "Sorry, that's not an acceptable file type."
+
+  ## CSS styling
+
+  def badge_color(color) do
+    case color do
+      :brand -> "bg-brand-50 text-brand-700 ring-brand-600/20"
+      :emerald -> "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
+      :orange -> "bg-orange-50 text-orange-700 ring-orange-600/20"
+      :pink -> "bg-pink-50 text-pink-700 ring-pink-600/20"
+      :purple -> "bg-purple-50 text-purple-700 ring-purple-600/20"
+      :rose -> "bg-rose-50 text-rose-700 ring-rose-600/20"
+      :yellow -> "bg-yellow-50 text-yellow-700 ring-yellow-600/20"
+      :zinc -> "bg-zinc-50 text-zinc-700 ring-zinc-600/20"
+    end
+  end
+
+  def badge_group_hover_color(color) do
+    case color do
+      :brand -> "group-hover:text-brand-700"
+      :emerald -> "group-hover:text-emerald-700"
+      :orange -> "group-hover:text-orange-700"
+      :pink -> "group-hover:text-pink-700"
+      :purple -> "group-hover:text-purple-700"
+      :rose -> "group-hover:text-rose-700"
+      :yellow -> "group-hover:text-yellow-700"
+      :zinc -> "group-hover:text-zinc-700"
+    end
+  end
+
+  def badge_svg_fill_color(color) do
+    case color do
+      :brand -> "fill-brand-500"
+      :emerald -> "fill-emerald-500"
+      :orange -> "fill-orange-500"
+      :pink -> "fill-pink-500"
+      :purple -> "fill-purple-500"
+      :rose -> "fill-rose-500"
+      :yellow -> "fill-yellow-500"
+      :zinc -> "fill-zinc-500"
+    end
+  end
 end
