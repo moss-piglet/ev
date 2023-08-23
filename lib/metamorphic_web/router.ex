@@ -100,14 +100,16 @@ defmodule MetamorphicWeb.Router do
       :browser,
       :require_authenticated_user,
       :require_confirmed_user,
-      :require_session_key
+      :require_session_key,
+      :maybe_require_private_posts
     ]
 
     live_session :require_authenticated_and_confirmed_user,
       on_mount: [
         {MetamorphicWeb.UserAuth, :ensure_authenticated},
         {MetamorphicWeb.UserAuth, :ensure_confirmed},
-        {MetamorphicWeb.UserAuth, :ensure_session_key}
+        {MetamorphicWeb.UserAuth, :ensure_session_key},
+        {MetamorphicWeb.UserAuth, :maybe_ensure_private_posts}
       ] do
       live "/posts", PostLive.Index, :index
       live "/posts/new", PostLive.Index, :new

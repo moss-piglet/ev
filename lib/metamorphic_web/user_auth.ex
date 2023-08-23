@@ -5,6 +5,7 @@ defmodule MetamorphicWeb.UserAuth do
   import Phoenix.Controller
 
   alias Metamorphic.Accounts
+  alias Metamorphic.Timeline
 
   # Make the remember me cookie valid for 60 days.
   # If you want bump or reduce this value, also change
@@ -246,6 +247,55 @@ defmodule MetamorphicWeb.UserAuth do
     end
   end
 
+  def on_mount(:maybe_ensure_private_posts, params, session, socket) do
+    socket =
+      socket
+      |> mount_current_user(session)
+      |> mount_current_user_session_key(session)
+
+    info = "You do not have permission to view this page or it does not exist."
+
+    if String.to_atom("Elixir.MetamorphicWeb.PostLive.Show") == socket.view do
+      with %Timeline.Post{} = post <- Timeline.get_post(params["id"]),
+           true <- post.user_id == socket.assigns.current_user.id do
+        {:cont, socket}
+      else
+        nil ->
+          socket =
+            socket
+            |> Phoenix.LiveView.put_flash(
+              :info,
+              info
+            )
+            |> Phoenix.LiveView.redirect(to: ~p"/posts")
+
+          {:halt, socket}
+
+        false ->
+          post = Timeline.get_post!(params["id"])
+
+          cond do
+            post.visibility == :connections &&
+                MetamorphicWeb.Helpers.has_user_connection?(post, socket.assigns.current_user) ->
+              {:cont, socket}
+
+            true ->
+              socket =
+                socket
+                |> Phoenix.LiveView.put_flash(
+                  :info,
+                  info
+                )
+                |> Phoenix.LiveView.redirect(to: ~p"/posts")
+
+              {:halt, socket}
+          end
+      end
+    else
+      {:cont, socket}
+    end
+  end
+
   def on_mount(:redirect_if_user_is_authenticated, _params, session, socket) do
     socket =
       socket
@@ -338,6 +388,50 @@ defmodule MetamorphicWeb.UserAuth do
       end
     else
       conn
+    end
+  end
+
+  def maybe_require_private_posts(conn, _opts) do
+    info = "You do not have permission to view this page or it does not exist."
+
+    case conn.path_info do
+      ["posts", id] ->
+        with %Timeline.Post{} = post <- Timeline.get_post(id),
+             true <- post.user_id == conn.assigns.current_user.id do
+          conn
+        else
+          nil ->
+            conn
+            |> put_flash(
+              :info,
+              info
+            )
+            |> maybe_store_return_to()
+            |> redirect(to: ~p"/posts")
+            |> halt()
+
+          false ->
+            post = Timeline.get_post!(id)
+
+            cond do
+              post.visibility == :connections &&
+                  MetamorphicWeb.Helpers.has_user_connection?(post, conn.assigns.current_user) ->
+                conn
+
+              true ->
+                conn
+                |> put_flash(
+                  :info,
+                  info
+                )
+                |> maybe_store_return_to()
+                |> redirect(to: ~p"/posts")
+                |> halt()
+            end
+        end
+
+      _rest ->
+        conn
     end
   end
 
