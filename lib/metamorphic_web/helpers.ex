@@ -185,13 +185,37 @@ defmodule MetamorphicWeb.Helpers do
     Accounts.get_user_connection_from_shared_post(post, user)
   end
 
-  def get_uconn_color_for_shared_post(post, user) do
-    case Accounts.get_user_connection_from_shared_post(post, user) do
-      %UserConnection{} = uconn ->
-        uconn.color
+  def has_user_connection?(post, user) do
+    unless is_nil(user) do
+      case get_uconn_for_shared_post(post, user) do
+        %UserConnection{} = _uconn ->
+          true
 
-      nil ->
-        nil
+        _rest ->
+          false
+      end
+    end
+  end
+
+  def is_my_post?(post, user) do
+    unless is_nil(user) do
+      post.user_id == user.id
+    end
+  end
+
+  def get_uconn_color_for_shared_post(post, user) do
+    cond do
+      is_nil(user) ->
+        :brand
+
+      true ->
+        case Accounts.get_user_connection_from_shared_post(post, user) do
+          %UserConnection{} = uconn ->
+            uconn.color
+
+          nil ->
+            nil
+        end
     end
   end
 

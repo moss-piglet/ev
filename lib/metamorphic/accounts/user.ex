@@ -33,7 +33,7 @@ defmodule Metamorphic.Accounts.User do
     field :key_pair, {:map, Encrypted.Binary}
     field :user_key, Encrypted.Binary, redact: true
     field :conn_key, Encrypted.Binary, redact: true
-    field :visibility, Ecto.Enum, values: [:public, :private, :connections], default: :public
+    field :visibility, Ecto.Enum, values: [:public, :private, :connections], default: :connections
     field :confirmed_at, :naive_datetime
 
     field :connection_map, :map, virtual: true

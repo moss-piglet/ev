@@ -99,9 +99,13 @@ defmodule MetamorphicWeb.PostLive.Components do
 
     <div class="flex-auto">
       <div class="flex items-baseline justify-between gap-x-4">
+        <!-- username -->
         <% post_user = get_user_from_post(@post) %>
         <p
-          :if={post_user.visibility == :private}
+          :if={
+            (post_user.visibility == :private && @current_user.id == @post.user_id) ||
+              @post.visibility == :private
+          }
           class="text-sm font-semibold leading-6 text-gray-900"
         >
           <%= decr_post(
@@ -112,9 +116,38 @@ defmodule MetamorphicWeb.PostLive.Components do
             @post
           ) %>
         </p>
+        <p
+          :if={@post.visibility == :public && is_nil(@current_user)}
+          class="text-sm font-semibold leading-6 text-gray-900"
+        >
+          <%= decr_post(
+            get_post_connection(@post, @current_user).username,
+            @current_user,
+            get_post_key(@post, @current_user),
+            @key,
+            @post
+          ) %>
+        </p>
+
+        <p
+          :if={
+            @post.visibility == :public && not is_nil(@current_user) &&
+              !has_user_connection?(@post, @current_user) && !is_my_post?(@post, @current_user)
+          }
+          class="text-sm font-semibold leading-6 text-gray-900"
+        >
+          <%= decr_post(
+            get_post_connection(@post, @current_user).username,
+            @current_user,
+            get_post_key(@post, @current_user),
+            @key,
+            @post
+          ) %>
+        </p>
+
         <.link
           :if={
-            post_user.visibility != :private && @post.visibility != :private &&
+            post_user.visibility != :private && @post.visibility == :connections &&
               get_shared_post_identity_atom(@post, @current_user) != :self
           }
           navigate={~p"/users/profile/#{post_user}"}
@@ -131,11 +164,26 @@ defmodule MetamorphicWeb.PostLive.Components do
         </.link>
         <.link
           :if={
-            (post_user.visibility != :private && @post.visibility == :private) ||
+            post_user.visibility != :private && @post.visibility == :connections &&
               get_shared_post_identity_atom(@post, @current_user) == :self
           }
           navigate={~p"/users/profile/#{post_user}"}
           class={"text-sm font-semibold leading-6 #{username_link_text_color(:brand)}"}
+          title="Click to view your profile"
+        >
+          <%= decr_post(
+            get_post_connection(@post, @current_user).username,
+            @current_user,
+            get_post_key(@post, @current_user),
+            @key,
+            @post
+          ) %>
+        </.link>
+
+        <.link
+          :if={@post.visibility == :public && has_user_connection?(@post, @current_user)}
+          navigate={~p"/users/profile/#{post_user}"}
+          class={"text-sm font-semibold leading-6 #{username_link_text_color(@color)}"}
           title="Click to view profile"
         >
           <%= decr_post(
@@ -146,6 +194,21 @@ defmodule MetamorphicWeb.PostLive.Components do
             @post
           ) %>
         </.link>
+        <.link
+          :if={@post.visibility == :public && is_my_post?(@post, @current_user)}
+          navigate={~p"/users/profile/#{post_user}"}
+          class={"text-sm font-semibold leading-6 #{username_link_text_color(:brand)}"}
+          title="Click to view your profile"
+        >
+          <%= decr_post(
+            get_post_connection(@post, @current_user).username,
+            @current_user,
+            get_post_key(@post, @current_user),
+            @key,
+            @post
+          ) %>
+        </.link>
+        <!-- timestamp -->
         <p class="flex-none text-xs text-gray-600">
           <time datetime={@post.inserted_at}>
             <span
