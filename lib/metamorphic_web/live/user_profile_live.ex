@@ -10,7 +10,7 @@ defmodule MetamorphicWeb.UserProfileLive do
         <div class="flex items-center gap-x-6">
           <.avatar
             :if={@user.id != @current_user.id}
-            src={get_user_avatar(get_uconn_for_users(@user, @current_user), @user.conn_key)}
+            src={get_user_avatar(get_uconn_for_users(@user, @current_user), @key)}
             alt=""
             class="h-16 w-16 flex-none rounded-full ring-1 ring-gray-900/10"
           />
@@ -66,7 +66,27 @@ defmodule MetamorphicWeb.UserProfileLive do
         </:subtitle>
       </.header>
 
-      <.list>
+      <.list :if={@user.id != @current_user.id}>
+        <:item title="Username">
+          <%= decr_uconn(
+            get_uconn_for_users(@user, @current_user).connection.username,
+            @current_user,
+            get_uconn_for_users(@user, @current_user).key,
+            @key
+          ) %>
+        </:item>
+        <:item title="Email">
+          <%= decr_uconn(
+            get_uconn_for_users(@user, @current_user).connection.email,
+            @current_user,
+            get_uconn_for_users(@user, @current_user).key,
+            @key
+          ) %>
+        </:item>
+        <:item title="Joined"><%= time_ago(@user.inserted_at) %></:item>
+      </.list>
+
+      <.list :if={@user.id == @current_user.id}>
         <:item title="Username"><%= decr(@user.username, @current_user, @key) %></:item>
         <:item title="Email"><%= decr(@user.email, @current_user, @key) %></:item>
         <:item title="Joined"><%= time_ago(@user.inserted_at) %></:item>

@@ -220,6 +220,14 @@ defmodule Metamorphic.Accounts do
     )
   end
 
+  def get_user_from_post(post) do
+    Repo.one(
+      from u in User,
+        where: ^post.user_id == u.id,
+        preload: [:connection]
+    )
+  end
+
   def get_connection_from_post(post, _current_user) do
     Repo.one(
       from c in Connection,

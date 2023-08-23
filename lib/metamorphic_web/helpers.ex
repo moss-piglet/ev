@@ -100,6 +100,10 @@ defmodule MetamorphicWeb.Helpers do
 
   ## Posts
 
+  def get_user_from_post(post) do
+    Accounts.get_user_from_post(post)
+  end
+
   def can_fav?(user, post) do
     if user.id not in post.favs_list do
       true
@@ -462,6 +466,19 @@ defmodule MetamorphicWeb.Helpers do
     do: "Sorry, that's not an acceptable file type."
 
   ## CSS styling
+
+  def username_link_text_color(color) do
+    case color do
+      :brand -> "text-brand-700 hover:text-brand-500"
+      :emerald -> "text-emerald-700 hover:text-emerald-500"
+      :orange -> "text-orange-700 hover:text-orange-500"
+      :pink -> "text-pink-700 hover:text-pink-500"
+      :purple -> "text-purple-700 hover:text-purple-500"
+      :rose -> "text-rose-700 hover:text-rose-500"
+      :yellow -> "text-yellow-700 hover:text-yellow-500"
+      :zinc -> "text-zinc-700 hover:text-zinc-500"
+    end
+  end
 
   def badge_color(color) do
     case color do
