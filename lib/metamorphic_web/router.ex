@@ -73,12 +73,18 @@ defmodule MetamorphicWeb.Router do
   end
 
   scope "/", MetamorphicWeb do
-    pipe_through [:browser, :require_authenticated_user, :require_session_key]
+    pipe_through [
+      :browser,
+      :require_authenticated_user,
+      :require_session_key,
+      :maybe_require_connection
+    ]
 
     live_session :require_authenticated_user,
       on_mount: [
         {MetamorphicWeb.UserAuth, :ensure_authenticated},
-        {MetamorphicWeb.UserAuth, :ensure_session_key}
+        {MetamorphicWeb.UserAuth, :ensure_session_key},
+        {MetamorphicWeb.UserAuth, :maybe_ensure_connection}
       ] do
       live "/users/dash", UserDashLive, :index
 

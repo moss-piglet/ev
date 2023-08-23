@@ -214,6 +214,38 @@ defmodule MetamorphicWeb.UserAuth do
     end
   end
 
+  def on_mount(:maybe_ensure_connection, params, session, socket) do
+    socket =
+      socket
+      |> mount_current_user(session)
+      |> mount_current_user_session_key(session)
+
+    if params["id"] do
+      if socket.assigns.current_user.id == params["id"] do
+        {:cont, socket}
+      else
+        if Accounts.get_user_connection_between_users!(
+             params["id"],
+             socket.assigns.current_user.id
+           ) do
+          {:cont, socket}
+        else
+          socket =
+            socket
+            |> Phoenix.LiveView.put_flash(
+              :info,
+              "You do not have permission to view this page or it does not exist."
+            )
+            |> Phoenix.LiveView.redirect(to: ~p"/users/dash")
+
+          {:halt, socket}
+        end
+      end
+    else
+      {:cont, socket}
+    end
+  end
+
   def on_mount(:redirect_if_user_is_authenticated, _params, session, socket) do
     socket =
       socket
@@ -281,6 +313,31 @@ defmodule MetamorphicWeb.UserAuth do
       conn
       |> put_flash(:info, "Your session key has expired, please log in again.")
       |> log_out_user()
+    end
+  end
+
+  def maybe_require_connection(conn, _opts) do
+    if conn.path_params["id"] do
+      if conn.path_params["id"] == conn.assigns.current_user.id do
+        conn
+      else
+        if Accounts.get_user_connection_between_users!(
+             conn.path_params["id"],
+             conn.assigns.current_user.id
+           ) do
+          conn
+        else
+          conn
+          |> put_flash(
+            :info,
+            "You do not have permission to view this page or it does not exist."
+          )
+          |> redirect(to: ~p"/users/dash")
+          |> halt()
+        end
+      end
+    else
+      conn
     end
   end
 
