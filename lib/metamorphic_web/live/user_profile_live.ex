@@ -5,7 +5,9 @@ defmodule MetamorphicWeb.UserProfileLive do
 
   def render(%{live_action: :show} = assigns) do
     ~H"""
-    <div :if={@user.visibility == :public || @user.visibility == :connections}>
+    <div :if={
+      @user.visibility == :public || @user.visibility == :connections || @user.id == @current_user.id
+    }>
       <.header :if={@user.id != @current_user.id}>
         <div class="flex items-center gap-x-6">
           <.avatar
@@ -98,13 +100,29 @@ defmodule MetamorphicWeb.UserProfileLive do
   end
 
   def mount(%{"id" => id} = _params, _session, socket) do
-    # if connected?(socket), do: Timeline.subscribe()
+    if connected?(socket), do: Accounts.private_subscribe(socket.assigns.current_user)
+
     socket =
       socket
       |> assign(:page_title, page_title(socket.assigns.live_action))
       |> assign(:user, Accounts.get_user!(id))
 
     {:ok, socket}
+  end
+
+  def handle_info({:uconn_visibility_updated, uconn}, socket) do
+    user = socket.assigns.current_user
+
+    cond do
+      uconn.user_id == user.id ->
+        {:noreply, assign(socket, :user, Accounts.get_user!(uconn.reverse_user_id))}
+
+      uconn.reverse_user_id == user.id ->
+        {:noreply, assign(socket, :user, Accounts.get_user!(uconn.user_id))}
+
+      true ->
+        {:noreply, socket}
+    end
   end
 
   defp page_title(:show), do: "Show User"

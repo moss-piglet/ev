@@ -467,6 +467,9 @@ defmodule Metamorphic.Accounts do
         |> Repo.update()
       end)
 
+    conn = get_connection!(user.connection.id)
+    broadcast_connection(conn, :uconn_visibility_updated)
+
     {:ok, user}
   end
 

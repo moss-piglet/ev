@@ -9,8 +9,15 @@ defmodule MetamorphicWeb.PostLive.Public do
 
   @impl true
   def mount(_params, _session, socket) do
-    if connected?(socket) do
+    user = socket.assigns.current_user
+
+    if connected?(socket) && is_nil(user) do
       Accounts.subscribe()
+      Timeline.subscribe()
+    end
+
+    if connected?(socket) && not is_nil(user) do
+      Accounts.private_subscribe(user)
       Timeline.subscribe()
     end
 
@@ -76,6 +83,22 @@ defmodule MetamorphicWeb.PostLive.Public do
   @impl true
   def handle_info({:public_uconn_deleted, _uconn}, socket) do
     {:noreply, paginate_posts(socket, socket.assigns.page, true)}
+  end
+
+  @impl true
+  def handle_info({:uconn_visibility_updated, uconn}, socket) do
+    user = socket.assigns.current_user
+
+    cond do
+      is_nil(user) ->
+        {:noreply, socket}
+
+      uconn.user_id == user.id || uconn.reverse_user_id == user.id ->
+        {:noreply, paginate_posts(socket, socket.assigns.page, true)}
+
+      true ->
+        {:noreply, socket}
+    end
   end
 
   @impl true

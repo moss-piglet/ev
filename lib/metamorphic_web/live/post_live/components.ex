@@ -103,7 +103,8 @@ defmodule MetamorphicWeb.PostLive.Components do
         <% post_user = get_user_from_post(@post) %>
         <p
           :if={
-            (post_user.visibility == :private && @current_user.id == @post.user_id) ||
+            (post_user.visibility == :private && is_my_post?(@post, @current_user) &&
+               @post.visibility != :public) ||
               @post.visibility == :private
           }
           class="text-sm font-semibold leading-6 text-gray-900"
@@ -133,6 +134,39 @@ defmodule MetamorphicWeb.PostLive.Components do
           :if={
             @post.visibility == :public && not is_nil(@current_user) &&
               !has_user_connection?(@post, @current_user) && !is_my_post?(@post, @current_user)
+          }
+          class="text-sm font-semibold leading-6 text-gray-900"
+        >
+          <%= decr_post(
+            get_post_connection(@post, @current_user).username,
+            @current_user,
+            get_post_key(@post, @current_user),
+            @key,
+            @post
+          ) %>
+        </p>
+
+        <p
+          :if={
+            @post.visibility == :public && not is_nil(@current_user) &&
+              has_user_connection?(@post, @current_user) && !is_my_post?(@post, @current_user) &&
+              post_user.visibility == :private
+          }
+          class="text-sm font-semibold leading-6 text-gray-900"
+        >
+          <%= decr_post(
+            get_post_connection(@post, @current_user).username,
+            @current_user,
+            get_post_key(@post, @current_user),
+            @key,
+            @post
+          ) %>
+        </p>
+        <p
+          :if={
+            @post.visibility == :connections && not is_nil(@current_user) &&
+              has_user_connection?(@post, @current_user) && !is_my_post?(@post, @current_user) &&
+              post_user.visibility == :private
           }
           class="text-sm font-semibold leading-6 text-gray-900"
         >
@@ -181,7 +215,10 @@ defmodule MetamorphicWeb.PostLive.Components do
         </.link>
 
         <.link
-          :if={@post.visibility == :public && has_user_connection?(@post, @current_user)}
+          :if={
+            @post.visibility == :public && has_user_connection?(@post, @current_user) &&
+              post_user.visibility != :private
+          }
           navigate={~p"/users/profile/#{post_user}"}
           class={"text-sm font-semibold leading-6 #{username_link_text_color(@color)}"}
           title="Click to view profile"
