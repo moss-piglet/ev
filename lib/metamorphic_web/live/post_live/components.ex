@@ -247,7 +247,7 @@ defmodule MetamorphicWeb.PostLive.Components do
         </.link>
         <!-- timestamp -->
         <p class="flex-none text-xs text-gray-600">
-          <time datetime={@post.inserted_at}>
+          <time>
             <span
               :if={get_shared_post_identity_atom(@post, @current_user) == :self}
               class="inline-flex items-center align-middle rounded-full"
@@ -271,7 +271,7 @@ defmodule MetamorphicWeb.PostLive.Components do
                 <%= get_shared_post_label(@post, @current_user, @key) %>
               </span>
             </span>
-            <%= time_ago(@post.inserted_at) %>
+            <.local_time id={@post.id} at={@post.inserted_at} />
           </time>
         </p>
       </div>
@@ -348,6 +348,15 @@ defmodule MetamorphicWeb.PostLive.Components do
         </.link>
       </div>
     </div>
+    """
+  end
+
+  attr :at, :any, required: true
+  attr :id, :any, required: true
+
+  def local_time(assigns) do
+    ~H"""
+    <time phx-hook="LocalTime" id={"time-#{@id}"} class="invisible"><%= @at %></time>
     """
   end
 end

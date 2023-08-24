@@ -28,6 +28,16 @@ let execJS = (selector, attr) => {
 
 let Hooks = {}
 
+Hooks.LocalTime = {
+  mounted(){ this.updated() },
+  updated() {
+    let dt = new Date(this.el.textContent)
+    let options = {hour: "2-digit", minute: "2-digit", hour12: true, timeZoneName: "short"}
+    this.el.textContent = `${dt.toLocaleString('en-US', options)}`
+    this.el.classList.remove("invisible")
+  }
+}
+
 Hooks.Flash = {
   mounted(){
     let hide = () => liveSocket.execJS(this.el, this.el.getAttribute("phx-click"))
