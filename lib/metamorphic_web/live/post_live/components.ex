@@ -6,6 +6,7 @@ defmodule MetamorphicWeb.PostLive.Components do
   use MetamorphicWeb, :verified_routes
 
   alias Phoenix.LiveView.JS
+
   import MetamorphicWeb.CoreComponents, only: [avatar: 1, icon: 1]
   import MetamorphicWeb.Helpers
 
@@ -356,7 +357,16 @@ defmodule MetamorphicWeb.PostLive.Components do
 
   def local_time(assigns) do
     ~H"""
-    <time phx-hook="LocalTime" id={"time-#{@id}"} class="invisible"><%= @at %></time>
+    <time phx-hook="LocalTime" id={"time-#{@id}"} class="hidden"><%= @at %></time>
+    """
+  end
+
+  attr :at, :any, required: true
+  attr :id, :any, required: true
+
+  def local_time_full(assigns) do
+    ~H"""
+    <time phx-hook="LocalTimeFull" id={"time-#{@id}"} class="hidden"><%= @at %></time>
     """
   end
 end

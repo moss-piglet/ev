@@ -2,7 +2,7 @@
   Public Post
   <:subtitle>
     This is a <span class="font-semibold text-brand-600">public</span>
-    post from <%= time_ago(@post.inserted_at) %>.
+    post from <.local_time_full id={@post.id} at={@post.inserted_at} />.
   </:subtitle>
   <:actions>
     <.link

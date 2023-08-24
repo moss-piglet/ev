@@ -31,10 +31,20 @@ let Hooks = {}
 Hooks.LocalTime = {
   mounted(){ this.updated() },
   updated() {
-    let dt = new Date(this.el.textContent)
+    let dt = new Date(this.el.textContent);
     let options = {hour: "2-digit", minute: "2-digit", hour12: true, timeZoneName: "short"}
     this.el.textContent = `${dt.toLocaleString('en-US', options)}`
-    this.el.classList.remove("invisible")
+    this.el.classList.remove("hidden")
+  }
+}
+
+Hooks.LocalTimeFull = {
+  mounted(){ this.updated() },
+  updated() {
+    let dt = new Date(this.el.textContent)
+    let options = {day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true, timeZoneName: "short"}
+    this.el.textContent = `${dt.toLocaleString('en-US', options)}`
+    this.el.classList.remove("hidden")
   }
 }
 

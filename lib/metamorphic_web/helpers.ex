@@ -84,8 +84,8 @@ defmodule MetamorphicWeb.Helpers do
     Date.utc_today()
   end
 
-  def time_ago(naive_dt, tz \\ "Etc/UTC") do
-    {:ok, dt} = DateTime.from_naive(naive_dt, tz)
+  def time_ago(date, tz \\ "America/Los_Angeles") do
+    {:ok, dt} = DateTime.from_naive(date, tz)
     {:ok, string} = Relative.to_string(dt)
     string
   end
