@@ -247,7 +247,7 @@ defmodule MetamorphicWeb.PostLive.Components do
         </.link>
         <!-- timestamp -->
         <p class="flex-none text-xs text-gray-600">
-          <time>
+          <span class="inline-flex items-center space-x-1">
             <span
               :if={get_shared_post_identity_atom(@post, @current_user) == :self}
               class="inline-flex items-center align-middle rounded-full"
@@ -272,7 +272,7 @@ defmodule MetamorphicWeb.PostLive.Components do
               </span>
             </span>
             <.local_time id={@post.id} at={@post.inserted_at} />
-          </time>
+          </span>
         </p>
       </div>
       <p class="mt-1 line-clamp-2 text-sm leading-6 text-gray-600">
