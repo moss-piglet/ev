@@ -142,7 +142,14 @@ defmodule Metamorphic.Timeline do
 
   """
   def get_post!(id), do: Repo.get!(Post, id) |> Repo.preload([:user_posts])
-  def get_post(id), do: Repo.get(Post, id) |> Repo.preload([:user_posts])
+
+  def get_post(id) do
+    if :new == id || "new" == id do
+      nil
+    else
+      Repo.get(Post, id) |> Repo.preload([:user_posts])
+    end
+  end
 
   def get_all_shared_posts(user_id) do
     Repo.all(

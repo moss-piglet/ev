@@ -401,14 +401,18 @@ defmodule MetamorphicWeb.UserAuth do
           conn
         else
           nil ->
-            conn
-            |> put_flash(
-              :info,
-              info
-            )
-            |> maybe_store_return_to()
-            |> redirect(to: ~p"/posts")
-            |> halt()
+            if :new == id || "new" == id do
+              conn
+            else
+              conn
+              |> put_flash(
+                :info,
+                info
+              )
+              |> maybe_store_return_to()
+              |> redirect(to: ~p"/posts")
+              |> halt()
+            end
 
           false ->
             post = Timeline.get_post!(id)
