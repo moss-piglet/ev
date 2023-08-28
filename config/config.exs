@@ -91,6 +91,9 @@ config :ex_aws, :s3,
   scheme: "https",
   host: {:system, "STORJ_HOST"}
 
+# Configure the time zone database
+config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
+
 config :ex_aws, :retries, max_attempts: 3
 
 # Import environment specific config. This must remain at the bottom

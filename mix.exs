@@ -4,7 +4,7 @@ defmodule Metamorphic.MixProject do
   def project do
     [
       app: :metamorphic,
-      version: "0.2.16",
+      version: "0.2.18",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -67,6 +67,7 @@ defmodule Metamorphic.MixProject do
       {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},
+      {:tzdata, "~> 1.1"},
       {:zxcvbn, "~> 0.1.3"}
     ]
   end
