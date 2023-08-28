@@ -86,8 +86,12 @@ defmodule MetamorphicWeb.Helpers do
 
   def time_ago(date, tz \\ "America/Los_Angeles") do
     {:ok, dt} = DateTime.from_naive(date, tz)
-    {:ok, string} = Relative.to_string(dt)
-    string
+    case Relative.to_string(dt)
+    {:ok, string} ->
+      string
+    {:error, _msg} ->
+      date
+    end
   end
 
   def can_edit?(user, item) when is_struct(item) do
