@@ -7,7 +7,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
 
   alias Phoenix.LiveView.JS
 
-  import MetamorphicWeb.CoreComponents, only: [avatar: 1, dropdown: 1]
+  import MetamorphicWeb.CoreComponents, only: [avatar: 1, dropdown: 1, local_time_ago: 1]
   import MetamorphicWeb.Helpers
 
   attr :id, :string, required: true
@@ -249,15 +249,6 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
         </:link>
       </.dropdown>
     </div>
-    """
-  end
-
-  attr :at, :any, required: true
-  attr :id, :any, required: true
-
-  def local_time_ago(assigns) do
-    ~H"""
-    <time phx-hook="LocalTimeAgo" id={"time-#{@id}"} class="hidden"><%= @at %></time>
     """
   end
 end

@@ -1,8 +1,6 @@
 defmodule MetamorphicWeb.PostLive.Show do
   use MetamorphicWeb, :live_view
 
-  import MetamorphicWeb.PostLive.Components, only: [local_time_full: 1]
-
   alias Metamorphic.Timeline
 
   @impl true

@@ -40,7 +40,7 @@ defmodule MetamorphicWeb.UserProfileLive do
         </div>
 
         <:subtitle>
-          This is their user profile on <%= now() %>.
+          This is their user profile on <.local_time_now id={@user.id} />.
         </:subtitle>
       </.header>
 
@@ -64,7 +64,7 @@ defmodule MetamorphicWeb.UserProfileLive do
         </div>
 
         <:subtitle>
-          This is your user profile on <%= now() %>.
+          This is your user profile on <.local_time_now id={@user.id} />.
         </:subtitle>
       </.header>
 
@@ -85,13 +85,13 @@ defmodule MetamorphicWeb.UserProfileLive do
             @key
           ) %>
         </:item>
-        <:item title="Joined"><%= time_ago(@user.inserted_at) %></:item>
+        <:item title="Joined"><.local_time_ago id={@user.id} at={@user.inserted_at} /></:item>
       </.list>
 
       <.list :if={@user.id == @current_user.id}>
         <:item title="Username"><%= decr(@user.username, @current_user, @key) %></:item>
         <:item title="Email"><%= decr(@user.email, @current_user, @key) %></:item>
-        <:item title="Joined"><%= time_ago(@user.inserted_at) %></:item>
+        <:item title="Joined"><.local_time_ago id={@user.id} at={@user.inserted_at} /></:item>
       </.list>
 
       <.back navigate={~p"/users/dash"}>Back to dash</.back>
@@ -123,6 +123,10 @@ defmodule MetamorphicWeb.UserProfileLive do
       true ->
         {:noreply, socket}
     end
+  end
+
+  def handle_info(_, socket) do
+    {:noreply, socket}
   end
 
   defp page_title(:show), do: "Show User"

@@ -58,6 +58,15 @@ Hooks.LocalTimeFull = {
   }
 }
 
+Hooks.LocalTimeNow = {
+  mounted(){ this.updated() },
+  updated() {
+    let dt = DateTime.local();
+    this.el.textContent = `${dt.toLocaleString(DateTime.DATETIME_FULL)}`
+    this.el.classList.remove("hidden")
+  }
+}
+
 Hooks.Flash = {
   mounted(){
     let hide = () => liveSocket.execJS(this.el, this.el.getAttribute("phx-click"))

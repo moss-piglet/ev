@@ -2,7 +2,6 @@ defmodule MetamorphicWeb.PostLive.PublicShow do
   use MetamorphicWeb, :live_view
 
   alias Metamorphic.Timeline
-  import MetamorphicWeb.PostLive.Components, only: [local_time_full: 1]
 
   @impl true
   def mount(_params, _session, socket) do

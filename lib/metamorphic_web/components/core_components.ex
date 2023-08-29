@@ -21,6 +21,43 @@ defmodule MetamorphicWeb.CoreComponents do
   import MetamorphicWeb.Gettext
 
   @doc """
+  Renders the local time for a struct with
+  the relative formatting.
+  """
+  attr :at, :any, required: true
+  attr :id, :any, required: true
+
+  def local_time_ago(assigns) do
+    ~H"""
+    <time phx-hook="LocalTimeAgo" id={"time-#{@id}"} class="hidden"><%= @at %></time>
+    """
+  end
+
+  @doc """
+  Renders the local time for a struct with
+  the full formatting.
+  """
+  attr :at, :any, required: true
+  attr :id, :any, required: true
+
+  def local_time_full(assigns) do
+    ~H"""
+    <time phx-hook="LocalTimeFull" id={"time-#{@id}"} class="hidden"><%= @at %></time>
+    """
+  end
+
+  @doc """
+  Renders the current local time.
+  """
+  attr :id, :any, required: true
+
+  def local_time_now(assigns) do
+    ~H"""
+    <time phx-hook="LocalTimeNow" id={"now-#{@id}"} class="hidden"></time>
+    """
+  end
+
+  @doc """
   Renders a modal.
 
   ## Examples

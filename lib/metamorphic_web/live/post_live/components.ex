@@ -7,7 +7,7 @@ defmodule MetamorphicWeb.PostLive.Components do
 
   alias Phoenix.LiveView.JS
 
-  import MetamorphicWeb.CoreComponents, only: [avatar: 1, icon: 1]
+  import MetamorphicWeb.CoreComponents, only: [avatar: 1, icon: 1, local_time_ago: 1]
   import MetamorphicWeb.Helpers
 
   attr :id, :string, required: true
@@ -359,24 +359,6 @@ defmodule MetamorphicWeb.PostLive.Components do
   def local_time(assigns) do
     ~H"""
     <time phx-hook="LocalTime" id={"time-#{@id}"} class="hidden"><%= @at %></time>
-    """
-  end
-
-  attr :at, :any, required: true
-  attr :id, :any, required: true
-
-  def local_time_ago(assigns) do
-    ~H"""
-    <time phx-hook="LocalTimeAgo" id={"time-#{@id}"} class="hidden"><%= @at %></time>
-    """
-  end
-
-  attr :at, :any, required: true
-  attr :id, :any, required: true
-
-  def local_time_full(assigns) do
-    ~H"""
-    <time phx-hook="LocalTimeFull" id={"time-#{@id}"} class="hidden"><%= @at %></time>
     """
   end
 end
