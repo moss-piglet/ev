@@ -272,7 +272,8 @@ defmodule MetamorphicWeb.PostLive.Components do
                 <%= get_shared_post_label(@post, @current_user, @key) %>
               </span>
             </span>
-            <.local_time id={@post.id} at={@post.inserted_at} />
+
+            <.local_time_ago id={@post.id} at={@post.inserted_at} />
           </span>
         </p>
       </div>
@@ -358,6 +359,15 @@ defmodule MetamorphicWeb.PostLive.Components do
   def local_time(assigns) do
     ~H"""
     <time phx-hook="LocalTime" id={"time-#{@id}"} class="hidden"><%= @at %></time>
+    """
+  end
+
+  attr :at, :any, required: true
+  attr :id, :any, required: true
+
+  def local_time_ago(assigns) do
+    ~H"""
+    <time phx-hook="LocalTimeAgo" id={"time-#{@id}"} class="hidden"><%= @at %></time>
     """
   end
 

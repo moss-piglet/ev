@@ -102,9 +102,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
           <%= decr_uconn(@uconn.request_email, @current_user, @uconn.key, @key) %>
         </p>
         <p class="mt-1 flex justify-start text-xs space-x-4">
-          <time datetime={@uconn.inserted_at} class="hidden sm:text-xs sm:block">
-            <%= time_ago(@uconn.inserted_at) %>
-          </time>
+          <.local_time_ago id={@uconn.id} at={@uconn.inserted_at} />
         </p>
       </div>
       <.dropdown id={"dropdown-" <> @uconn.id} svg_arrows={false}>
@@ -251,6 +249,15 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
         </:link>
       </.dropdown>
     </div>
+    """
+  end
+
+  attr :at, :any, required: true
+  attr :id, :any, required: true
+
+  def local_time_ago(assigns) do
+    ~H"""
+    <time phx-hook="LocalTimeAgo" id={"time-#{@id}"} class="hidden"><%= @at %></time>
     """
   end
 end

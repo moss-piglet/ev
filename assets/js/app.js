@@ -21,6 +21,7 @@ import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
+import { DateTime } from "../vendor/luxon"
 
 let execJS = (selector, attr) => {
   document.querySelectorAll(selector).forEach(el => liveSocket.execJS(el, el.getAttribute(attr)))
@@ -38,12 +39,21 @@ Hooks.LocalTime = {
   }
 }
 
+Hooks.LocalTimeAgo = {
+  mounted(){ this.updated() },
+  updated() {
+    let dt = DateTime.fromISO(this.el.textContent, { zone: "UTC" }).toLocal();
+    let options = {}
+    this.el.textContent = `${dt.toRelative(options)}`
+    this.el.classList.remove("hidden")
+  }
+}
+
 Hooks.LocalTimeFull = {
   mounted(){ this.updated() },
   updated() {
-    let dt = new Date(this.el.textContent)
-    let options = {day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true, timeZoneName: "short"}
-    this.el.textContent = `${dt.toLocaleString('en-US', options)}`
+    let dt = DateTime.fromISO(this.el.textContent, { zone: "UTC" }).toLocal()
+    this.el.textContent = `${dt.toLocaleString(DateTime.DATETIME_FULL)}`
     this.el.classList.remove("hidden")
   }
 }
