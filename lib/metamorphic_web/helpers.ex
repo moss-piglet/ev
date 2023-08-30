@@ -5,7 +5,6 @@ defmodule MetamorphicWeb.Helpers do
   alias Metamorphic.Accounts.{User, UserConnection}
   alias Metamorphic.Encrypted
   alias Metamorphic.Extensions.AvatarProcessor
-  alias Metamorphic.Cldr.DateTime.Relative
   alias Metamorphic.Timeline.Post
 
   ## Encryption
