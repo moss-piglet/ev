@@ -190,6 +190,8 @@ defmodule MetamorphicWeb.Helpers do
     )
   end
 
+  def get_username_for_uconn(_, _user, _key), do: nil
+
   def get_shared_post_user_connection(post, user) do
     Enum.map(post.shared_users, fn x ->
       u = Accounts.get_user!(x.user_id)
@@ -215,6 +217,10 @@ defmodule MetamorphicWeb.Helpers do
           false
       end
     end
+  end
+
+  def has_any_user_connections?(user) do
+    Accounts.has_any_user_connections?(user)
   end
 
   def is_my_post?(post, user) do

@@ -251,10 +251,11 @@ defmodule MetamorphicWeb.PostLive.Components do
         <div :if={get_shared_post_identity_atom(@post, @current_user) == :self && !Enum.empty?(@post.shared_users)} class="absolute right-2 -bottom-2 group space-x-1">
           <span
             :for={uconn <- get_shared_post_user_connection(@post, @current_user)}
-            class={"inline-flex items-center rounded-full group-hover:bg-purple-100 group-hover:px-2 group-hover:py-1 group-hover:text-xs group-hover:font-medium #{badge_group_hover_color(uconn.color)} group-hover:space-x-1"}
+            :if={uconn}
+            class={"inline-flex items-center rounded-full group-hover:bg-purple-100 group-hover:px-2 group-hover:py-1 group-hover:text-xs group-hover:font-medium #{if uconn, do: badge_group_hover_color(uconn.color)} group-hover:space-x-1"}
           >
             <svg
-              class={"h-1.5 w-1.5 #{badge_svg_fill_color(uconn.color)}"}
+              class={"h-1.5 w-1.5 #{if uconn, do: badge_svg_fill_color(uconn.color)}"}
               viewBox="0 0 6 6"
               aria-hidden="true"
             >
