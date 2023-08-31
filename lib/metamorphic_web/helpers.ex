@@ -113,6 +113,8 @@ defmodule MetamorphicWeb.Helpers do
     end
   end
 
+  def get_user!(id), do: Accounts.get_user!(id)
+
   def get_post_connection(post, current_user) do
     cond do
       post.visibility == :public ->
@@ -168,6 +170,31 @@ defmodule MetamorphicWeb.Helpers do
       true ->
         "nil"
     end
+  end
+
+  def get_label_for_uconn(%UserConnection{} = uconn, user, key) do
+    Encrypted.Users.Utils.decrypt_user_item(
+      uconn.label,
+      user,
+      uconn.key,
+      key
+    )
+  end
+
+  def get_username_for_uconn(%UserConnection{} = uconn, user, key) do
+    Encrypted.Users.Utils.decrypt_user_item(
+      uconn.connection.username,
+      user,
+      uconn.key,
+      key
+    )
+  end
+
+  def get_shared_post_user_connection(post, user) do
+    Enum.map(post.shared_users, fn x ->
+      u = Accounts.get_user!(x.user_id)
+      get_uconn_for_users(u, user)
+    end)
   end
 
   # User is the current user and should be
@@ -242,6 +269,10 @@ defmodule MetamorphicWeb.Helpers do
 
   def get_uconn_for_users(user, current_user) do
     Accounts.get_user_connection_between_users(user, current_user)
+  end
+
+  def get_uconn_for_users!(user_id, current_user_id) do
+    Accounts.get_user_connection_between_users!(user_id, current_user_id)
   end
 
   ## Avatars

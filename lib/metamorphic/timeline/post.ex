@@ -24,6 +24,12 @@ defmodule Metamorphic.Timeline.Post do
 
     field :user_post_map, :map, virtual: true
 
+    embeds_many :shared_users, SharedUser, on_replace: :delete do
+      field :sender_id, :string, virtual: true
+      field :username, :string, virtual: true
+      field :user_id, :binary_id
+    end
+
     belongs_to :user, User
     belongs_to :original_post, Post
 
@@ -52,6 +58,10 @@ defmodule Metamorphic.Timeline.Post do
     |> add_username_hash()
     |> validate_visibility(opts)
     |> encrypt_attrs(opts)
+    |> cast_embed(:shared_users,
+      with: &shared_user_changeset/2,
+      sort_param: :shared_users_order,
+      drop_param: :shared_users_delete)
   end
 
   @doc false
@@ -75,7 +85,40 @@ defmodule Metamorphic.Timeline.Post do
     |> validate_length(:body, min: 2, max: 250)
     |> add_username_hash()
     |> encrypt_attrs(opts)
+    |> cast_embed(:shared_users,
+      with: &shared_user_changeset/2,
+      sort_param: :shared_users_order,
+      drop_param: :shared_users_delete)
   end
+
+  def shared_user_changeset(shared_user, attrs \\ %{}, _opts \\ []) do
+    shared_user
+    |> cast(attrs, [:sender_id, :username])
+    |> validate_shared_username()
+  end
+
+  defp validate_shared_username(changeset) do
+    changeset
+    |> validate_required([:username])
+    |> validate_length(:username, min: 2, max: 160)
+    |> maybe_add_recipient_id_by_username()
+  end
+
+  # The recipient is either the user_id or reverse_user_id
+  # of the connection.
+  defp maybe_add_recipient_id_by_username(changeset) do
+    username = get_change(changeset, :username, "")
+    user_id = get_field(changeset, :sender_id)
+
+    if recipient = Accounts.get_shared_user_by_username(user_id, username) do
+      changeset
+      |> put_change(:user_id, recipient.id)
+    else
+      changeset
+      |> add_error(:username, "invalid or does not exist")
+    end
+  end
+
 
   defp add_username_hash(changeset) do
     if Map.has_key?(changeset.changes, :username) do

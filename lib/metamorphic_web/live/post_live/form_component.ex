@@ -31,6 +31,39 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
           required
         />
 
+        <div :if={@selector == "connections" && @action != :edit} class="space-y-4 mb-6">
+          <p class="font-light text-zinc-800">
+            Add or remove people to share with (you must be connected to them). To share with all of your connections, use the "x" to remove any open fields:
+          </p>
+
+          <div id="shared_users" phx-hook="SortableInputsFor" class="space-y-2">
+            <.inputs_for :let={f_nested} field={@form[:shared_users]}>
+              <div class="relative flex space-x-2 drag-item">
+                <input type="hidden" name="post[shared_users_order][]" value={f_nested.index} />
+                <.input type="hidden" field={f_nested[:sender_id]} value={@user.id} />
+                <.input type="text" field={f_nested[:username]} placeholder="Enter username" />
+                <label class="cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="post[shared_users_delete][]"
+                    value={f_nested.index}
+                    class="hidden"
+                  />
+
+                  <.icon name="hero-x-mark" class="w-6 h-6 absolute top-4" />
+                </label>
+              </div>
+            </.inputs_for>
+          </div>
+
+          <label class="block cursor-pointer">
+            <input type="checkbox" name="post[shared_users_order][]" class="hidden" />
+            <.icon name="hero-plus-circle" /> add more
+          </label>
+
+          <input type="hidden" name="post[shared_users_delete][]" />
+        </div>
+
         <.input :if={@action == :new} field={@form[:body]} type="textarea" label="Body" />
         <.input
           :if={@action == :edit && @post.visibility == :private}
@@ -70,12 +103,14 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
       {:ok,
        socket
        |> assign(:post_key, get_post_key(post))
+       |> assign(:selector, Atom.to_string(assigns.post.visibility) || Map.get(assigns, :selector, "public"))
        |> assign(assigns)
        |> assign_form(changeset)}
     else
       {:ok,
        socket
        |> assign(assigns)
+       |> assign(:selector, Map.get(assigns, :selector, "public"))
        |> assign_form(changeset)}
     end
   end
@@ -87,7 +122,7 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
       |> Timeline.change_post(post_params, user: socket.assigns.user)
       |> Map.put(:action, :validate)
 
-    {:noreply, assign_form(socket, changeset)}
+    {:noreply, socket |> assign_form(changeset) |> assign(:selector, post_params["visibility"])}
   end
 
   def handle_event("save", %{"post" => post_params}, socket) do

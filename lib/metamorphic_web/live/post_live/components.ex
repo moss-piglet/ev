@@ -98,7 +98,7 @@ defmodule MetamorphicWeb.PostLive.Components do
       class="inline-block h-12 w-12 rounded-md bg-zinc-100"
     />
 
-    <div class="flex-auto">
+    <div class="relative flex-auto">
       <div class="flex items-baseline justify-between gap-x-4">
         <!-- username -->
         <% post_user = get_user_from_post(@post) %>
@@ -246,7 +246,27 @@ defmodule MetamorphicWeb.PostLive.Components do
             @post
           ) %>
         </.link>
-        <!-- timestamp -->
+
+        <!-- sharing with users badge -->
+        <div :if={get_shared_post_identity_atom(@post, @current_user) == :self && !Enum.empty?(@post.shared_users)} class="absolute right-2 -bottom-2 group space-x-1">
+          <span
+            :for={uconn <- get_shared_post_user_connection(@post, @current_user)}
+            class={"inline-flex items-center rounded-full group-hover:bg-purple-100 group-hover:px-2 group-hover:py-1 group-hover:text-xs group-hover:font-medium #{badge_group_hover_color(uconn.color)} group-hover:space-x-1"}
+          >
+            <svg
+              class={"h-1.5 w-1.5 #{badge_svg_fill_color(uconn.color)}"}
+              viewBox="0 0 6 6"
+              aria-hidden="true"
+            >
+              <circle cx="3" cy="3" r="3" />
+            </svg>
+            <span class="hidden group-hover:flex">
+              <%= get_username_for_uconn(uconn, @current_user, @key) %>
+            </span>
+          </span>
+        </div>
+
+        <!-- timestamp && label badge -->
         <p class="flex-none text-xs text-gray-600">
           <span class="inline-flex items-center space-x-1">
             <span
@@ -257,6 +277,7 @@ defmodule MetamorphicWeb.PostLive.Components do
                 <circle cx="3" cy="3" r="3" />
               </svg>
             </span>
+
             <span
               :if={get_shared_post_identity_atom(@post, @current_user) == :connection}
               class={"inline-flex items-center rounded-full group group-hover:bg-purple-100 group-hover:px-2 group-hover:py-1 group-hover:text-xs group-hover:font-medium #{badge_group_hover_color(@color)} group-hover:space-x-1"}

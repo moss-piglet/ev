@@ -85,6 +85,7 @@ defmodule Metamorphic.Timeline do
       preload: [:user_posts]
     )
     |> Repo.all()
+    |> Enum.filter(fn post -> Enum.empty?(post.shared_users) || Enum.any?(post.shared_users, fn x -> x.user_id == user.id end) end)
   end
 
   def list_public_posts(opts) do
@@ -376,16 +377,39 @@ defmodule Metamorphic.Timeline do
   defp connections_broadcast({:error, _reason} = error, _event), do: error
 
   defp connections_broadcast({:ok, conn, post}, event) do
-    Enum.each(conn.user_connections, fn uconn ->
-      Phoenix.PubSub.broadcast(Metamorphic.PubSub, "conn_posts:#{uconn.user_id}", {event, post})
+    if Enum.empty?(post.shared_users) do
+      Enum.each(conn.user_connections, fn uconn ->
+        Phoenix.PubSub.broadcast(Metamorphic.PubSub, "conn_posts:#{uconn.user_id}", {event, post})
 
-      Phoenix.PubSub.broadcast(
-        Metamorphic.PubSub,
-        "conn_posts:#{uconn.reverse_user_id}",
-        {event, post}
-      )
-    end)
+        Phoenix.PubSub.broadcast(
+          Metamorphic.PubSub,
+          "conn_posts:#{uconn.reverse_user_id}",
+          {event, post}
+        )
+      end)
 
-    {:ok, post}
+      {:ok, post}
+    else
+      Enum.each(conn.user_connections, fn uconn ->
+
+        Enum.each(post.shared_users, fn shared_user ->
+          cond do
+            uconn.user_id == shared_user.user_id || uconn.reverse_user_id == shared_user.user_id ->
+              Phoenix.PubSub.broadcast(Metamorphic.PubSub, "conn_posts:#{uconn.user_id}", {event, post})
+
+              Phoenix.PubSub.broadcast(
+                Metamorphic.PubSub,
+                "conn_posts:#{uconn.reverse_user_id}",
+                {event, post}
+              )
+
+            true ->
+              nil
+          end
+        end)
+      end)
+
+      {:ok, post}
+    end
   end
 end

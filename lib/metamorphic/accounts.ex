@@ -46,7 +46,7 @@ defmodule Metamorphic.Accounts do
   This is used to send connection requests and we
   don't want people to send themselves requests.
   """
-  def get_user_by_username(user, username) when is_binary(username) do
+  def get_user_by_username(user, username) when is_binary(username) and is_struct(user) do
     new_user =
       from(u in User,
         where: u.id != ^user.id,
@@ -62,6 +62,30 @@ defmodule Metamorphic.Accounts do
         nil
     end
   end
+
+  @doc """
+  Get user by username to share a post with.
+  This checks to make sure the current_user_id
+  is not the user be searched for and HAS a
+  confirmed UserConnection.
+  """
+  def get_shared_user_by_username(user_id, username) when is_binary(username) and is_binary(user_id) do
+    new_user =
+      from(u in User,
+        where: u.id != ^user_id
+      )
+      |> Repo.get_by(username_hash: username)
+
+    cond do
+      not is_nil(new_user) && has_confirmed_user_connection?(new_user, user_id) ->
+        new_user
+
+      true ->
+        nil
+    end
+  end
+
+  def get_shared_user_by_username(_, _username), do: nil
 
   @doc """
   Get user by email. This checks to make sure
@@ -93,6 +117,23 @@ defmodule Metamorphic.Accounts do
         from uc in UserConnection,
           where: uc.user_id == ^user.id and uc.reverse_user_id == ^current_user.id,
           or_where: uc.reverse_user_id == ^user.id and uc.user_id == ^current_user.id
+      )
+
+    cond do
+      Enum.empty?(query) ->
+        false
+
+      !Enum.empty?(query) ->
+        true
+    end
+  end
+
+  def has_confirmed_user_connection?(%User{} = user, current_user_id) do
+    query =
+      Repo.all(
+        from uc in UserConnection,
+          where: uc.user_id == ^user.id and uc.reverse_user_id == ^current_user_id and not is_nil(uc.confirmed_at),
+          or_where: uc.reverse_user_id == ^user.id and uc.user_id == ^current_user_id and not is_nil(uc.confirmed_at)
       )
 
     cond do
