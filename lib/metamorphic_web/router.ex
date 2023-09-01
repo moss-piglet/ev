@@ -25,7 +25,8 @@ defmodule MetamorphicWeb.Router do
     live_session :public,
       on_mount: [
         {MetamorphicWeb.UserAuth, :mount_current_user},
-        {MetamorphicWeb.UserAuth, :mount_current_user_session_key}
+        {MetamorphicWeb.UserAuth, :mount_current_user_session_key},
+        {MetamorphicWeb.UserAuth, :ensure_session_key}
       ] do
       live "/about", PublicLive.About, :about
       live "/privacy", PublicLive.Privacy, :privacy

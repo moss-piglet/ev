@@ -531,7 +531,7 @@ defmodule MetamorphicWeb.Helpers do
       :rose -> "text-rose-700 hover:text-rose-500"
       :yellow -> "text-yellow-700 hover:text-yellow-500"
       :zinc -> "text-zinc-700 hover:text-zinc-500"
-      rest -> "text-brand-700 hover:text-brand-500"
+      _rest -> "text-brand-700 hover:text-brand-500"
     end
   end
 
@@ -545,7 +545,7 @@ defmodule MetamorphicWeb.Helpers do
       :rose -> "bg-rose-50 text-rose-700 ring-rose-600/20"
       :yellow -> "bg-yellow-50 text-yellow-700 ring-yellow-600/20"
       :zinc -> "bg-zinc-50 text-zinc-700 ring-zinc-600/20"
-      rest -> "bg-brand-50 text-brand-700 ring-brand-600/20"
+      _rest -> "bg-brand-50 text-brand-700 ring-brand-600/20"
     end
   end
 
@@ -559,7 +559,7 @@ defmodule MetamorphicWeb.Helpers do
       :rose -> "group-hover:text-rose-700"
       :yellow -> "group-hover:text-yellow-700"
       :zinc -> "group-hover:text-zinc-700"
-      rest -> "group-hover:text-brand-700"
+      _rest -> "group-hover:text-brand-700"
     end
   end
 
@@ -573,7 +573,7 @@ defmodule MetamorphicWeb.Helpers do
       :rose -> "fill-rose-500"
       :yellow -> "fill-yellow-500"
       :zinc -> "fill-zinc-500"
-      rest -> "fill-brand-500"
+      _rest -> "fill-brand-500"
     end
   end
 end

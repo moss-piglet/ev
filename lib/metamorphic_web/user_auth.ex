@@ -200,18 +200,36 @@ defmodule MetamorphicWeb.UserAuth do
       |> mount_current_user(session)
       |> mount_current_user_session_key(session)
 
+    view_list = Atom.to_string(socket.view) |> String.split(".")
+
     if socket.assigns.current_user && socket.assigns.key do
       {:cont, socket}
     else
-      socket =
-        socket
-        |> Phoenix.LiveView.put_flash(
-          :info,
-          "Your session key has expired, please log in again."
-        )
-        |> Phoenix.LiveView.redirect(to: ~p"/users/log_in")
+      if socket.assigns.current_user do
+        socket =
+          socket
+          |> Phoenix.LiveView.put_flash(
+            :info,
+            "Your session key has expired, please log in again."
+          )
+          |> Phoenix.LiveView.redirect(to: ~p"/users/log_in")
 
-      {:halt, socket}
+        {:halt, socket}
+      else
+        if "Public" in view_list do
+          {:cont, socket}
+        else
+          socket =
+            socket
+            |> Phoenix.LiveView.put_flash(
+              :info,
+              "Your session key has expired, please log in again."
+            )
+            |> Phoenix.LiveView.redirect(to: ~p"/users/log_in")
+
+          {:halt, socket}
+        end
+      end
     end
   end
 
