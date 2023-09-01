@@ -40,7 +40,7 @@ defmodule Metamorphic.Timeline do
       (post_list ++ list_own_connection_posts(user, opts) ++ list_connection_posts(user, opts))
       |> Enum.filter(fn post -> post.__meta__ != :deleted end)
       |> Enum.uniq_by(fn post -> post end)
-      |> Enum.sort_by(fn p -> p.inserted_at end, :desc)
+      |> Enum.sort_by(fn p -> p.inserted_at end, {:desc, NaiveDateTime})
 
     posts
   end
@@ -85,7 +85,11 @@ defmodule Metamorphic.Timeline do
       preload: [:user_posts]
     )
     |> Repo.all()
-    |> Enum.filter(fn post -> Enum.empty?(post.shared_users) || Enum.any?(post.shared_users, fn x -> x.user_id == user.id end) end)
+    |> Enum.filter(fn post ->
+      Enum.empty?(post.shared_users) ||
+        Enum.any?(post.shared_users, fn x -> x.user_id == user.id end)
+    end)
+    |> Enum.sort_by(fn p -> p.inserted_at end, :desc)
   end
 
   def list_public_posts(opts) do
@@ -391,11 +395,14 @@ defmodule Metamorphic.Timeline do
       {:ok, post}
     else
       Enum.each(conn.user_connections, fn uconn ->
-
         Enum.each(post.shared_users, fn shared_user ->
           cond do
             uconn.user_id == shared_user.user_id || uconn.reverse_user_id == shared_user.user_id ->
-              Phoenix.PubSub.broadcast(Metamorphic.PubSub, "conn_posts:#{uconn.user_id}", {event, post})
+              Phoenix.PubSub.broadcast(
+                Metamorphic.PubSub,
+                "conn_posts:#{uconn.user_id}",
+                {event, post}
+              )
 
               Phoenix.PubSub.broadcast(
                 Metamorphic.PubSub,

@@ -31,7 +31,7 @@ defmodule MetamorphicWeb.UserRegistrationLive do
           Oops, something went wrong! Please check the errors below.
         </.error>
 
-        <.input field={@form[:email]} type="email" label="Email" required />
+        <.input field={@form[:email]} type="email" label="Email" autocomplete="off" required />
         <.input field={@form[:username_hash]} type="hidden" />
         <.input field={@form[:email_hash]} type="hidden" />
         <.input field={@form[:password]} type="password" label="Password" required />

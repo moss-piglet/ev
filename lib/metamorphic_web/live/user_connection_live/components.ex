@@ -7,7 +7,9 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
 
   alias Phoenix.LiveView.JS
 
-  import MetamorphicWeb.CoreComponents, only: [avatar: 1, dropdown: 1, local_time_ago: 1]
+  import MetamorphicWeb.CoreComponents,
+    only: [avatar: 1, icon: 1, local_time_ago: 1]
+
   import MetamorphicWeb.Helpers
 
   attr :id, :string, required: true
@@ -29,7 +31,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
       <span class="text-sm">pg</span>
       <%= @page %>
     </span>
-    <ul
+    <div
       id={@id}
       phx-update="stream"
       phx-viewport-top={@page > 1 && "prev-page-arrivals"}
@@ -41,7 +43,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
           "grid grid-cols-1 gap-6 divide-y divide-brand-100"
       ]}
     >
-      <li
+      <div
         :for={{id, item} <- @stream}
         id={id}
         phx-click={@card_click.(item)}
@@ -52,15 +54,15 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
         ]}
       >
         <.arrival
-          :if={%Metamorphic.Accounts.UserConnection{} = item}
+          :if={not is_nil(item)}
           uconn={item}
           current_user={@current_user}
           key={@key}
           list_id={id}
           color={item.color || :purple}
         />
-      </li>
-    </ul>
+      </div>
+    </div>
     <div
       :if={@end_of_arrivals_timeline?}
       id="end-of-arrivals"
@@ -105,24 +107,31 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
           <.local_time_ago id={@uconn.id} at={@uconn.inserted_at} />
         </p>
       </div>
-      <.dropdown id={"dropdown-" <> @uconn.id} svg_arrows={false}>
-        <:img src={~p"/images/logo.svg"} />
-
-        <:link
-          :if={@current_user && @uconn.user_id == @current_user.id}
-          phx_click={JS.push("accept_uconn", value: %{id: @uconn.id})}
-          data_confirm={nil}
-        >
-          Accept
-        </:link>
-        <:link
-          :if={@current_user && @uconn.user_id == @current_user.id}
-          phx_click={JS.push("decline_uconn", value: %{id: @uconn.id})}
-          data_confirm="Are you sure you wish to decline this request?"
-        >
-          Decline
-        </:link>
-      </.dropdown>
+      <div class="flex-col items-center justify-between">
+        <.avatar
+          class="mx-auto h-10 w-10 flex-shrink-0 rounded-full"
+          src={get_user_avatar(@uconn, @key)}
+        />
+        <div class="mt-2 space-x-4">
+          <.link
+            :if={@current_user && @uconn.user_id == @current_user.id}
+            phx-click={JS.push("accept_uconn", value: %{id: @uconn.id})}
+            class="hover:text-brand-600"
+            title="Accept connection"
+          >
+            <.icon name="hero-hand-thumb-up" class="h-5 w-5" />
+          </.link>
+          <.link
+            :if={@current_user && @uconn.user_id == @current_user.id}
+            phx-click={JS.push("decline_uconn", value: %{id: @uconn.id})}
+            data-confirm="Are you sure you wish to decline this request?"
+            class="hover:text-rose-600"
+            title="Decline connection"
+          >
+            <.icon name="hero-hand-thumb-down" class="h-5 w-5" />
+          </.link>
+        </div>
+      </div>
     </div>
     """
   end
@@ -169,7 +178,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
         ]}
       >
         <.connection
-          :if={%Metamorphic.Accounts.UserConnection{} = item}
+          :if={not is_nil(item)}
           uconn={item}
           current_user={@current_user}
           key={@key}
@@ -199,55 +208,55 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
   def connection(assigns) do
     ~H"""
     <div class="relative">
-      <.dropdown id={"dropdown-" <> @uconn.id} svg_arrows={false} connection?={true}>
-        <:connection_block>
-          <div class="flex flex-1 flex-col p-8">
-            <.avatar
-              class="mx-auto h-32 w-32 flex-shrink-0 rounded-full"
-              src={get_user_avatar(@uconn, @key)}
-            />
-            <h3 class="mt-6 text-sm font-medium text-gray-900">
-              <%= decr_uconn(@uconn.connection.username, @current_user, @uconn.key, @key) %>
-            </h3>
-            <dl class="mt-1 flex flex-grow flex-col justify-between">
-              <dt class="sr-only">Email</dt>
-              <dd class="text-sm text-gray-500">
-                <%= decr_uconn(@uconn.connection.email, @current_user, @uconn.key, @key) %>
-              </dd>
-              <dt class="sr-only">Label</dt>
-              <dd class="mt-3">
-                <span class={"inline-flex items-center rounded-full #{badge_color(@color)} px-2 py-1 text-xs font-medium  ring-1 ring-inset"}>
-                  <%= decr_uconn(@uconn.label, @current_user, @uconn.key, @key) %>
-                </span>
-              </dd>
-            </dl>
-          </div>
-        </:connection_block>
-        <:link
+      <div class="flex flex-1 flex-col p-8">
+        <.avatar
+          class="mx-auto h-32 w-32 flex-shrink-0 rounded-full"
+          src={get_user_avatar(@uconn, @key)}
+        />
+        <h3 class="mt-6 text-sm font-medium text-gray-900">
+          <%= decr_uconn(@uconn.connection.username, @current_user, @uconn.key, @key) %>
+        </h3>
+        <dl class="mt-1 flex flex-grow flex-col justify-between">
+          <dt class="sr-only">Email</dt>
+          <dd class="text-sm text-gray-500">
+            <%= decr_uconn(@uconn.connection.email, @current_user, @uconn.key, @key) %>
+          </dd>
+          <dt class="sr-only">Label</dt>
+          <dd class="mt-3">
+            <span class={"inline-flex items-center rounded-full #{badge_color(@color)} px-2 py-1 text-xs font-medium  ring-1 ring-inset"}>
+              <%= decr_uconn(@uconn.label, @current_user, @uconn.key, @key) %>
+            </span>
+          </dd>
+        </dl>
+      </div>
+      <div class="flex-col mb-4 space-x-4 mx-4">
+        <.link
           :if={@current_user && @uconn.user_id == @current_user.id}
-          phx_click={nil}
-          data_confirm={nil}
+          title="View profile"
+          class="hover:text-brand-600"
           navigate={~p"/users/profile/#{@uconn.reverse_user_id}"}
         >
-          View Profile
-        </:link>
-        <:link
+          <.icon name="hero-user-circle" class="h-5 w-5" />
+        </.link>
+        <.link
           :if={@current_user && @uconn.user_id == @current_user.id}
-          phx_click={nil}
-          data_confirm={nil}
+          title="Edit"
+          class="hover:text-brand-600"
           navigate={~p"/users/connections/#{@uconn}/edit"}
         >
-          Edit
-        </:link>
+          <.icon name="hero-pencil" class="h-5 w-5" />
+        </.link>
 
-        <:link
+        <.link
           :if={@current_user && @uconn.user_id == @current_user.id}
-          phx_click={JS.push("delete", value: %{id: @uconn.id})}
-          data_confirm="Are you sure you wish to decline this user connection?"
+          phx-click={JS.push("delete", value: %{id: @uconn.id})}
+          class="hover:text-rose-600"
+          data-confirm="Are you sure you wish to decline this user connection?"
+          title="Delete connection"
         >
-          Delete
-        </:link>
-      </.dropdown>
+          <.icon name="hero-trash" class="h-5 w-5" />
+        </.link>
+      </div>
     </div>
     """
   end

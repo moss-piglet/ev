@@ -194,7 +194,7 @@ defmodule MetamorphicWeb.Helpers do
 
   def get_shared_post_user_connection(post, user) do
     Enum.map(post.shared_users, fn x ->
-      u = Accounts.get_user!(x.user_id)
+      u = Accounts.get_user(x.user_id)
       get_uconn_for_users(u, user)
     end)
   end

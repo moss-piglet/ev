@@ -69,7 +69,8 @@ defmodule Metamorphic.Accounts do
   is not the user be searched for and HAS a
   confirmed UserConnection.
   """
-  def get_shared_user_by_username(user_id, username) when is_binary(username) and is_binary(user_id) do
+  def get_shared_user_by_username(user_id, username)
+      when is_binary(username) and is_binary(user_id) do
     new_user =
       from(u in User,
         where: u.id != ^user_id
@@ -132,8 +133,12 @@ defmodule Metamorphic.Accounts do
     query =
       Repo.all(
         from uc in UserConnection,
-          where: uc.user_id == ^user.id and uc.reverse_user_id == ^current_user_id and not is_nil(uc.confirmed_at),
-          or_where: uc.reverse_user_id == ^user.id and uc.user_id == ^current_user_id and not is_nil(uc.confirmed_at)
+          where:
+            uc.user_id == ^user.id and uc.reverse_user_id == ^current_user_id and
+              not is_nil(uc.confirmed_at),
+          or_where:
+            uc.reverse_user_id == ^user.id and uc.user_id == ^current_user_id and
+              not is_nil(uc.confirmed_at)
       )
 
     cond do
@@ -197,6 +202,7 @@ defmodule Metamorphic.Accounts do
 
   """
   def get_user!(id), do: Repo.get!(User, id)
+  def get_user(id), do: Repo.get(User, id)
 
   def get_connection!(id), do: Repo.get!(Connection, id)
 
@@ -225,13 +231,15 @@ defmodule Metamorphic.Accounts do
   end
 
   def get_user_connection_between_users(user, current_user) do
-    Repo.one(
-      from uc in UserConnection,
-        where: uc.user_id == ^current_user.id,
-        where: uc.user_id == ^user.id and uc.reverse_user_id == ^current_user.id,
-        or_where: uc.user_id == ^current_user.id and uc.reverse_user_id == ^user.id,
-        preload: [:user, :connection]
-    )
+    unless is_nil(user) do
+      Repo.one(
+        from uc in UserConnection,
+          where: uc.user_id == ^current_user.id,
+          where: uc.user_id == ^user.id and uc.reverse_user_id == ^current_user.id,
+          or_where: uc.user_id == ^current_user.id and uc.reverse_user_id == ^user.id,
+          preload: [:user, :connection]
+      )
+    end
   end
 
   def get_all_user_connections(id) do

@@ -31,7 +31,10 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
           required
         />
 
-        <div :if={@selector == "connections" && @action != :edit && has_any_user_connections?(@user)} class="space-y-4 mb-6">
+        <div
+          :if={@selector == "connections" && @action != :edit && has_any_user_connections?(@user)}
+          class="space-y-4 mb-6"
+        >
           <p class="font-light text-zinc-800">
             Add or remove people to share with (you must be connected to them). To share with all of your connections, use the "x" to remove any open fields:
           </p>
@@ -41,7 +44,12 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
               <div class="relative flex space-x-2 drag-item">
                 <input type="hidden" name="post[shared_users_order][]" value={f_nested.index} />
                 <.input type="hidden" field={f_nested[:sender_id]} value={@user.id} />
-                <.input type="text" field={f_nested[:username]} placeholder="Enter username" />
+                <.input
+                  type="text"
+                  field={f_nested[:username]}
+                  placeholder="Enter username"
+                  autocomplete="off"
+                />
                 <label class="cursor-pointer">
                   <input
                     type="checkbox"
@@ -103,7 +111,10 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
       {:ok,
        socket
        |> assign(:post_key, get_post_key(post))
-       |> assign(:selector, Atom.to_string(assigns.post.visibility) || Map.get(assigns, :selector, "public"))
+       |> assign(
+         :selector,
+         Atom.to_string(assigns.post.visibility) || Map.get(assigns, :selector, "public")
+       )
        |> assign(assigns)
        |> assign_form(changeset)}
     else

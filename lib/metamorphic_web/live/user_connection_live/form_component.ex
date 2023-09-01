@@ -63,9 +63,21 @@ defmodule MetamorphicWeb.UserConnectionLive.FormComponent do
           options={[Username: "username", Email: "email"]}
         />
 
-        <.input :if={@selector == "email"} field={@form[:email]} type="email" label="Email" />
+        <.input
+          :if={@selector == "email"}
+          field={@form[:email]}
+          type="email"
+          label="Email"
+          autocomplete="off"
+        />
 
-        <.input :if={@selector == "username"} field={@form[:username]} type="text" label="Username" />
+        <.input
+          :if={@selector == "username"}
+          field={@form[:username]}
+          type="text"
+          label="Username"
+          autocomplete="off"
+        />
 
         <:actions>
           <.button :if={@form.source.valid?} phx-disable-with="Saving...">Send</.button>

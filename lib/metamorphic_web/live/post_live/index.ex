@@ -322,7 +322,7 @@ defmodule MetamorphicWeb.PostLive.Index do
       [_ | _] = posts ->
         socket
         |> assign(end_of_timeline?: false)
-        |> assign(page: if(posts == [], do: cur_page, else: new_page))
+        |> assign(page: new_page)
         |> stream(:posts, posts, at: at, limit: limit, reset: reset)
     end
   end
