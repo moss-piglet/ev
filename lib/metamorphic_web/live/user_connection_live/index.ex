@@ -377,8 +377,6 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
         {Enum.reverse(arrivals), 0, per_page * 3}
       end
 
-    IO.inspect(at, label: "AT ARRIALS")
-
     case arrivals do
       [] ->
         socket
