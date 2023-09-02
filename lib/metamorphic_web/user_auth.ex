@@ -15,6 +15,10 @@ defmodule MetamorphicWeb.UserAuth do
   @metamorphic_key_cookie "__Host-_metamorphic_key"
   @remember_me_options [encrypt: true, max_age: @max_age, secure: true, same_site: "Lax"]
 
+  # Checking the route for public routes for the
+  # ensure_session_key live_session mount
+  @public_list ["Public", "PublicShow", "About", "Privacy"]
+
   @doc """
   Logs the user in.
 
@@ -201,6 +205,7 @@ defmodule MetamorphicWeb.UserAuth do
       |> mount_current_user_session_key(session)
 
     view_list = Atom.to_string(socket.view) |> String.split(".")
+    IO.inspect(view_list, label: "VIEW LIST")
 
     if socket.assigns.current_user && socket.assigns.key do
       {:cont, socket}
@@ -216,7 +221,7 @@ defmodule MetamorphicWeb.UserAuth do
 
         {:halt, socket}
       else
-        if "Public" in view_list do
+        if Enum.any?(@public_list, fn view -> view in view_list end) do
           {:cont, socket}
         else
           socket =
