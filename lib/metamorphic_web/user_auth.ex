@@ -205,7 +205,6 @@ defmodule MetamorphicWeb.UserAuth do
       |> mount_current_user_session_key(session)
 
     view_list = Atom.to_string(socket.view) |> String.split(".")
-    IO.inspect(view_list, label: "VIEW LIST")
 
     if socket.assigns.current_user && socket.assigns.key do
       {:cont, socket}
