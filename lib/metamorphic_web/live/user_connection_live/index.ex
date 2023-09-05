@@ -78,6 +78,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
       upd_uconn.user_id == socket.assigns.current_user.id && upd_uconn.confirmed_at ->
         {:noreply,
          socket
+         |> paginate_arrivals(socket.assigns.page)
          |> stream_delete(:arrivals, upd_uconn)
          |> stream_insert(:user_connections, upd_uconn)}
 
