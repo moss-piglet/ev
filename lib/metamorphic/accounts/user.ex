@@ -203,16 +203,46 @@ defmodule Metamorphic.Accounts.User do
   defp encrypt_connection_map_username_change(changeset, opts, username) do
     # decrypt the user connection key
     # and then encrypt the username change
-    {:ok, d_conn_key} =
-      Encrypted.Users.Utils.decrypt_user_attrs_key(opts[:user].conn_key, opts[:user], opts[:key])
+    visibility = get_field(changeset, :visibility)
+    slug = build_slug(username)
 
-    c_encrypted_username = Encrypted.Utils.encrypt(%{key: d_conn_key, payload: username})
+    cond do
+      visibility == :public ->
+        changeset
+        |> put_change(:connection_map, %{
+          c_username: username,
+          c_username_hash: username,
+          c_slug: slug,
+          c_slug_hash: slug
+        })
 
-    changeset
-    |> put_change(:connection_map, %{
-      c_username: c_encrypted_username,
-      c_username_hash: username
-    })
+      true ->
+        {:ok, d_conn_key} =
+          Encrypted.Users.Utils.decrypt_user_attrs_key(
+            opts[:user].conn_key,
+            opts[:user],
+            opts[:key]
+          )
+
+        c_encrypted_username = Encrypted.Utils.encrypt(%{key: d_conn_key, payload: username})
+        c_encrypted_slug = Encrypted.Utils.encrypt(%{key: d_conn_key, payload: slug})
+
+        changeset
+        |> put_change(:connection_map, %{
+          c_username: c_encrypted_username,
+          c_username_hash: username,
+          c_slug: c_encrypted_slug,
+          c_slug_hash: slug
+        })
+    end
+  end
+
+  defp build_slug(username) do
+    if username do
+      Slug.slugify(username)
+    else
+      nil
+    end
   end
 
   # When registering, the email is used to

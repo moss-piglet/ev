@@ -249,22 +249,22 @@ defmodule Metamorphic.Accounts do
     )
   end
 
-  def get_user_connection_from_shared_post(post, current_user) do
+  def get_user_connection_from_shared_item(item, current_user) do
     Repo.one(
       from uc in UserConnection,
         join: c in Connection,
-        on: c.user_id == ^post.user_id,
+        on: c.user_id == ^item.user_id,
         where: uc.user_id == ^current_user.id,
         where: uc.connection_id == c.id,
         preload: [:user, :connection]
     )
   end
 
-  def get_all_user_connections_from_shared_post(post, current_user) do
+  def get_all_user_connections_from_shared_item(item, current_user) do
     Repo.all(
       from uc in UserConnection,
         join: c in Connection,
-        on: c.user_id == ^post.user_id,
+        on: c.user_id == ^item.user_id,
         where: uc.user_id == ^current_user.id
     )
   end
@@ -277,12 +277,12 @@ defmodule Metamorphic.Accounts do
     )
   end
 
-  def get_connection_from_post(post, _current_user) do
+  def get_connection_from_item(item, _current_user) do
     Repo.one(
       from c in Connection,
         join: u in User,
         on: u.id == c.user_id,
-        where: c.user_id == ^post.user_id,
+        where: c.user_id == ^item.user_id,
         preload: [:user_connections]
     )
   end

@@ -16,8 +16,8 @@
 </.header>
 
 <.list>
-  <:item title="Username"><%= decr_public_post(@post.username, get_post_key(@post)) %></:item>
-  <:item title="Body"><%= decr_public_post(@post.body, get_post_key(@post)) %></:item>
+  <:item title="Username"><%= decr_public_item(@post.username, get_post_key(@post)) %></:item>
+  <:item title="Body"><%= decr_public_item(@post.body, get_post_key(@post)) %></:item>
   <:item title="Repost"><%= @post.repost %></:item>
   <:item title="Favs count"><%= @post.favs_count %></:item>
   <:item title="Reposts count"><%= @post.reposts_count %></:item>

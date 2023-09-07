@@ -28,9 +28,6 @@ defmodule MetamorphicWeb.Helpers do
            e_item_key,
            key
          ) do
-      {:error, message} ->
-        message
-
       :failed_verification ->
         "failed_verification"
 
@@ -39,19 +36,19 @@ defmodule MetamorphicWeb.Helpers do
     end
   end
 
-  def decr_post(payload, user, post_key, key, post \\ nil) do
+  def decr_item(payload, user, item_key, key, item \\ nil) do
     cond do
-      post && post.visibility == :public ->
-        decr_public_post(payload, post_key)
+      item && item.visibility == :public ->
+        decr_public_item(payload, item_key)
 
-      post && post.visibility == :private ->
-        Encrypted.Users.Utils.decrypt_user_item(payload, user, post_key, key)
+      item && item.visibility == :private ->
+        Encrypted.Users.Utils.decrypt_user_item(payload, user, item_key, key)
 
-      post && post.visibility == :connections && post.user_id == user.id ->
-        Encrypted.Users.Utils.decrypt_user_item(payload, user, post_key, key)
+      item && item.visibility == :connections && item.user_id == user.id ->
+        Encrypted.Users.Utils.decrypt_user_item(payload, user, item_key, key)
 
-      post && post.visibility == :connections && post.user_id != user.id ->
-        uconn = get_uconn_for_shared_post(post, user)
+      item && item.visibility == :connections && item.user_id != user.id ->
+        uconn = get_uconn_for_shared_item(item, user)
         Encrypted.Users.Utils.decrypt_user_item(payload, user, uconn.key, key)
 
       true ->
@@ -59,8 +56,8 @@ defmodule MetamorphicWeb.Helpers do
     end
   end
 
-  def decr_public_post(payload, post_key) do
-    Encrypted.Users.Utils.decrypt_public_post(payload, post_key)
+  def decr_public_item(payload, item_key) do
+    Encrypted.Users.Utils.decrypt_public_item(payload, item_key)
   end
 
   def decr_uconn(payload, user, uconn_key, key) do
@@ -115,14 +112,18 @@ defmodule MetamorphicWeb.Helpers do
 
   def get_user!(id), do: Accounts.get_user!(id)
 
-  def get_post_connection(post, current_user) do
+  def get_item_connection(item, current_user) do
     cond do
-      post.visibility == :public ->
-        post
+      item && item.visibility == :public ->
+        item
 
       true ->
-        Accounts.get_connection_from_post(post, current_user)
+        Accounts.get_connection_from_item(item, current_user)
     end
+  end
+
+  def get_memory_key(memory) do
+    Enum.at(memory.user_memories, 0).key
   end
 
   def get_post_key(post) do
@@ -132,7 +133,7 @@ defmodule MetamorphicWeb.Helpers do
   def get_post_key(post, current_user) do
     cond do
       post.visibility == :connections && current_user.id != post.user_id ->
-        uconn = get_uconn_for_shared_post(post, current_user)
+        uconn = get_uconn_for_shared_item(post, current_user)
         uconn.key
 
       post.visibility == :private ->
@@ -143,13 +144,13 @@ defmodule MetamorphicWeb.Helpers do
     end
   end
 
-  def get_shared_post_identity_atom(post, user) do
+  def get_shared_item_identity_atom(item, user) do
     cond do
-      post.visibility == :connections && post.user_id == user.id ->
+      item.visibility == :connections && item.user_id == user.id ->
         :self
 
-      post.visibility == :connections && post.user_id != user.id &&
-          user_in_post_connections(post, user) ->
+      item.visibility == :connections && item.user_id != user.id &&
+          user_in_item_connections(item, user) ->
         :connection
 
       true ->
@@ -159,7 +160,7 @@ defmodule MetamorphicWeb.Helpers do
 
   def get_shared_post_label(post, user, key) do
     cond do
-      %UserConnection{} = uconn = get_uconn_for_shared_post(post, user) ->
+      %UserConnection{} = uconn = get_uconn_for_shared_item(post, user) ->
         Encrypted.Users.Utils.decrypt_user_item(
           uconn.label,
           user,
@@ -200,16 +201,16 @@ defmodule MetamorphicWeb.Helpers do
   end
 
   # User is the current user and should be
-  # different from the user_id of the post,
+  # different from the user_id of the item,
   # but the two users should have
   # user connections together.
-  def get_uconn_for_shared_post(post, user) do
-    Accounts.get_user_connection_from_shared_post(post, user)
+  def get_uconn_for_shared_item(item, user) do
+    Accounts.get_user_connection_from_shared_item(item, user)
   end
 
   def has_user_connection?(post, user) do
     unless is_nil(user) do
-      case get_uconn_for_shared_post(post, user) do
+      case get_uconn_for_shared_item(post, user) do
         %UserConnection{} = _uconn ->
           true
 
@@ -235,7 +236,7 @@ defmodule MetamorphicWeb.Helpers do
         :brand
 
       true ->
-        case Accounts.get_user_connection_from_shared_post(post, user) do
+        case Accounts.get_user_connection_from_shared_item(post, user) do
           %UserConnection{} = uconn ->
             uconn.color
 
@@ -252,12 +253,12 @@ defmodule MetamorphicWeb.Helpers do
     if post.user_id == user.id do
       user
     else
-      Accounts.get_user_connection_from_shared_post(post, user)
+      Accounts.get_user_connection_from_shared_item(post, user)
     end
   end
 
-  defp user_in_post_connections(post, user) do
-    uconns = Accounts.get_all_user_connections_from_shared_post(post, user)
+  defp user_in_item_connections(item, user) do
+    uconns = Accounts.get_all_user_connections_from_shared_item(item, user)
     Enum.any?(uconns, fn uconn -> uconn.user_id == user.id end)
   end
 

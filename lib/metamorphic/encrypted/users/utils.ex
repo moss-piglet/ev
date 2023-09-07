@@ -51,13 +51,13 @@ defmodule Metamorphic.Encrypted.Users.Utils do
     end
   end
 
-  def decrypt_public_post(payload, e_post_key) do
-    with {:ok, d_post_key} <-
-           Encrypted.Utils.decrypt_message_for_user(e_post_key, %{
+  def decrypt_public_item(payload, e_item_key) do
+    with {:ok, d_item_key} <-
+           Encrypted.Utils.decrypt_message_for_user(e_item_key, %{
              public: Encrypted.Session.server_public_key(),
              private: Encrypted.Session.server_private_key()
            }),
-         {:ok, d_payload} <- decrypt_payload(d_post_key, payload) do
+         {:ok, d_payload} <- decrypt_payload(d_item_key, payload) do
       d_payload
     else
       {:error_user_key, message} -> message
@@ -65,13 +65,13 @@ defmodule Metamorphic.Encrypted.Users.Utils do
     end
   end
 
-  def decrypt_public_post_key(payload) do
-    with {:ok, d_post_key} <-
+  def decrypt_public_item_key(payload) do
+    with {:ok, d_item_key} <-
            Encrypted.Utils.decrypt_message_for_user(payload, %{
              public: Encrypted.Session.server_public_key(),
              private: Encrypted.Session.server_private_key()
            }) do
-      d_post_key
+      d_item_key
     else
       {:error_user_key, message} -> message
       rest -> rest

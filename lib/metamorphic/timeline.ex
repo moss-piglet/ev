@@ -194,7 +194,7 @@ defmodule Metamorphic.Timeline do
       end)
       |> Repo.transaction_on_primary()
 
-    conn = Accounts.get_connection_from_post(post, user)
+    conn = Accounts.get_connection_from_item(post, user)
 
     {:ok, conn, post |> Repo.preload([:user_posts])}
     |> broadcast(:post_created)
@@ -229,7 +229,7 @@ defmodule Metamorphic.Timeline do
       end)
       |> Repo.transaction_on_primary()
 
-    conn = Accounts.get_connection_from_post(post, user)
+    conn = Accounts.get_connection_from_item(post, user)
 
     {:ok, conn, post |> Repo.preload([:user_posts])}
     |> broadcast(:post_reposted)
@@ -264,7 +264,7 @@ defmodule Metamorphic.Timeline do
       end)
       |> Repo.transaction_on_primary()
 
-    conn = Accounts.get_connection_from_post(post, user)
+    conn = Accounts.get_connection_from_item(post, user)
 
     {:ok, conn, post |> Repo.preload([:user_posts])}
     |> broadcast(:post_updated)
@@ -279,7 +279,7 @@ defmodule Metamorphic.Timeline do
         |> Repo.update()
       end)
 
-    conn = Accounts.get_connection_from_post(post, user)
+    conn = Accounts.get_connection_from_item(post, user)
 
     {:ok, conn, post |> Repo.preload([:user_posts])}
     |> broadcast(:post_updated)
@@ -294,7 +294,7 @@ defmodule Metamorphic.Timeline do
         |> Repo.update()
       end)
 
-    conn = Accounts.get_connection_from_post(post, user)
+    conn = Accounts.get_connection_from_item(post, user)
 
     {:ok, conn, post |> Repo.preload([:user_posts])}
     |> broadcast(:post_updated)
@@ -320,7 +320,7 @@ defmodule Metamorphic.Timeline do
   def delete_post(%Post{} = post, opts \\ []) do
     user = Accounts.get_user!(opts[:user].id)
 
-    conn = Accounts.get_connection_from_post(post, user)
+    conn = Accounts.get_connection_from_item(post, user)
 
     {:ok, {:ok, post}} =
       Repo.transaction_on_primary(fn ->
@@ -364,21 +364,15 @@ defmodule Metamorphic.Timeline do
     end
   end
 
-  defp public_broadcast({:error, _reason} = error, _event), do: error
-
   defp public_broadcast({:ok, post}, event) do
     Phoenix.PubSub.broadcast(Metamorphic.PubSub, "posts", {event, post})
     {:ok, post}
   end
 
-  defp private_broadcast({:error, _reason} = error, _event), do: error
-
   defp private_broadcast({:ok, post}, event) do
     Phoenix.PubSub.broadcast(Metamorphic.PubSub, "priv_posts:#{post.user_id}", {event, post})
     {:ok, post}
   end
-
-  defp connections_broadcast({:error, _reason} = error, _event), do: error
 
   defp connections_broadcast({:ok, conn, post}, event) do
     if Enum.empty?(post.shared_users) do

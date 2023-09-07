@@ -4,7 +4,7 @@ defmodule Metamorphic.MixProject do
   def project do
     [
       app: :metamorphic,
-      version: "0.3.4",
+      version: "0.3.5",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -62,6 +62,7 @@ defmodule Metamorphic.MixProject do
       {:plug_canonical_host, "~> 2.0"},
       {:plug_cowboy, "~> 2.5"},
       {:postgrex, ">= 0.0.0"},
+      {:slugify, "~> 1.3"},
       {:sweet_xml, "~> 0.6"},
       {:swoosh, "~> 1.3"},
       {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},

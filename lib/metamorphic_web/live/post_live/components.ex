@@ -80,17 +80,25 @@ defmodule MetamorphicWeb.PostLive.Components do
       <.link navigate={~p"/posts/#{@post}"}>Show</.link>
     </div>
 
-    <.avatar
-      :if={not is_nil(@current_user)}
-      src={
-        get_user_avatar(
-          get_uconn_avatar_for_shared_post(@post, @current_user),
-          @key,
-          @post,
-          @current_user
-        )
-      }
-    />
+    <div class="flex flex-col space-y-1 items-center">
+      <.avatar
+        :if={not is_nil(@current_user)}
+        src={
+          get_user_avatar(
+            get_uconn_avatar_for_shared_post(@post, @current_user),
+            @key,
+            @post,
+            @current_user
+          )
+        }
+      />
+      <span
+        :if={@post.repost}
+        class="inline-flex items-center rounded-md bg-purple-50 px-2 py-1 text-xs font-light text-purple-700 ring-1 ring-inset ring-purple-700/10"
+      >
+        repost
+      </span>
+    </div>
 
     <image
       :if={is_nil(@current_user)}
@@ -110,8 +118,8 @@ defmodule MetamorphicWeb.PostLive.Components do
           }
           class="text-sm font-semibold leading-6 text-gray-900"
         >
-          <%= decr_post(
-            get_post_connection(@post, @current_user).username,
+          <%= decr_item(
+            get_item_connection(@post, @current_user).username,
             @current_user,
             get_post_key(@post, @current_user),
             @key,
@@ -122,8 +130,8 @@ defmodule MetamorphicWeb.PostLive.Components do
           :if={@post.visibility == :public && is_nil(@current_user)}
           class="text-sm font-semibold leading-6 text-gray-900"
         >
-          <%= decr_post(
-            get_post_connection(@post, @current_user).username,
+          <%= decr_item(
+            get_item_connection(@post, @current_user).username,
             @current_user,
             get_post_key(@post, @current_user),
             @key,
@@ -138,8 +146,8 @@ defmodule MetamorphicWeb.PostLive.Components do
           }
           class="text-sm font-semibold leading-6 text-gray-900"
         >
-          <%= decr_post(
-            get_post_connection(@post, @current_user).username,
+          <%= decr_item(
+            get_item_connection(@post, @current_user).username,
             @current_user,
             get_post_key(@post, @current_user),
             @key,
@@ -155,8 +163,8 @@ defmodule MetamorphicWeb.PostLive.Components do
           }
           class="text-sm font-semibold leading-6 text-gray-900"
         >
-          <%= decr_post(
-            get_post_connection(@post, @current_user).username,
+          <%= decr_item(
+            get_item_connection(@post, @current_user).username,
             @current_user,
             get_post_key(@post, @current_user),
             @key,
@@ -171,8 +179,8 @@ defmodule MetamorphicWeb.PostLive.Components do
           }
           class="text-sm font-semibold leading-6 text-gray-900"
         >
-          <%= decr_post(
-            get_post_connection(@post, @current_user).username,
+          <%= decr_item(
+            get_item_connection(@post, @current_user).username,
             @current_user,
             get_post_key(@post, @current_user),
             @key,
@@ -183,14 +191,14 @@ defmodule MetamorphicWeb.PostLive.Components do
         <.link
           :if={
             post_user.visibility != :private && @post.visibility == :connections &&
-              get_shared_post_identity_atom(@post, @current_user) != :self
+              get_shared_item_identity_atom(@post, @current_user) != :self
           }
           navigate={~p"/users/profile/#{post_user}"}
           class={"text-sm font-semibold leading-6 #{username_link_text_color(@color)}"}
           title="Click to view profile"
         >
-          <%= decr_post(
-            get_post_connection(@post, @current_user).username,
+          <%= decr_item(
+            get_item_connection(@post, @current_user).username,
             @current_user,
             get_post_key(@post, @current_user),
             @key,
@@ -200,14 +208,14 @@ defmodule MetamorphicWeb.PostLive.Components do
         <.link
           :if={
             post_user.visibility != :private && @post.visibility == :connections &&
-              get_shared_post_identity_atom(@post, @current_user) == :self
+              get_shared_item_identity_atom(@post, @current_user) == :self
           }
           navigate={~p"/users/profile/#{post_user}"}
           class={"text-sm font-semibold leading-6 #{username_link_text_color(:brand)}"}
           title="Click to view your profile"
         >
-          <%= decr_post(
-            get_post_connection(@post, @current_user).username,
+          <%= decr_item(
+            get_item_connection(@post, @current_user).username,
             @current_user,
             get_post_key(@post, @current_user),
             @key,
@@ -224,8 +232,8 @@ defmodule MetamorphicWeb.PostLive.Components do
           class={"text-sm font-semibold leading-6 #{username_link_text_color(@color)}"}
           title="Click to view profile"
         >
-          <%= decr_post(
-            get_post_connection(@post, @current_user).username,
+          <%= decr_item(
+            get_item_connection(@post, @current_user).username,
             @current_user,
             get_post_key(@post, @current_user),
             @key,
@@ -238,17 +246,22 @@ defmodule MetamorphicWeb.PostLive.Components do
           class={"text-sm font-semibold leading-6 #{username_link_text_color(:brand)}"}
           title="Click to view your profile"
         >
-          <%= decr_post(
-            get_post_connection(@post, @current_user).username,
+          <%= decr_item(
+            get_item_connection(@post, @current_user).username,
             @current_user,
             get_post_key(@post, @current_user),
             @key,
             @post
           ) %>
         </.link>
-
         <!-- sharing with users badge -->
-        <div :if={get_shared_post_identity_atom(@post, @current_user) == :self && !Enum.empty?(@post.shared_users)} class="absolute right-2 -bottom-2 group space-x-1">
+        <div
+          :if={
+            get_shared_item_identity_atom(@post, @current_user) == :self &&
+              !Enum.empty?(@post.shared_users)
+          }
+          class="absolute right-2 -bottom-2 group space-x-1"
+        >
           <span
             :for={uconn <- get_shared_post_user_connection(@post, @current_user)}
             :if={uconn}
@@ -266,12 +279,11 @@ defmodule MetamorphicWeb.PostLive.Components do
             </span>
           </span>
         </div>
-
         <!-- timestamp && label badge -->
         <p class="flex-none text-xs text-gray-600">
           <span class="inline-flex items-center space-x-1">
             <span
-              :if={get_shared_post_identity_atom(@post, @current_user) == :self}
+              :if={get_shared_item_identity_atom(@post, @current_user) == :self}
               class="inline-flex items-center align-middle rounded-full"
             >
               <svg class="h-1.5 w-1.5 fill-brand-500" viewBox="0 0 6 6" aria-hidden="true">
@@ -280,7 +292,7 @@ defmodule MetamorphicWeb.PostLive.Components do
             </span>
 
             <span
-              :if={get_shared_post_identity_atom(@post, @current_user) == :connection}
+              :if={get_shared_item_identity_atom(@post, @current_user) == :connection}
               class={"inline-flex items-center rounded-full group group-hover:bg-purple-100 group-hover:px-2 group-hover:py-1 group-hover:text-xs group-hover:font-medium #{badge_group_hover_color(@color)} group-hover:space-x-1"}
             >
               <svg
@@ -300,7 +312,7 @@ defmodule MetamorphicWeb.PostLive.Components do
         </p>
       </div>
       <p class="mt-1 line-clamp-2 text-sm leading-6 text-gray-600">
-        <%= decr_post(@post.body, @current_user, get_post_key(@post), @key, @post) %>
+        <%= decr_item(@post.body, @current_user, get_post_key(@post), @key, @post) %>
       </p>
       <!-- favorite -->
       <div class="inline-flex space-x-2 align-middle">
@@ -334,7 +346,7 @@ defmodule MetamorphicWeb.PostLive.Components do
           class="inline-flex align-middle"
           phx-click="repost"
           phx-value-id={@post.id}
-          phx-value-body={decr_post(@post.body, @current_user, get_post_key(@post), @key, @post)}
+          phx-value-body={decr_item(@post.body, @current_user, get_post_key(@post), @key, @post)}
           phx-value-username={decr(@current_user.username, @current_user, @key)}
         >
           <.icon name="hero-arrow-path-rounded-square" class="h-4 w-4 hover:text-brand-600" />

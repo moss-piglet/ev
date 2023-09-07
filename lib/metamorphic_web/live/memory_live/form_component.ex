@@ -1,4 +1,4 @@
-defmodule MetamorphicWeb.PostLive.FormComponent do
+defmodule MetamorphicWeb.MemoryLive.FormComponent do
   use MetamorphicWeb, :live_component
 
   alias Metamorphic.Timeline
@@ -9,13 +9,13 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
     <div>
       <.header>
         <%= @title %>
-        <:subtitle :if={@action == :new}>Use this form to create a new post.</:subtitle>
-        <:subtitle :if={@action == :edit}>Use this form to edit your existing post.</:subtitle>
+        <:subtitle :if={@action == :new}>Use this form to create a new memory.</:subtitle>
+        <:subtitle :if={@action == :edit}>Use this form to edit your existing memory.</:subtitle>
       </.header>
 
       <.simple_form
         for={@form}
-        id="post-form"
+        id="memory-form"
         phx-target={@myself}
         phx-change="validate"
         phx-submit="save"
@@ -42,7 +42,7 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
           <div id="shared_users" phx-hook="SortableInputsFor" class="space-y-2">
             <.inputs_for :let={f_nested} field={@form[:shared_users]}>
               <div class="relative flex space-x-2 drag-item">
-                <input type="hidden" name="post[shared_users_order][]" value={f_nested.index} />
+                <input type="hidden" name="memory[shared_users_order][]" value={f_nested.index} />
                 <.input type="hidden" field={f_nested[:sender_id]} value={@user.id} />
                 <.input
                   type="text"
@@ -53,7 +53,7 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
                 <label class="cursor-pointer">
                   <input
                     type="checkbox"
-                    name="post[shared_users_delete][]"
+                    name="memory[shared_users_delete][]"
                     value={f_nested.index}
                     class="hidden"
                   />
@@ -65,34 +65,34 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
           </div>
 
           <label class="block cursor-pointer">
-            <input type="checkbox" name="post[shared_users_order][]" class="hidden" />
+            <input type="checkbox" name="memory[shared_users_order][]" class="hidden" />
             <.icon name="hero-plus-circle" /> add more
           </label>
 
-          <input type="hidden" name="post[shared_users_delete][]" />
+          <input type="hidden" name="memory[shared_users_delete][]" />
         </div>
 
         <.input :if={@action == :new} field={@form[:body]} type="textarea" label="Body" />
         <.input
-          :if={@action == :edit && @post.visibility == :private}
+          :if={@action == :edit && @memory.visibility == :private}
           field={@form[:body]}
           type="textarea"
           label="Body"
-          value={decr_item(@post.body, @user, get_post_key(@post), @key, @post)}
+          value={decr_item(@memory.blurb, @user, get_memory_key(@memory), @key, @memory)}
         />
         <.input
-          :if={@action == :edit && @post.visibility == :public}
+          :if={@action == :edit && @memory.visibility == :public}
           field={@form[:body]}
           type="textarea"
           label="Body"
-          value={decr_item(@post.body, @user, get_post_key(@post), @key, @post)}
+          value={decr_item(@memory.blurb, @user, get_memory_key(@memory), @key, @memory)}
         />
         <.input
-          :if={@action == :edit && get_shared_item_identity_atom(@post, @user) == :self}
+          :if={@action == :edit && get_shared_item_identity_atom(@memory, @user) == :self}
           field={@form[:body]}
           type="textarea"
           label="Body"
-          value={decr_item(@post.body, @user, get_post_key(@post), @key, @post)}
+          value={decr_item(@memory.blurb, @user, get_memory_key(@memory), @key, @memory)}
         />
         <:actions>
           <.button :if={@form.source.valid?} phx-disable-with="Saving...">Save Post</.button>
@@ -104,16 +104,16 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
   end
 
   @impl true
-  def update(%{post: post} = assigns, socket) do
-    changeset = Timeline.change_post(post, %{}, user: assigns.user)
+  def update(%{memory: memory} = assigns, socket) do
+    changeset = Accounts.change_memory(memory, %{}, user: assigns.user)
 
-    if :edit == Map.get(assigns, :action) && post != nil do
+    if :edit == Map.get(assigns, :action) && memory != nil do
       {:ok,
        socket
-       |> assign(:post_key, get_post_key(post))
+       |> assign(:memory_key, get_memory_key(memory))
        |> assign(
          :selector,
-         Atom.to_string(post.visibility)
+         Atom.to_string(memory.visibility)
        )
        |> assign(assigns)
        |> assign_form(changeset)}
@@ -127,56 +127,62 @@ defmodule MetamorphicWeb.PostLive.FormComponent do
   end
 
   @impl true
-  def handle_event("validate", %{"post" => post_params}, socket) do
+  def handle_event("validate", %{"memory" => memory_params}, socket) do
     changeset =
-      socket.assigns.post
-      |> Timeline.change_post(post_params, user: socket.assigns.user)
+      socket.assigns.memory
+      |> Accounts.change_memory(memory_params, user: socket.assigns.user)
       |> Map.put(:action, :validate)
 
-    {:noreply, socket |> assign_form(changeset) |> assign(:selector, post_params["visibility"])}
+    {:noreply, socket |> assign_form(changeset) |> assign(:selector, memory_params["visibility"])}
   end
 
-  def handle_event("save", %{"post" => post_params}, socket) do
-    save_post(socket, socket.assigns.action, post_params)
+  def handle_event("save", %{"memory" => memory_params}, socket) do
+    save_memory(socket, socket.assigns.action, memory_params)
   end
 
-  defp save_post(socket, :edit, post_params) do
-    if can_edit?(socket.assigns.user, socket.assigns.post) do
+  defp save_memory(socket, :edit, memory_params) do
+    if can_edit?(socket.assigns.user, socket.assigns.memory) do
       user = socket.assigns.user
       key = socket.assigns.key
 
-      case Timeline.update_post(socket.assigns.post, post_params,
-             update_post: true,
-             post_key: socket.assigns.post_key,
+      case Accounts.update_memory(socket.assigns.memory, memory_params,
+             update_memory: true,
+             memory_key: socket.assigns.memory_key,
              user: user,
              key: key
            ) do
-        {:ok, post} ->
-          notify_parent({:updated, post})
+        {:ok, memory} ->
+          notify_parent({:updated, memory})
 
           {:noreply,
            socket
            |> put_flash(:success, "Post updated successfully")
            |> push_patch(to: socket.assigns.patch)}
+
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:noreply, assign_form(socket, changeset)}
       end
     else
       {:noreply, socket}
     end
   end
 
-  defp save_post(socket, :new, post_params) do
+  defp save_memory(socket, :new, memory_params) do
     user = socket.assigns.user
     key = socket.assigns.key
 
-    if post_params["user_id"] == user.id do
-      case Timeline.create_post(post_params, user: user, key: key) do
-        {:ok, post} ->
-          notify_parent({:saved, post})
+    if memory_params["user_id"] == user.id do
+      case Accounts.create_memory(memory_params, user: user, key: key) do
+        {:ok, memory} ->
+          notify_parent({:saved, memory})
 
           {:noreply,
            socket
            |> put_flash(:success, "Post created successfully")
            |> push_patch(to: socket.assigns.patch)}
+
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:noreply, assign_form(socket, changeset)}
       end
     else
       {:noreply, socket}

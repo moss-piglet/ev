@@ -77,6 +77,17 @@ defmodule MetamorphicWeb.UserDashLive do
           </span>
         </.link>
         <.link
+          :if={@release_memories?}
+          navigate={~p"/memories/"}
+          class="group relative rounded-2xl px-6 py-4 text-sm font-semibold leading-6 text-zinc-900 sm:py-6"
+        >
+          <span class="absolute inset-0 rounded-2xl bg-zinc-50 transition group-hover:bg-zinc-100 sm:group-hover:scale-105">
+          </span>
+          <span class="relative flex items-center gap-4 sm:flex-col">
+            <.icon name="hero-photo" class="h-6 w-6" /> Memories
+          </span>
+        </.link>
+        <.link
           navigate={~p"/posts/"}
           class="group relative rounded-2xl px-6 py-4 text-sm font-semibold leading-6 text-zinc-900 sm:py-6"
         >
@@ -92,7 +103,7 @@ defmodule MetamorphicWeb.UserDashLive do
   end
 
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, :page_title, "Dashboard")}
+    {:ok, socket |> assign(:page_title, "Dashboard") |> assign(:release_memories?, false)}
   end
 
   def handle_event("onboard", %{"id" => id}, socket) do
@@ -110,15 +121,6 @@ defmodule MetamorphicWeb.UserDashLive do
             {:noreply,
              socket
              |> put_flash(:success, info)
-             |> redirect(to: ~p"/users/dash")}
-
-          {:error, changeset} ->
-            info = "That username may already be taken."
-
-            {:noreply,
-             socket
-             |> put_flash(:error, info)
-             |> assign(username_form: to_form(changeset))
              |> redirect(to: ~p"/users/dash")}
         end
     end

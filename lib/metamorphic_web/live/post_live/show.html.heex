@@ -18,8 +18,8 @@
 
 <.list>
   <:item title="Username">
-    <%= decr_post(
-      get_post_connection(@post, @current_user).username,
+    <%= decr_item(
+      get_item_connection(@post, @current_user).username,
       @current_user,
       get_post_key(@post, @current_user),
       @key,
@@ -27,7 +27,7 @@
     ) %>
   </:item>
   <:item title="Body">
-    <%= decr_post(@post.body, @current_user, get_post_key(@post), @key, @post) %>
+    <%= decr_item(@post.body, @current_user, get_post_key(@post), @key, @post) %>
   </:item>
   <:item title="Repost"><%= @post.repost %></:item>
   <:item title="Favs count"><%= @post.favs_count %></:item>

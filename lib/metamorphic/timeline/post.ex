@@ -1,4 +1,5 @@
 defmodule Metamorphic.Timeline.Post do
+  @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -20,7 +21,7 @@ defmodule Metamorphic.Timeline.Post do
     field :favs_count, :integer, default: 0
     field :reposts_count, :integer, default: 0
     field :repost, :boolean, default: false
-    field :visibility, Ecto.Enum, values: [:public, :private, :connections], default: :public
+    field :visibility, Ecto.Enum, values: [:public, :private, :connections], default: :private
 
     field :user_post_map, :map, virtual: true
 
@@ -61,7 +62,8 @@ defmodule Metamorphic.Timeline.Post do
     |> cast_embed(:shared_users,
       with: &shared_user_changeset/2,
       sort_param: :shared_users_order,
-      drop_param: :shared_users_delete)
+      drop_param: :shared_users_delete
+    )
   end
 
   @doc false
@@ -86,15 +88,21 @@ defmodule Metamorphic.Timeline.Post do
     |> add_username_hash()
     |> encrypt_attrs(opts)
     |> cast_embed(:shared_users,
-      with: &shared_user_changeset/2,
+      with: &shared_user_repost_changeset/2,
       sort_param: :shared_users_order,
-      drop_param: :shared_users_delete)
+      drop_param: :shared_users_delete
+    )
   end
 
   def shared_user_changeset(shared_user, attrs \\ %{}, _opts \\ []) do
     shared_user
     |> cast(attrs, [:sender_id, :username])
     |> validate_shared_username()
+  end
+
+  def shared_user_repost_changeset(shared_user, attrs \\ %{}, _opts \\ []) do
+    shared_user
+    |> cast(attrs, [:user_id])
   end
 
   defp validate_shared_username(changeset) do
@@ -118,7 +126,6 @@ defmodule Metamorphic.Timeline.Post do
       |> add_error(:username, "invalid or does not exist")
     end
   end
-
 
   defp add_username_hash(changeset) do
     if Map.has_key?(changeset.changes, :username) do
@@ -215,7 +222,7 @@ defmodule Metamorphic.Timeline.Post do
     if opts[:update_post] do
       case visibility do
         :public ->
-          Encrypted.Users.Utils.decrypt_public_post_key(opts[:post_key])
+          Encrypted.Users.Utils.decrypt_public_item_key(opts[:post_key])
 
         _rest ->
           {:ok, d_post_key} =

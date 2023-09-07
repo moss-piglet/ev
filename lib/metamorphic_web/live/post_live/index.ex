@@ -91,7 +91,7 @@ defmodule MetamorphicWeb.PostLive.Index do
 
   @impl true
   def handle_info({:post_reposted, post}, socket) do
-    {:noreply, stream_insert(socket, :posts, post, at: 0)}
+    {:noreply, paginate_posts(socket, socket.assigns.page, true)}
   end
 
   @impl true
@@ -288,6 +288,8 @@ defmodule MetamorphicWeb.PostLive.Index do
         user_id: user.id,
         original_post_id: post.id,
         visibility: post.visibility,
+        shared_users:
+          Enum.into(post.shared_users, [], fn shared_user -> Map.from_struct(shared_user) end),
         repost: true
       }
 
