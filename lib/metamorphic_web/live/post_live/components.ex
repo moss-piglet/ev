@@ -80,7 +80,7 @@ defmodule MetamorphicWeb.PostLive.Components do
       <.link navigate={~p"/posts/#{@post}"}>Show</.link>
     </div>
 
-    <div class="flex flex-col space-y-1 items-center">
+    <div class="flex flex-col flex-shrink-0 space-y-1 items-center">
       <.avatar
         :if={not is_nil(@current_user)}
         src={

@@ -90,7 +90,7 @@ defmodule MetamorphicWeb.PostLive.Index do
   end
 
   @impl true
-  def handle_info({:post_reposted, post}, socket) do
+  def handle_info({:post_reposted, _post}, socket) do
     {:noreply, paginate_posts(socket, socket.assigns.page, true)}
   end
 
