@@ -39,7 +39,7 @@ defmodule Metamorphic.Memories do
       end)
       |> Repo.transaction_on_primary()
 
-    conn = Accounts.get_connection_from_memory(memory, user)
+    conn = Accounts.get_connection_from_item(memory, user)
 
     {:ok, conn, memory |> Repo.preload([:user_memories])}
     |> broadcast(:memory_created)

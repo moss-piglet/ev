@@ -5,7 +5,6 @@ defmodule Metamorphic.Accounts do
 
   import Ecto.Query, warn: false
 
-  alias Ecto.Adapters.SQL.Sandbox.Connection
   alias Metamorphic.Repo
 
   alias Metamorphic.Accounts.{Connection, User, UserConnection, UserToken, UserNotifier, UserTOTP}

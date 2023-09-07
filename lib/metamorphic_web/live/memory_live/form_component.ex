@@ -1,7 +1,7 @@
 defmodule MetamorphicWeb.MemoryLive.FormComponent do
   use MetamorphicWeb, :live_component
 
-  alias Metamorphic.Timeline
+  alias Metamorphic.Memories
 
   @impl true
   def render(assigns) do
@@ -105,7 +105,7 @@ defmodule MetamorphicWeb.MemoryLive.FormComponent do
 
   @impl true
   def update(%{memory: memory} = assigns, socket) do
-    changeset = Accounts.change_memory(memory, %{}, user: assigns.user)
+    changeset = Memories.change_memory(memory, %{}, user: assigns.user)
 
     if :edit == Map.get(assigns, :action) && memory != nil do
       {:ok,
@@ -130,7 +130,7 @@ defmodule MetamorphicWeb.MemoryLive.FormComponent do
   def handle_event("validate", %{"memory" => memory_params}, socket) do
     changeset =
       socket.assigns.memory
-      |> Accounts.change_memory(memory_params, user: socket.assigns.user)
+      |> Memories.change_memory(memory_params, user: socket.assigns.user)
       |> Map.put(:action, :validate)
 
     {:noreply, socket |> assign_form(changeset) |> assign(:selector, memory_params["visibility"])}
@@ -145,7 +145,7 @@ defmodule MetamorphicWeb.MemoryLive.FormComponent do
       user = socket.assigns.user
       key = socket.assigns.key
 
-      case Accounts.update_memory(socket.assigns.memory, memory_params,
+      case Memories.update_memory(socket.assigns.memory, memory_params,
              update_memory: true,
              memory_key: socket.assigns.memory_key,
              user: user,
@@ -156,7 +156,7 @@ defmodule MetamorphicWeb.MemoryLive.FormComponent do
 
           {:noreply,
            socket
-           |> put_flash(:success, "Post updated successfully")
+           |> put_flash(:success, "Memory updated successfully")
            |> push_patch(to: socket.assigns.patch)}
 
         {:error, %Ecto.Changeset{} = changeset} ->
@@ -172,13 +172,13 @@ defmodule MetamorphicWeb.MemoryLive.FormComponent do
     key = socket.assigns.key
 
     if memory_params["user_id"] == user.id do
-      case Accounts.create_memory(memory_params, user: user, key: key) do
+      case Memories.create_memory(memory_params, user: user, key: key) do
         {:ok, memory} ->
           notify_parent({:saved, memory})
 
           {:noreply,
            socket
-           |> put_flash(:success, "Post created successfully")
+           |> put_flash(:success, "Memory created successfully")
            |> push_patch(to: socket.assigns.patch)}
 
         {:error, %Ecto.Changeset{} = changeset} ->
