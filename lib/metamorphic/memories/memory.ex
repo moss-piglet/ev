@@ -94,7 +94,7 @@ defmodule Metamorphic.Memories.Memory do
 
     case visibility do
       :public ->
-        changeset
+        changeset |> add_error(:blurb, "Woopsy, public photos are not available yet.")
 
       :private ->
         changeset
