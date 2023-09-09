@@ -56,6 +56,11 @@ defmodule MetamorphicWeb.MemoryLive.Show do
   end
 
   @impl true
+  def handle_info({:memory_deleted, memory}, socket) do
+    {:noreply, push_redirect(socket, to: ~p"/memories/#{socket.assigns.memory}")}
+  end
+
+  @impl true
   def handle_info({:uconn_deleted, uconn}, socket) do
     user = socket.assigns.current_user
 
@@ -134,7 +139,8 @@ defmodule MetamorphicWeb.MemoryLive.Show do
   end
 
   @impl true
-  def handle_info(_message, socket) do
+  def handle_info(message, socket) do
+    IO.inspect message, label: "MESSAGE"
     {:noreply, socket}
   end
 
