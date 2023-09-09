@@ -103,7 +103,7 @@ defmodule Metamorphic.Memories.Memory do
         if Accounts.has_any_user_connections?(opts[:user]) do
           changeset
         else
-          changeset |> add_error(:body, "Woopsy, first we need to make some connections.")
+          changeset |> add_error(:blurb, "Woopsy, first we need to make some connections.")
         end
     end
   end
@@ -132,7 +132,7 @@ defmodule Metamorphic.Memories.Memory do
 
   defp encrypt_attrs(changeset, opts) do
     if changeset.valid? && opts[:user] && opts[:key] do
-      body = get_change(changeset, :body)
+      body = get_change(changeset, :blurb)
       username = get_field(changeset, :username)
       visibility = get_field(changeset, :visibility)
       memory_url = get_field(changeset, :memory_url)
@@ -142,7 +142,7 @@ defmodule Metamorphic.Memories.Memory do
         :public ->
           changeset
           |> put_change(:memory_url, Utils.encrypt(%{key: memory_key, payload: memory_url}))
-          |> put_change(:body, Utils.encrypt(%{key: memory_key, payload: body}))
+          |> put_change(:blurb, Utils.encrypt(%{key: memory_key, payload: body}))
           |> put_change(:username, Utils.encrypt(%{key: memory_key, payload: username}))
           |> put_change(:user_memory_map, %{
             key:
@@ -154,7 +154,7 @@ defmodule Metamorphic.Memories.Memory do
         :private ->
           changeset
           |> put_change(:memory_url, Utils.encrypt(%{key: memory_key, payload: memory_url}))
-          |> put_change(:body, Utils.encrypt(%{key: memory_key, payload: body}))
+          |> put_change(:blurb, Utils.encrypt(%{key: memory_key, payload: body}))
           |> put_change(:username, Utils.encrypt(%{key: memory_key, payload: username}))
           |> put_change(:user_memory_map, %{
             key:
@@ -166,7 +166,7 @@ defmodule Metamorphic.Memories.Memory do
         :connections ->
           changeset
           |> put_change(:memory_url, Utils.encrypt(%{key: memory_key, payload: memory_url}))
-          |> put_change(:body, Utils.encrypt(%{key: memory_key, payload: body}))
+          |> put_change(:blurb, Utils.encrypt(%{key: memory_key, payload: body}))
           |> put_change(:username, Utils.encrypt(%{key: memory_key, payload: username}))
           |> put_change(:user_memory_map, %{
             key:
@@ -176,7 +176,7 @@ defmodule Metamorphic.Memories.Memory do
           })
 
         _rest ->
-          changeset |> add_error(:body, "There was an error determining the visibility.")
+          changeset |> add_error(:blurb, "There was an error determining the visibility.")
       end
     else
       changeset

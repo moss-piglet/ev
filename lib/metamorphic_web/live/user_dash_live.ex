@@ -77,7 +77,6 @@ defmodule MetamorphicWeb.UserDashLive do
           </span>
         </.link>
         <.link
-          :if={@release_memories?}
           navigate={~p"/memories/"}
           class="group relative rounded-2xl px-6 py-4 text-sm font-semibold leading-6 text-zinc-900 sm:py-6"
         >
@@ -103,7 +102,7 @@ defmodule MetamorphicWeb.UserDashLive do
   end
 
   def mount(_params, _session, socket) do
-    {:ok, socket |> assign(:page_title, "Dashboard") |> assign(:release_memories?, false)}
+    {:ok, socket |> assign(:page_title, "Dashboard")}
   end
 
   def handle_event("onboard", %{"id" => id}, socket) do

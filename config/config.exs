@@ -16,6 +16,7 @@ config :metamorphic,
   server_public_key: System.get_env("SERVER_PUBLIC_KEY"),
   server_private_key: System.get_env("SERVER_PRIVATE_KEY"),
   avatars_bucket: System.get_env("AVATARS_BUCKET"),
+  memories_bucket: System.get_env("MEMORIES_BUCKET"),
   canonical_host: System.get_env("PHX_HOST")
 
 config :metamorphic, Metamorphic.Repo.Local, priv: "priv/repo"

@@ -32,6 +32,8 @@ defmodule Metamorphic.Application do
       ExMarcel.TableWrapper,
       # Start the ETS AvatarProcessor
       Metamorphic.Extensions.AvatarProcessor,
+      # Start the ETS MemoryProcessor
+      Metamorphic.Extensions.MemoryProcessor,
       # Start the Endpoint (http/https)
       MetamorphicWeb.Endpoint
       # Start a worker by calling: Metamorphic.Worker.start_link(arg)

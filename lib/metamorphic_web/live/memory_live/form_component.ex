@@ -1,6 +1,8 @@
 defmodule MetamorphicWeb.MemoryLive.FormComponent do
   use MetamorphicWeb, :live_component
 
+  alias Metamorphic.Encrypted
+  alias Metamorphic.Extensions.MemoryProcessor
   alias Metamorphic.Memories
 
   @impl true
@@ -21,12 +23,13 @@ defmodule MetamorphicWeb.MemoryLive.FormComponent do
         phx-submit="save"
       >
         <.input field={@form[:user_id]} type="hidden" value={@user.id} />
+        <.input field={@form[:id]} type="hidden" value={@memory.id} />
         <.input field={@form[:username]} type="hidden" value={decr(@user.username, @user, @key)} />
         <.input
           :if={@action != :edit}
           field={@form[:visibility]}
           type="select"
-          options={Ecto.Enum.values(Timeline.Post, :visibility)}
+          options={Ecto.Enum.values(Memories.Memory, :visibility)}
           label="Visibility"
           required
         />
@@ -72,31 +75,116 @@ defmodule MetamorphicWeb.MemoryLive.FormComponent do
           <input type="hidden" name="memory[shared_users_delete][]" />
         </div>
 
-        <.input :if={@action == :new} field={@form[:body]} type="textarea" label="Body" />
+        <div :if={@action == :new} class="col-span-full">
+          <div
+            class="mt-2 flex justify-center rounded-lg border border-dashed border-zinc-900/25 px-6 py-10"
+            phx-drop-target={@uploads.memory.ref}
+          >
+            <div :if={Enum.empty?(@uploads.memory.entries)} class="text-center">
+              <svg
+                class="mx-auto h-12 w-12 text-zinc-300"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <div class="mt-4 flex text-sm leading-6 text-zinc-600">
+                <label
+                  for={@uploads.memory.ref}
+                  class="relative cursor-pointer rounded-md bg-white font-semibold text-brand-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-brand-600 focus-within:ring-offset-2 hover:text-brand-500"
+                >
+                  <span>Upload a memory</span>
+                </label>
+                <p class="pl-1">or drag and drop</p>
+              </div>
+              <p class="text-xs leading-5 text-zinc-600">
+                PNG, JPEG, JPG up to <%= @uploads.memory.max_file_size / 1_000_000 %>MB
+              </p>
+            </div>
+            <div
+              :for={entry <- @uploads.memory.entries}
+              :if={!Enum.empty?(@uploads.memory.entries)}
+              class="text-center text-brand-600"
+            >
+              <.live_img_preview entry={entry} width={100} />
+              <div class="w-full">
+                <div class="text-left mb-2 text-xs font-semibold inline-block text-brand-600">
+                  <%= entry.progress %>%
+                </div>
+                <div class="flex h-2 overflow-hidden text-base bg-brand-200 rounded-lg mb-4">
+                  <span
+                    style={"width: #{entry.progress}%"}
+                    class="shadow-md bg-brand-500 transition-transform"
+                  >
+                  </span>
+                </div>
+              </div>
+
+              <.link phx-click="cancel" phx-target={@myself} phx-value-ref={entry.ref}>
+                <.icon name="hero-x-circle" class="h-6 w-6" />
+              </.link>
+            </div>
+          </div>
+          <.error :for={err <- upload_errors(@uploads.memory)}>
+            <%= error_to_string(err) %>
+          </.error>
+        </div>
+        <.live_file_input :if={@action == :new} upload={@uploads.memory} />
+
+        <.input :if={@action == :new} field={@form[:blurb]} type="textarea" label="Blurb" />
         <.input
           :if={@action == :edit && @memory.visibility == :private}
-          field={@form[:body]}
+          field={@form[:blurb]}
           type="textarea"
-          label="Body"
+          label="Blurb"
           value={decr_item(@memory.blurb, @user, get_memory_key(@memory), @key, @memory)}
         />
         <.input
           :if={@action == :edit && @memory.visibility == :public}
-          field={@form[:body]}
+          field={@form[:blurb]}
           type="textarea"
-          label="Body"
+          label="Blurb"
           value={decr_item(@memory.blurb, @user, get_memory_key(@memory), @key, @memory)}
         />
         <.input
           :if={@action == :edit && get_shared_item_identity_atom(@memory, @user) == :self}
-          field={@form[:body]}
+          field={@form[:blurb]}
           type="textarea"
-          label="Body"
+          label="Blurb"
           value={decr_item(@memory.blurb, @user, get_memory_key(@memory), @key, @memory)}
         />
         <:actions>
-          <.button :if={@form.source.valid?} phx-disable-with="Saving...">Save Post</.button>
-          <.button :if={!@form.source.valid?} disabled class="opacity-25">Save Post</.button>
+          <.button
+            :if={@form.source.valid? && !Enum.empty?(@uploads.memory.entries) && @action == :new}
+            phx-disable-with="Creating..."
+          >
+            Create Memory
+          </.button>
+          <.button
+            :if={!@form.source.valid? || Enum.empty?(@uploads.memory.entries) && @action == :new}
+            disabled
+            class="opacity-25"
+          >
+            Create Memory
+          </.button>
+          <.button
+            :if={@form.source.valid? && @action == :edit}
+            phx-disable-with="Creating..."
+          >
+            Update Memory
+          </.button>
+          <.button
+            :if={!@form.source.valid? && @action == :edit}
+            disabled
+            class="opacity-25"
+          >
+            Update Memory
+          </.button>
         </:actions>
       </.simple_form>
     </div>
@@ -106,6 +194,15 @@ defmodule MetamorphicWeb.MemoryLive.FormComponent do
   @impl true
   def update(%{memory: memory} = assigns, socket) do
     changeset = Memories.change_memory(memory, %{}, user: assigns.user)
+
+    socket =
+      socket
+      |> allow_upload(:memory,
+        accept: ~w(.png .jpeg .jpg),
+        max_file_size: 10_000_000,
+        auto_upload: true,
+        temporary_assigns: [uploaded_files: []]
+      )
 
     if :edit == Map.get(assigns, :action) && memory != nil do
       {:ok,
@@ -127,6 +224,11 @@ defmodule MetamorphicWeb.MemoryLive.FormComponent do
   end
 
   @impl true
+  def handle_event("cancel", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :memory, ref)}
+  end
+
+  @impl true
   def handle_event("validate", %{"memory" => memory_params}, socket) do
     changeset =
       socket.assigns.memory
@@ -138,6 +240,80 @@ defmodule MetamorphicWeb.MemoryLive.FormComponent do
 
   def handle_event("save", %{"memory" => memory_params}, socket) do
     save_memory(socket, socket.assigns.action, memory_params)
+  end
+
+  defp save_memory(socket, :new, memory_params) do
+    user = socket.assigns.user
+    key = socket.assigns.key
+    memories_bucket = Encrypted.Session.memories_bucket()
+
+    memory_url_tuple_list =
+      consume_uploaded_entries(
+        socket,
+        :memory,
+        fn %{path: path} = _meta, entry ->
+          # Check the mime_type to avoid malicious file naming
+          mime_type = ExMarcel.MimeType.for({:path, path})
+
+          cond do
+            mime_type in ["image/jpeg", "image/jpg", "image/png"] ->
+              with {:ok, blob} <-
+                     Image.open!(path)
+                     |> Image.write(:memory,
+                       suffix: ".#{file_ext(entry)}"
+                     ),
+                   {:ok, e_blob} <- prepare_encrypted_blob(blob, user, key),
+                   {:ok, file_path} <- prepare_file_path(entry, user.id) do
+                make_aws_requests(entry, memories_bucket, file_path, e_blob, user, key)
+              end
+
+            true ->
+              {:postpone, :error}
+          end
+        end
+      )
+
+    cond do
+      :error in memory_url_tuple_list ->
+        err_msg = "Incorrect file type."
+        {:noreply, put_flash(socket, :error, err_msg)}
+
+      :error not in memory_url_tuple_list ->
+        # Get the file path & e_blob from the tuple.
+        [{entry, file_path, e_blob}] = memory_url_tuple_list
+
+        memory_params =
+          memory_params
+          |> Map.put("memory_url", file_path)
+          |> Map.put("size", entry.client_size)
+          |> Map.put("type", entry.client_type)
+
+        case Memories.create_memory(memory_params, user: user, key: key) do
+          {:ok, _user, conn} ->
+            # Put the encrypted memory blob in ets under the
+            # user's connection id.
+            MemoryProcessor.put_ets_memory(
+              "user:#{memory_params["user_id"]}-memory:#{memory_params["id"]}-key:#{conn.id}",
+              e_blob
+            )
+
+            info = "Your memory has been created successfully."
+
+            memory_form =
+              user
+              |> Memories.change_memory(memory_params)
+              |> to_form()
+
+            {:noreply,
+             socket
+             |> put_flash(:success, info)
+             |> assign(memory_form: memory_form)
+             |> push_navigate(to: ~p"/memories")}
+
+          _rest ->
+            {:noreply, socket}
+        end
+    end
   end
 
   defp save_memory(socket, :edit, memory_params) do
@@ -158,35 +334,57 @@ defmodule MetamorphicWeb.MemoryLive.FormComponent do
            socket
            |> put_flash(:success, "Memory updated successfully")
            |> push_patch(to: socket.assigns.patch)}
-
-        {:error, %Ecto.Changeset{} = changeset} ->
-          {:noreply, assign_form(socket, changeset)}
       end
     else
       {:noreply, socket}
     end
   end
 
-  defp save_memory(socket, :new, memory_params) do
-    user = socket.assigns.user
-    key = socket.assigns.key
+  ## PRIVATE & AWS
 
-    if memory_params["user_id"] == user.id do
-      case Memories.create_memory(memory_params, user: user, key: key) do
-        {:ok, memory} ->
-          notify_parent({:saved, memory})
+  defp file_ext(entry) do
+    [ext | _] = MIME.extensions(entry.client_type)
+    "#{ext}"
+  end
 
-          {:noreply,
-           socket
-           |> put_flash(:success, "Memory created successfully")
-           |> push_patch(to: socket.assigns.patch)}
+  defp filename(entry) do
+    [ext | _] = MIME.extensions(entry.client_type)
+    "#{entry.uuid}.#{ext}"
+  end
 
-        {:error, %Ecto.Changeset{} = changeset} ->
-          {:noreply, assign_form(socket, changeset)}
-      end
-    else
-      {:noreply, socket}
+  defp prepare_file_path(entry, user_id) do
+    {:ok, "uploads/user/#{user_id}/memories/#{filename(entry)}"}
+  end
+
+  defp prepare_encrypted_blob(blob, user, key) do
+    {:ok, d_conn_key} =
+      Encrypted.Users.Utils.decrypt_user_attrs_key(user.conn_key, user, key)
+
+    encrypted_avatar_blob = Encrypted.Utils.encrypt(%{key: d_conn_key, payload: blob})
+
+    cond do
+      is_binary(encrypted_avatar_blob) ->
+        {:ok, encrypted_avatar_blob}
+
+      true ->
+        {:error, encrypted_avatar_blob}
     end
+  end
+
+  defp make_aws_requests(entry, memories_bucket, file_path, e_blob, _user, _key) do
+    with {:ok, _resp} <- ex_aws_put_request(memories_bucket, file_path, e_blob) do
+      # Return the encrypted_blob in the tuple for putting
+      # the encrypted avatar into ets.
+      {:ok, {entry, file_path, e_blob}}
+    else
+      _rest ->
+        ex_aws_put_request(memories_bucket, file_path, e_blob)
+    end
+  end
+
+  defp ex_aws_put_request(memories_bucket, file_path, e_blob) do
+    ExAws.S3.put_object(memories_bucket, file_path, e_blob)
+    |> ExAws.request()
   end
 
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do

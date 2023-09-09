@@ -56,7 +56,7 @@ defmodule MetamorphicWeb.PostLive.Components do
           post={item}
           current_user={@current_user}
           key={@key}
-          color={get_uconn_color_for_shared_post(item, @current_user) || :purple}
+          color={get_uconn_color_for_shared_item(item, @current_user) || :purple}
         />
       </li>
     </ul>
@@ -85,7 +85,7 @@ defmodule MetamorphicWeb.PostLive.Components do
         :if={not is_nil(@current_user)}
         src={
           get_user_avatar(
-            get_uconn_avatar_for_shared_post(@post, @current_user),
+            get_uconn_for_shared_item(@post, @current_user),
             @key,
             @post,
             @current_user
@@ -263,7 +263,7 @@ defmodule MetamorphicWeb.PostLive.Components do
           class="absolute right-2 -bottom-2 group space-x-1"
         >
           <span
-            :for={uconn <- get_shared_post_user_connection(@post, @current_user)}
+            :for={uconn <- get_shared_item_user_connection(@post, @current_user)}
             :if={uconn}
             class={"inline-flex items-center rounded-full group-hover:bg-purple-100 group-hover:px-2 group-hover:py-1 group-hover:text-xs group-hover:font-medium #{if uconn, do: badge_group_hover_color(uconn.color)} group-hover:space-x-1"}
           >

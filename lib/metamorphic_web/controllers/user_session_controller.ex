@@ -2,6 +2,7 @@ defmodule MetamorphicWeb.UserSessionController do
   use MetamorphicWeb, :controller
 
   alias Metamorphic.Accounts
+  alias Metamorphic.Extensions.{AvatarProcessor}
   alias MetamorphicWeb.UserAuth
 
   def create(conn, %{"_action" => "registered"} = params) do
@@ -37,6 +38,16 @@ defmodule MetamorphicWeb.UserSessionController do
   def delete(conn, _params) do
     conn
     |> put_flash(:success, "Logged out successfully.")
+    |> clear_user_ets_data()
     |> UserAuth.log_out_user()
+  end
+
+  defp clear_user_ets_data(conn) do
+    if key = Map.get(conn.assigns.current_user.connection, :id) do
+      AvatarProcessor.delete_ets_avatar(key)
+      conn
+    else
+      conn
+    end
   end
 end

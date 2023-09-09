@@ -4,7 +4,8 @@ defmodule MetamorphicWeb.Helpers do
   alias Metamorphic.Accounts
   alias Metamorphic.Accounts.{User, UserConnection}
   alias Metamorphic.Encrypted
-  alias Metamorphic.Extensions.AvatarProcessor
+  alias Metamorphic.Extensions.{AvatarProcessor, MemoryProcessor}
+  alias Metamorphic.Memories.Memory
   alias Metamorphic.Timeline.Post
 
   ## Encryption
@@ -21,11 +22,11 @@ defmodule MetamorphicWeb.Helpers do
 
   def decr(_payload, _user, _key), do: nil
 
-  def decr_avatar(payload, user, e_item_key, key) do
+  def decr_avatar(payload, user, item_key, key) do
     case Encrypted.Users.Utils.decrypt_user_item(
            payload,
            user,
-           e_item_key,
+           item_key,
            key
          ) do
       :failed_verification ->
@@ -126,6 +127,20 @@ defmodule MetamorphicWeb.Helpers do
     Enum.at(memory.user_memories, 0).key
   end
 
+  def get_memory_key(memory, current_user) do
+    cond do
+      memory.visibility == :connections && current_user.id != memory.user_id ->
+        uconn = get_uconn_for_shared_item(memory, current_user)
+        uconn.key
+
+      memory.visibility == :private ->
+        current_user.conn_key
+
+      true ->
+        Enum.at(memory.user_memories, 0).key
+    end
+  end
+
   def get_post_key(post) do
     Enum.at(post.user_posts, 0).key
   end
@@ -173,6 +188,21 @@ defmodule MetamorphicWeb.Helpers do
     end
   end
 
+  def get_shared_memory_label(memory, user, key) do
+    cond do
+      %UserConnection{} = uconn = get_uconn_for_shared_item(memory, user) ->
+        Encrypted.Users.Utils.decrypt_user_item(
+          uconn.label,
+          user,
+          uconn.key,
+          key
+        )
+
+      true ->
+        "nil"
+    end
+  end
+
   def get_label_for_uconn(%UserConnection{} = uconn, user, key) do
     Encrypted.Users.Utils.decrypt_user_item(
       uconn.label,
@@ -193,19 +223,11 @@ defmodule MetamorphicWeb.Helpers do
 
   def get_username_for_uconn(_, _user, _key), do: nil
 
-  def get_shared_post_user_connection(post, user) do
-    Enum.map(post.shared_users, fn x ->
+  def get_shared_item_user_connection(item, user) do
+    Enum.map(item.shared_users, fn x ->
       u = Accounts.get_user(x.user_id)
       get_uconn_for_users(u, user)
     end)
-  end
-
-  # User is the current user and should be
-  # different from the user_id of the item,
-  # but the two users should have
-  # user connections together.
-  def get_uconn_for_shared_item(item, user) do
-    Accounts.get_user_connection_from_shared_item(item, user)
   end
 
   def has_user_connection?(post, user) do
@@ -230,13 +252,13 @@ defmodule MetamorphicWeb.Helpers do
     end
   end
 
-  def get_uconn_color_for_shared_post(post, user) do
+  def get_uconn_color_for_shared_item(item, user) do
     cond do
       is_nil(user) ->
         :brand
 
       true ->
-        case Accounts.get_user_connection_from_shared_item(post, user) do
+        case Accounts.get_user_connection_from_shared_item(item, user) do
           %UserConnection{} = uconn ->
             uconn.color
 
@@ -247,13 +269,13 @@ defmodule MetamorphicWeb.Helpers do
   end
 
   # If the user (current_user) is the same as the
-  # post.user_id, then we return the user and not
+  # item.user_id, then we return the user and not
   # the uconn.
-  def get_uconn_avatar_for_shared_post(post, user) do
-    if post.user_id == user.id do
+  def get_uconn_for_shared_item(item, user) do
+    if item.user_id == user.id do
       user
     else
-      Accounts.get_user_connection_from_shared_item(post, user)
+      Accounts.get_user_connection_from_shared_item(item, user)
     end
   end
 
@@ -471,6 +493,225 @@ defmodule MetamorphicWeb.Helpers do
                 "error"
             end
         end
+    end
+  end
+
+  ## Memories
+
+  def get_user_memory(user, key, memory \\ nil, current_user \\ nil)
+
+  def get_user_memory(nil, _key, _memory, _current_user), do: nil
+
+  def get_user_memory(%User{} = user, key, memory, _current_user) do
+    user = preload_connection(user)
+
+    cond do
+      is_nil(memory.memory_url) ->
+        nil
+
+      not is_nil(
+        memory_binary =
+            MemoryProcessor.get_ets_memory(
+              "user:#{user.id}-memory:#{memory.id}-key:#{user.connection.id}"
+            )
+      ) ->
+        image =
+          decr_item(
+            memory_binary,
+            user,
+            user.conn_key,
+            key,
+            memory
+          )
+          |> Base.encode64()
+
+        "data:image/jpg;base64," <> image
+
+      is_nil(
+        _memory_binary =
+            MemoryProcessor.get_ets_memory(
+              "user:#{user.id}-memory:#{memory.id}-key:#{user.connection.id}"
+            )
+      ) ->
+        memories_bucket = Encrypted.Session.memories_bucket()
+
+        with {:ok, %{body: obj}} <-
+               ExAws.S3.get_object(
+                 memories_bucket,
+                 decr_item(
+                   memory.memory_url,
+                   user,
+                   get_memory_key(memory),
+                   key,
+                   memory
+                 )
+               )
+               |> ExAws.request(),
+             decrypted_obj <-
+               decr_item(
+                 obj,
+                 user,
+                 user.conn_key,
+                 key,
+                 memory
+               ) do
+          # Put the encrypted memory binary in ets.
+          Task.async(fn ->
+            MemoryProcessor.put_ets_memory(
+              "user:#{user.id}-memory:#{memory.id}-key:#{user.connection.id}",
+              obj
+            )
+          end)
+
+          image = decrypted_obj |> Base.encode64()
+          path = "data:image/jpg;base64," <> image
+          path
+        else
+          {:error, _rest} ->
+            "error"
+        end
+    end
+  end
+
+  def get_user_memory(%UserConnection{} = uconn, key, memory, current_user) do
+    case memory do
+      nil ->
+        nil
+
+      %Memory{} = memory ->
+        # we handle decrypting the memory for the user connection and
+        # possibly the current user if the memory is their own.
+        cond do
+          not is_nil(
+            memory_binary =
+                MemoryProcessor.get_ets_memory(
+                  "user:#{memory.user_id}-memory:#{memory.id}-key:#{uconn.connection.id}"
+                )
+          ) ->
+            image = decrypt_memory_binary(memory_binary, uconn, memory, key, current_user)
+            "data:image/jpg;base64," <> image
+
+          is_nil(
+            _memory_binary =
+                MemoryProcessor.get_ets_memory(
+                  "user:#{memory.user_id}-memory:#{memory.id}-key:#{uconn.connection.id}"
+                )
+          ) &&
+            not is_nil(current_user) && current_user != memory.user_id ->
+            memories_bucket = Encrypted.Session.memories_bucket()
+
+            with {:ok, %{body: obj}} <-
+                   ExAws.S3.get_object(
+                     memories_bucket,
+                     decr_item(
+                       memory.memory_url,
+                       uconn.user,
+                       uconn.key,
+                       key,
+                       memory
+                     )
+                   )
+                   |> ExAws.request(),
+                 decrypted_obj <-
+                   decr_item(
+                     obj,
+                     uconn.user,
+                     uconn.key,
+                     key,
+                     memory
+                   ) do
+              # Put the encrypted memory binary in ets.
+              Task.async(fn ->
+                MemoryProcessor.put_ets_memory(
+                  "user:#{memory.user_id}-memory:#{memory.id}-key:#{uconn.connection.id}",
+                  obj
+                )
+              end)
+
+              image = decrypted_obj |> Base.encode64()
+              path = "data:image/jpg;base64," <> image
+              path
+            else
+              {:error, _rest} ->
+                "error"
+            end
+
+          is_nil(
+            _memory_binary =
+                MemoryProcessor.get_ets_memory(
+                  "user:#{memory.user_id}-memory:#{memory.id}-key:#{uconn.connection.id}"
+                )
+          ) &&
+            not is_nil(current_user) && current_user.id == memory.user_id ->
+            memories_bucket = Encrypted.Session.memories_bucket()
+
+            with {:ok, %{body: obj}} <-
+                   ExAws.S3.get_object(
+                     memories_bucket,
+                     decr_item(
+                       memory.memory_url,
+                       current_user,
+                       uconn.key,
+                       key,
+                       memory
+                     )
+                   )
+                   |> ExAws.request(),
+                 decrypted_obj <-
+                   decr_item(
+                     obj,
+                     current_user,
+                     uconn.key,
+                     key,
+                     memory
+                   ) do
+              # Put the encrypted memory binary in ets.
+              Task.async(fn ->
+                MemoryProcessor.put_ets_memory(
+                  "user:#{memory.user_id}-memory:#{memory.id}-key:#{uconn.connection.id}",
+                  obj
+                )
+              end)
+
+              image = decrypted_obj |> Base.encode64()
+              path = "data:image/jpg;base64," <> image
+              path
+            else
+              {:error, _rest} ->
+                "error"
+            end
+        end
+    end
+  end
+
+  defp decrypt_memory_binary(memory_binary, uconn, memory, key, current_user) do
+    cond do
+      is_nil(current_user) ->
+        decr_item(
+          memory_binary,
+          uconn.user,
+          uconn.key,
+          key
+        )
+        |> Base.encode64()
+
+      not is_nil(current_user) && memory.user_id != current_user.id ->
+        decr_avatar(
+          memory_binary,
+          uconn.user,
+          uconn.key,
+          key
+        )
+        |> Base.encode64()
+
+      not is_nil(current_user) && memory.user_id == current_user.id ->
+        decr_avatar(
+          memory_binary,
+          current_user,
+          current_user.conn_key,
+          key
+        )
+        |> Base.encode64()
     end
   end
 

@@ -5,6 +5,7 @@ defmodule MetamorphicWeb.UserAuth do
   import Phoenix.Controller
 
   alias Metamorphic.Accounts
+  alias Metamorphic.Memories
   alias Metamorphic.Timeline
 
   # Make the remember me cookie valid for 60 days.
@@ -309,6 +310,55 @@ defmodule MetamorphicWeb.UserAuth do
                   info
                 )
                 |> Phoenix.LiveView.redirect(to: ~p"/posts")
+
+              {:halt, socket}
+          end
+      end
+    else
+      {:cont, socket}
+    end
+  end
+
+  def on_mount(:maybe_ensure_private_memories, params, session, socket) do
+    socket =
+      socket
+      |> mount_current_user(session)
+      |> mount_current_user_session_key(session)
+
+    info = "You do not have permission to view this page or it does not exist."
+
+    if String.to_atom("Elixir.MetamorphicWeb.MemoryLive.Show") == socket.view do
+      with %Memories.Memory{} = memory <- Memories.get_memory(params["id"]),
+           true <- memory.user_id == socket.assigns.current_user.id do
+        {:cont, socket}
+      else
+        nil ->
+          socket =
+            socket
+            |> Phoenix.LiveView.put_flash(
+              :info,
+              info
+            )
+            |> Phoenix.LiveView.redirect(to: ~p"/memories")
+
+          {:halt, socket}
+
+        false ->
+          memory = Memories.get_memory!(params["id"])
+
+          cond do
+            memory.visibility == :connections &&
+                MetamorphicWeb.Helpers.has_user_connection?(memory, socket.assigns.current_user) ->
+              {:cont, socket}
+
+            true ->
+              socket =
+                socket
+                |> Phoenix.LiveView.put_flash(
+                  :info,
+                  info
+                )
+                |> Phoenix.LiveView.redirect(to: ~p"/memories")
 
               {:halt, socket}
           end

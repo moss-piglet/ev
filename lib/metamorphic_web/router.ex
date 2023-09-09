@@ -110,9 +110,14 @@ defmodule MetamorphicWeb.Router do
         {MetamorphicWeb.UserAuth, :ensure_authenticated},
         {MetamorphicWeb.UserAuth, :ensure_confirmed},
         {MetamorphicWeb.UserAuth, :ensure_session_key},
+        {MetamorphicWeb.UserAuth, :maybe_ensure_private_memories},
         {MetamorphicWeb.UserAuth, :maybe_ensure_private_posts}
       ] do
       live "/memories", MemoryLive.Index, :index
+      live "/memories/new", MemoryLive.Index, :new
+      live "/memories/:id/edit", MemoryLive.Index, :edit
+      live "/memories/:id", MemoryLive.Show, :show
+      live "/memories/:id/show/edit", MemoryLive.Show, :edit
 
       live "/posts", PostLive.Index, :index
       live "/posts/new", PostLive.Index, :new

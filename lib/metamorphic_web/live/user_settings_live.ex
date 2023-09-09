@@ -93,7 +93,10 @@ defmodule MetamorphicWeb.UserSettingsLive do
               with {:ok, blob} <-
                      Image.open!(path)
                      |> Image.avatar!()
-                     |> Image.write(:memory, suffix: ".#{file_ext(entry)}"),
+                     |> Image.write(:memory,
+                       suffix: ".#{file_ext(entry)}",
+                       minimize_file_size: true
+                     ),
                    {:ok, e_blob} <- prepare_encrypted_blob(blob, user, key),
                    {:ok, file_path} <- prepare_file_path(entry, user.id) do
                 make_aws_requests(entry, avatars_bucket, file_path, e_blob, user, key)
@@ -420,12 +423,30 @@ defmodule MetamorphicWeb.UserSettingsLive do
 
     case Accounts.delete_user_account(user, password, user_params) do
       {:ok, _user} ->
-        socket =
-          socket
-          |> put_flash(:success, "Account deleted successfully.")
-          |> redirect(to: ~p"/")
+        avatars_bucket = Encrypted.Session.avatars_bucket()
+        memories_bucket = Encrypted.Session.memories_bucket()
 
-        {:noreply, socket}
+        # Handle deleting the object storage avatar and memories async.
+        with {:ok, _resp} <- ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories"),
+          {:ok, _resp} <- ex_aws_delete_request(avatars_bucket, "uploads/user/#{user.id}/avatars") do
+          socket =
+            socket
+            |> put_flash(:success, "Account deleted successfully.")
+            |> redirect(to: ~p"/")
+
+          {:noreply, socket}
+        else
+          _rest ->
+            ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories")
+            ex_aws_delete_request(avatars_bucket, "uploads/user/#{user.id}/avatars")
+
+            socket =
+              socket
+              |> put_flash(:success, "Account deleted successfully.")
+              |> redirect(to: ~p"/")
+
+            {:noreply, socket}
+        end
 
       {:error, changeset} ->
         {:noreply, assign(socket, delete_account_form: to_form(changeset))}
@@ -458,7 +479,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
       is_binary(encrypted_avatar_blob) ->
         {:ok, encrypted_avatar_blob}
 
-      !is_binary(encrypted_avatar_blob) ->
+      true ->
         {:error, encrypted_avatar_blob}
     end
   end

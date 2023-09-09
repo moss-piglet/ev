@@ -37,7 +37,7 @@ defmodule Metamorphic.Encrypted.Users.Utils do
 
   @doc """
   Decrypts a user item, where item is a
-  struct (e.g. %Post{}, %Userconnection).
+  struct (e.g. %Post{}, %Userconnection{}, %Memory{}).
   """
   def decrypt_user_item(payload, user, e_item_key, key) do
     with {:ok, d_item_key} <- decrypt_user_attrs_key(e_item_key, user, key),
