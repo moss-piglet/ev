@@ -109,17 +109,21 @@ defmodule Metamorphic.Timeline do
   end
 
   def inc_favs(%Post{id: id}) do
-    {1, [post]} =
-      from(p in Post, where: p.id == ^id, select: p)
-      |> Repo.update_all(inc: [favs_count: 1])
+    {:ok, {1, [post]}} =
+      Repo.transaction_on_primary(fn ->
+        from(p in Post, where: p.id == ^id, select: p)
+        |> Repo.update_all(inc: [favs_count: 1])
+      end)
 
     {:ok, post |> Repo.preload([:user_posts])}
   end
 
   def decr_favs(%Post{id: id}) do
-    {1, [post]} =
-      from(p in Post, where: p.id == ^id, select: p)
-      |> Repo.update_all(inc: [favs_count: -1])
+    {:ok, {1, [post]}} =
+      Repo.transaction_on_primary(fn ->
+        from(p in Post, where: p.id == ^id, select: p)
+        |> Repo.update_all(inc: [favs_count: -1])
+    end)
 
     {:ok, post |> Repo.preload([:user_posts])}
   end

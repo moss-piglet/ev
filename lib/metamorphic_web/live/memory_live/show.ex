@@ -57,7 +57,7 @@ defmodule MetamorphicWeb.MemoryLive.Show do
 
   @impl true
   def handle_info({:memory_deleted, memory}, socket) do
-    {:noreply, push_redirect(socket, to: ~p"/memories/#{socket.assigns.memory}")}
+    {:noreply, push_redirect(socket, to: ~p"/memories/#{memory}")}
   end
 
   @impl true
@@ -139,9 +139,44 @@ defmodule MetamorphicWeb.MemoryLive.Show do
   end
 
   @impl true
-  def handle_info(message, socket) do
-    IO.inspect message, label: "MESSAGE"
+  def handle_info(_message, socket) do
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("fav", %{"id" => id}, socket) do
+    memory = Memories.get_memory!(id)
+    user = socket.assigns.current_user
+
+    if user.id not in memory.favs_list do
+      {:ok, memory} = Memories.inc_favs(memory)
+
+      Memories.update_memory_fav(memory, %{favs_list: List.insert_at(memory.favs_list, 0, user.id)},
+        user: user
+      )
+
+      {:noreply, socket}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("unfav", %{"id" => id}, socket) do
+    memory = Memories.get_memory!(id)
+    user = socket.assigns.current_user
+
+    if user.id in memory.favs_list do
+      {:ok, memory} = Memories.decr_favs(memory)
+
+      Memories.update_memory_fav(memory, %{favs_list: List.delete(memory.favs_list, user.id)},
+        user: user
+      )
+
+      {:noreply, socket}
+    else
+      {:noreply, socket}
+    end
   end
 
   @doc """

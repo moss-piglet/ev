@@ -95,8 +95,8 @@ defmodule MetamorphicWeb.Helpers do
     Accounts.get_user_from_post(post)
   end
 
-  def can_fav?(user, post) do
-    if user.id not in post.favs_list do
+  def can_fav?(user, item) do
+    if user.id not in item.favs_list do
       true
     else
       false

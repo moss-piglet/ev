@@ -17,7 +17,7 @@ defmodule Metamorphic.Memories.Memory do
     field :username, Encrypted.Binary
     field :username_hash, Encrypted.HMAC
     field :favs_list, {:array, :binary_id}, default: []
-    field :favs_count, :integer
+    field :favs_count, :integer, default: 0
     field :visibility, Ecto.Enum, values: [:public, :private, :connections], default: :private
     field :size, :decimal
     field :type, :string

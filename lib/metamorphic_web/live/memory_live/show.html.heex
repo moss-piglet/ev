@@ -39,6 +39,7 @@
     alt=""
     class="pointer-events-none object-cover group-hover:opacity-75"
   />
+  
 </div>
 <.list>
   <:item title="Username">
@@ -53,7 +54,31 @@
   <:item title="Blurb">
     <%= decr_item(@memory.blurb, @current_user, get_memory_key(@memory), @key, @memory) %>
   </:item>
-  <:item title="Favs count"><%= @memory.favs_count %></:item>
+  <:item title="Favorite">
+    <div
+      :if={@current_user && can_fav?(@current_user, @memory)}
+      class="inline-flex align-middle cursor-pointer"
+      phx-click="fav"
+      phx-value-id={@memory.id}
+    >
+      <.icon name="hero-star" class="h-4 w-4 hover:text-brand-600" />
+      <span class="ml-1 text-xs"><%= @memory.favs_count %></span>
+    </div>
+    <div
+      :if={@current_user && !can_fav?(@current_user, @memory)}
+      class="inline-flex align-middle cursor-pointer"
+      phx-click="unfav"
+      phx-value-id={@memory.id}
+    >
+      <.icon name="hero-star-solid" class="h-4 w-4 text-brand-600" />
+      <span class="ml-1 text-xs"><%= @memory.favs_count %></span>
+    </div>
+
+    <div :if={!@current_user && @memory.favs_count > 0} class="inline-flex align-middle">
+      <.icon name="hero-star-solid" class="h-4 w-4 text-brand-600" />
+      <span class="ml-1 text-xs"><%= @memory.favs_count %></span>
+    </div>
+  </:item>
   <:item title="Sharing">
     <div>
       <!-- sharing with users badge -->

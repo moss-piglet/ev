@@ -221,6 +221,26 @@ defmodule Metamorphic.Memories do
     |> broadcast(:memory_updated)
   end
 
+  def inc_favs(%Memory{id: id}) do
+    {:ok, {1, [memory]}} =
+      Repo.transaction_on_primary(fn ->
+        from(m in Memory, where: m.id == ^id, select: m)
+        |> Repo.update_all(inc: [favs_count: 1])
+      end)
+
+    {:ok, memory |> Repo.preload([:user_memories])}
+  end
+
+  def decr_favs(%Memory{id: id}) do
+    {:ok, {1, [memory]}} =
+      Repo.transaction_on_primary(fn ->
+        from(m in Memory, where: m.id == ^id, select: m)
+        |> Repo.update_all(inc: [favs_count: -1])
+      end)
+
+    {:ok, memory |> Repo.preload([:user_memories])}
+  end
+
   @doc """
   Deletes a memory.
 
