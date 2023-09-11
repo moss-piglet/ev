@@ -123,7 +123,7 @@ defmodule Metamorphic.Timeline do
       Repo.transaction_on_primary(fn ->
         from(p in Post, where: p.id == ^id, select: p)
         |> Repo.update_all(inc: [favs_count: -1])
-    end)
+      end)
 
     {:ok, post |> Repo.preload([:user_posts])}
   end

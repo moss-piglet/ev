@@ -23,7 +23,10 @@ defmodule MetamorphicWeb.MemoryLive.Show do
 
     {:noreply,
      socket
-     |> assign(:color, get_uconn_color_for_shared_item(memory, socket.assigns.current_user) || :purple)
+     |> assign(
+       :color,
+       get_uconn_color_for_shared_item(memory, socket.assigns.current_user) || :purple
+     )
      |> assign(:page_title, page_title(socket.assigns.live_action))
      |> assign(:memory, memory)}
   end
@@ -151,7 +154,9 @@ defmodule MetamorphicWeb.MemoryLive.Show do
     if user.id not in memory.favs_list do
       {:ok, memory} = Memories.inc_favs(memory)
 
-      Memories.update_memory_fav(memory, %{favs_list: List.insert_at(memory.favs_list, 0, user.id)},
+      Memories.update_memory_fav(
+        memory,
+        %{favs_list: List.insert_at(memory.favs_list, 0, user.id)},
         user: user
       )
 
@@ -190,21 +195,25 @@ defmodule MetamorphicWeb.MemoryLive.Show do
 
     if memory.user_id == user.id do
       conn = Accounts.get_connection_from_item(memory, user)
+
       with {:ok, memory} <- Memories.delete_memory(memory, user: user),
-        true <- MemoryProcessor.delete_ets_memory("user:#{memory.user_id}-memory:#{memory.id}-key:#{conn.id}") do
-          # Handle deleting the object storage avatar async.
-          with {:ok, _resp} <- ex_aws_delete_request(memories_bucket, url) do
-            info = "Your memory has been deleted successfully."
-            notify_self({:deleted, memory})
+           true <-
+             MemoryProcessor.delete_ets_memory(
+               "user:#{memory.user_id}-memory:#{memory.id}-key:#{conn.id}"
+             ) do
+        # Handle deleting the object storage avatar async.
+        with {:ok, _resp} <- ex_aws_delete_request(memories_bucket, url) do
+          info = "Your memory has been deleted successfully."
+          notify_self({:deleted, memory})
 
-            socket =
-              socket
-              |> put_flash(:success, info)
+          socket =
+            socket
+            |> put_flash(:success, info)
 
-            {:noreply, push_navigate(socket, to: ~p"/memories")}
-          else
-            _rest -> ex_aws_delete_request(memories_bucket, url)
-          end
+          {:noreply, push_navigate(socket, to: ~p"/memories")}
+        else
+          _rest -> ex_aws_delete_request(memories_bucket, url)
+        end
       else
         _rest ->
           {:noreply, socket}

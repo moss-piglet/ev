@@ -427,8 +427,10 @@ defmodule MetamorphicWeb.UserSettingsLive do
         memories_bucket = Encrypted.Session.memories_bucket()
 
         # Handle deleting the object storage avatar and memories async.
-        with {:ok, _resp} <- ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories"),
-          {:ok, _resp} <- ex_aws_delete_request(avatars_bucket, "uploads/user/#{user.id}/avatars") do
+        with {:ok, _resp} <-
+               ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories"),
+             {:ok, _resp} <-
+               ex_aws_delete_request(avatars_bucket, "uploads/user/#{user.id}/avatars") do
           socket =
             socket
             |> put_flash(:success, "Account deleted successfully.")

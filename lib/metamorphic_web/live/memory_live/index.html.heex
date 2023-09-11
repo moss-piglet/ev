@@ -1,5 +1,11 @@
 <.header>
   Memories
+  <div class="flex items-center align-middle space-x-4">
+      <span class="text-sm font-light">
+      Total storage
+      </span>
+      <span class="inline-flex items-center rounded-md bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700"><%= Decimal.div(@memory_storage_total, 1_000_000) %> MB</span>
+    </div>
   <:actions>
     <.link patch={~p"/memories/new"}>
       <.button>New Memory</.button>

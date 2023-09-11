@@ -35,6 +35,14 @@ defmodule Metamorphic.Memories do
   end
 
   @doc """
+  Returns the sum of the size of a user's memories.
+  """
+  def get_total_storage(user) do
+    query = from m in Memory, where: m.user_id == ^user.id
+    Repo.aggregate(query, :sum, :size)
+  end
+
+  @doc """
   Returns the list of non-public memories for
   the user.
 

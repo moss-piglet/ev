@@ -16,11 +16,27 @@
       </.link>
       <.link
         :if={@current_user && @memory.user_id == @current_user.id}
-        phx-click={JS.push("delete", value: %{id: @memory.id, url: decr_item(@memory.memory_url, @current_user, get_memory_key(@memory), @key, @memory)})}
+        phx-click={
+          JS.push("delete",
+            value: %{
+              id: @memory.id,
+              url:
+                decr_item(
+                  @memory.memory_url,
+                  @current_user,
+                  get_memory_key(@memory),
+                  @key,
+                  @memory
+                )
+            }
+          )
+        }
         data-confirm="Are you sure?"
         title="Delete memory"
       >
-        <.button class="rounded-md bg-pink-600 p-2.5 text-white items-center text-center align-middle shadow-sm hover:bg-pink-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-600"><.icon name="hero-trash" class="h-5 w-5" /></.button>
+        <.button class="rounded-md bg-pink-600 p-2.5 text-white items-center text-center align-middle shadow-sm hover:bg-pink-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-600">
+          <.icon name="hero-trash" class="h-5 w-5" />
+        </.button>
       </.link>
     </div>
   </:actions>
@@ -39,7 +55,6 @@
     alt=""
     class="pointer-events-none object-cover group-hover:opacity-75"
   />
-  
 </div>
 <.list>
   <:item title="Username">
@@ -109,12 +124,10 @@
       <!-- label badge -->
       <p class="flex-none text-xs text-gray-600">
         <span class="inline-flex items-center space-x-1">
-
           <span
             :if={get_shared_item_identity_atom(@memory, @current_user) == :connection}
             class={"inline-flex items-center rounded-full #{badge_color(@color)} px-2 py-1 text-xs font-medium space-x-1"}
           >
-            
             <svg
               class={"h-1.5 w-1.5 #{badge_svg_fill_color(@color)}"}
               viewBox="0 0 6 6"
@@ -126,23 +139,21 @@
               <%= get_shared_memory_label(@memory, @current_user, @key) %>
             </span>
           </span>
-
         </span>
       </p>
     </div>
-      
   </:item>
   <:item title="Created">
-  <!-- timestamp && label badge -->
-      <p class="flex-none text-xs text-gray-600">
-          <.local_time_ago id={@memory.id} at={@memory.inserted_at} />
-      </p>
+    <!-- timestamp && label badge -->
+    <p class="flex-none text-xs text-gray-600">
+      <.local_time_ago id={@memory.id} at={@memory.inserted_at} />
+    </p>
   </:item>
   <:item title="Updated">
-  <!-- timestamp && label badge -->
-      <p class="flex-none text-xs text-gray-600">
-          <.local_time_ago id={@memory.id} at={@memory.updated_at} />
-      </p>
+    <!-- timestamp && label badge -->
+    <p class="flex-none text-xs text-gray-600">
+      <.local_time_ago id={@memory.id} at={@memory.updated_at} />
+    </p>
   </:item>
 </.list>
 

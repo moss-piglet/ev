@@ -166,23 +166,16 @@ defmodule MetamorphicWeb.MemoryLive.FormComponent do
             Create Memory
           </.button>
           <.button
-            :if={!@form.source.valid? || Enum.empty?(@uploads.memory.entries) && @action == :new}
+            :if={!@form.source.valid? || (Enum.empty?(@uploads.memory.entries) && @action == :new)}
             disabled
             class="opacity-25"
           >
             Create Memory
           </.button>
-          <.button
-            :if={@form.source.valid? && @action == :edit}
-            phx-disable-with="Creating..."
-          >
+          <.button :if={@form.source.valid? && @action == :edit} phx-disable-with="Creating...">
             Update Memory
           </.button>
-          <.button
-            :if={!@form.source.valid? && @action == :edit}
-            disabled
-            class="opacity-25"
-          >
+          <.button :if={!@form.source.valid? && @action == :edit} disabled class="opacity-25">
             Update Memory
           </.button>
         </:actions>

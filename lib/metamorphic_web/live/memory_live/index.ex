@@ -19,6 +19,7 @@ defmodule MetamorphicWeb.MemoryLive.Index do
     {:ok,
      socket
      |> assign(page: 1, per_page: 20)
+     |> assign(memory_storage_total:  Memories.get_total_storage(socket.assigns.current_user))
      |> paginate_memories(1)}
   end
 
@@ -173,18 +174,21 @@ defmodule MetamorphicWeb.MemoryLive.Index do
   defp apply_action(socket, :edit, %{"id" => id}) do
     socket
     |> assign(:page_title, "Edit Memory")
+    |> assign(:memory_storage_total, Memories.get_total_storage(socket.assigns.current_user))
     |> assign(:memory, Memories.get_memory!(id))
   end
 
   defp apply_action(socket, :new, _params) do
     socket
     |> assign(:page_title, "New Memory")
+    |> assign(:memory_storage_total, Memories.get_total_storage(socket.assigns.current_user))
     |> assign(:memory, %Memory{})
   end
 
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(:page_title, "Your Memories")
+    |> assign(:memory_storage_total, Memories.get_total_storage(socket.assigns.current_user))
     |> assign(:memory, nil)
   end
 
