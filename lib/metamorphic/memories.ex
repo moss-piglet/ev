@@ -39,7 +39,14 @@ defmodule Metamorphic.Memories do
   """
   def get_total_storage(user) do
     query = from m in Memory, where: m.user_id == ^user.id
-    Repo.aggregate(query, :sum, :size)
+    sum = Repo.aggregate(query, :sum, :size)
+    case sum do
+      nil ->
+        0
+
+      sum ->
+        sum
+    end
   end
 
   @doc """
