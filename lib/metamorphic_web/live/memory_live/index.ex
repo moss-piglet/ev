@@ -19,7 +19,7 @@ defmodule MetamorphicWeb.MemoryLive.Index do
     {:ok,
      socket
      |> assign(page: 1, per_page: 20)
-     |> assign(memory_storage_total:  Memories.get_total_storage(socket.assigns.current_user))
+     |> assign(memory_storage_total: Memories.get_total_storage(socket.assigns.current_user))
      |> paginate_memories(1)}
   end
 
@@ -97,6 +97,19 @@ defmodule MetamorphicWeb.MemoryLive.Index do
 
   @impl true
   def handle_info({:uconn_username_updated, uconn}, socket) do
+    user = socket.assigns.current_user
+
+    cond do
+      uconn.user_id == user.id || uconn.reverse_user_id == user.id ->
+        {:noreply, paginate_memories(socket, socket.assigns.page, true)}
+
+      true ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:uconn_name_updated, uconn}, socket) do
     user = socket.assigns.current_user
 
     cond do

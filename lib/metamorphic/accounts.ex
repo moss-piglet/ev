@@ -430,6 +430,19 @@ defmodule Metamorphic.Accounts do
   ## Settings
 
   @doc """
+  Returns an `%Ecto.Changeset{}` for changing the user name.
+
+  ## Examples
+
+      iex> change_user_name(user)
+      %Ecto.Changeset{data: %User{}}
+
+  """
+  def change_user_name(user, attrs \\ %{}) do
+    User.name_changeset(user, attrs, validate_name: false)
+  end
+
+  @doc """
   Returns an `%Ecto.Changeset{}` for changing the user username.
 
   ## Examples
@@ -520,6 +533,33 @@ defmodule Metamorphic.Accounts do
     broadcast_connection(conn, :uconn_updated)
 
     {:ok, conn}
+  end
+
+  def update_user_name(user, attrs \\ %{}, opts \\ []) do
+    {:ok, {:ok, user}} =
+      Repo.transaction_on_primary(fn ->
+        changeset = User.name_changeset(user, attrs, opts)
+        conn = get_connection!(user.connection.id)
+        c_attrs = Map.get(changeset.changes, :connection_map, %{c_name: nil})
+
+        {:ok, %{update_user: user, update_connection: conn}} =
+          Ecto.Multi.new()
+          |> Ecto.Multi.update(:update_user, fn _ ->
+            User.name_changeset(user, attrs, opts)
+          end)
+          |> Ecto.Multi.update(:update_connection, fn %{update_user: _user} ->
+            Connection.update_name_changeset(conn, %{
+              name: c_attrs.c_name
+            })
+          end)
+          |> Repo.transaction_on_primary()
+
+        broadcast_connection(conn, :uconn_name_updated)
+
+        {:ok, user}
+      end)
+
+    {:ok, user}
   end
 
   def update_user_username(user, attrs \\ %{}, opts \\ []) do

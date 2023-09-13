@@ -184,6 +184,19 @@
     </.simple_form>
   </div>
   <div>
+    <.simple_form for={@name_form} id="name_form" phx-submit="update_name">
+      <.input
+        field={@name_form[:name]}
+        type="text"
+        label="Name"
+        value={decr(@current_user.name, @current_user, @key)}
+      />
+      <:actions>
+        <.button phx-disable-with="Changing...">Change Name</.button>
+      </:actions>
+    </.simple_form>
+  </div>
+  <div>
     <.simple_form for={@username_form} id="username_form" phx-submit="update_username">
       <.input
         field={@username_form[:username]}
@@ -279,8 +292,33 @@
             </span>
           </h2>
           <p class="mt-1 text-sm leading-6 text-gray-600">
-            This information will be displayed based on your visibility setting.
+            This information will be displayed based on your visibility setting. It is possible to have a different profile visibility than your account visibility setting. Always check the badge next to "Profile" in this section to know what your profile's current visibility is, and hit "Update Profile" if you wish to realign it with your account visibility setting.
           </p>
+
+          <.input
+            :if={@current_user.connection.avatar_url}
+            field={f_nested[:avatar_url]}
+            type="hidden"
+            value={
+              decr_avatar(
+                @current_user.connection.avatar_url,
+                @current_user,
+                @current_user.conn_key,
+                @key
+              )
+            }
+          />
+          <.input
+            field={f_nested[:email]}
+            type="hidden"
+            value={decr(@current_user.email, @current_user, @key)}
+          />
+          <.input
+            :if={@current_user.name}
+            field={f_nested[:name]}
+            type="hidden"
+            value={decr(@current_user.name, @current_user, @key)}
+          />
 
           <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
             <div class="sm:col-span-4">
@@ -315,7 +353,7 @@
                 </div>
               </div>
               <div class="divide-y divide-yellow-900/25">
-                <div class="mt-2">
+                <div :if={@current_user.connection.avatar_url} class="mt-2">
                   <.input
                     field={f_nested[:show_avatar?]}
                     type="checkbox"
@@ -339,24 +377,23 @@
                     </:description_block>
                   </.input>
                 </div>
-                <div class="mt-2">
+                <div :if={@current_user.name} class="mt-2">
                   <.input
-                    field={f_nested[:show_public_memories?]}
+                    field={f_nested[:show_name?]}
                     type="checkbox"
-                    label="Show your public Memories?"
+                    label="Show your name?"
                     description?={true}
                   >
                     <:description_block>
-                      <p>Show your public Memories on your profile page.</p>
+                      <p>Show your name on your profile page.</p>
                     </:description_block>
                   </.input>
                 </div>
                 <div class="mt-2">
                   <.input
-                    :if={@current_user.name}
-                    field={f_nested[:show_name?]}
+                    field={f_nested[:show_public_memories?]}
                     type="checkbox"
-                    label="Show your name?"
+                    label="Show your public Memories?"
                     description?={true}
                   >
                     <:description_block>
@@ -500,7 +537,7 @@
         </:description_block>
       </.input>
       <:actions>
-        <.button phx-disable-with="Changing...">Change</.button>
+        <.button phx-disable-with="Changing...">Change Forgot Password</.button>
       </:actions>
     </.simple_form>
   </div>

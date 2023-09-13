@@ -87,6 +87,11 @@ defmodule Metamorphic.Accounts.Connection do
     |> encrypt_attrs(opts_map)
   end
 
+  def update_name_changeset(conn, attrs \\ %{}) do
+    conn
+    |> cast(attrs, [:name])
+  end
+
   def update_username_changeset(conn, attrs \\ %{}) do
     conn
     |> cast(attrs, [:username, :username_hash])
@@ -162,17 +167,16 @@ defmodule Metamorphic.Accounts.Connection do
     if changeset.valid? && opts_map && Map.has_key?(opts_map, :encrypt) do
       about = get_field(changeset, :about)
       username = get_field(changeset, :username)
-      name = get_field(changeset, :name)
       visibility = opts_map.user.visibility
       profile_key = maybe_generate_key(opts_map, visibility)
-      e_avatar_url = maybe_encrypt_avatar_url(opts_map.user, profile_key)
 
       case visibility do
         :public ->
           changeset
-          |> put_change(:avatar_url, e_avatar_url)
-          # |> put_change(:name, Utils.encrypt(%{key: profile_key, payload: name}))
-          |> put_change(:about, Utils.encrypt(%{key: profile_key, payload: about}))
+          |> put_change(:avatar_url, maybe_encrypt_avatar_url(changeset, profile_key))
+          |> put_change(:name, maybe_encrypt_name(changeset, profile_key))
+          |> put_change(:email, maybe_encrypt_email(changeset, profile_key))
+          |> put_change(:about, maybe_encrypt_about(changeset, profile_key))
           |> put_change(:username, Utils.encrypt(%{key: profile_key, payload: username}))
           |> put_change(
             :profile_key,
@@ -183,8 +187,9 @@ defmodule Metamorphic.Accounts.Connection do
 
         :private ->
           changeset
-          |> put_change(:avatar_url, e_avatar_url)
-          # |> put_change(:name, Utils.encrypt(%{key: profile_key, payload: name}))
+          |> put_change(:avatar_url, maybe_encrypt_avatar_url(changeset, profile_key))
+          |> put_change(:name, maybe_encrypt_name(changeset, profile_key))
+          |> put_change(:email, maybe_encrypt_email(changeset, profile_key))
           |> put_change(:about, Utils.encrypt(%{key: profile_key, payload: about}))
           |> put_change(:username, Utils.encrypt(%{key: profile_key, payload: username}))
           |> put_change(
@@ -196,8 +201,9 @@ defmodule Metamorphic.Accounts.Connection do
 
         :connections ->
           changeset
-          |> put_change(:avatar_url, e_avatar_url)
-          # |> put_change(:name, Utils.encrypt(%{key: profile_key, payload: name}))
+          |> put_change(:avatar_url, maybe_encrypt_avatar_url(changeset, profile_key))
+          |> put_change(:name, maybe_encrypt_name(changeset, profile_key))
+          |> put_change(:email, maybe_encrypt_email(changeset, profile_key))
           |> put_change(:about, Utils.encrypt(%{key: profile_key, payload: about}))
           |> put_change(:username, Utils.encrypt(%{key: profile_key, payload: username}))
           |> put_change(
@@ -215,13 +221,43 @@ defmodule Metamorphic.Accounts.Connection do
     end
   end
 
-  defp maybe_encrypt_avatar_url(user, profile_key) do
-    case user.avatar_url do
-      nil ->
-        nil
+  defp maybe_encrypt_about(changeset, profile_key) do
+    cond do
+      about = get_field(changeset, :about) ->
+        Utils.encrypt(%{key: profile_key, payload: about})
 
-      avatar_url ->
-        Utils.encrypt(%{key: profile_key, payload: avatar_url})
+      true ->
+        nil
+    end
+  end
+
+  defp maybe_encrypt_avatar_url(changeset, profile_key) do
+    cond do
+      get_field(changeset, :show_avatar?) ->
+        Utils.encrypt(%{key: profile_key, payload: get_field(changeset, :avatar_url)})
+
+      true ->
+        nil
+    end
+  end
+
+  defp maybe_encrypt_name(changeset, profile_key) do
+    cond do
+      get_field(changeset, :show_name?) ->
+        Utils.encrypt(%{key: profile_key, payload: get_field(changeset, :name)})
+
+      true ->
+        nil
+    end
+  end
+
+  defp maybe_encrypt_email(changeset, profile_key) do
+    cond do
+      get_field(changeset, :show_email?) ->
+        Utils.encrypt(%{key: profile_key, payload: get_field(changeset, :email)})
+
+      true ->
+        nil
     end
   end
 

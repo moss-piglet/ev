@@ -164,6 +164,18 @@ defmodule Metamorphic.Accounts.User do
     |> put_change(:avatar_url, encrypt_user_data(avatar_url, opts[:user], opts[:key]))
   end
 
+  defp encrypt_name_change(changeset, opts, name) do
+    if is_nil(name) do
+      changeset
+      |> encrypt_connection_map_name_change(opts, name)
+      |> put_change(:name, nil)
+    else
+      changeset
+      |> encrypt_connection_map_name_change(opts, name)
+      |> put_change(:name, encrypt_user_data(name, opts[:user], opts[:key]))
+    end
+  end
+
   defp encrypt_username_change(changeset, opts, username) do
     changeset
     |> encrypt_connection_map_username_change(opts, username)
@@ -200,20 +212,53 @@ defmodule Metamorphic.Accounts.User do
     })
   end
 
+  defp encrypt_connection_map_name_change(changeset, opts, name) do
+    # decrypt the user connection key
+    # and then encrypt the name change
+    if is_nil(name) do
+      changeset
+      |> put_change(:connection_map, %{
+        c_name: nil
+      })
+    else
+      visibility = get_field(changeset, :visibility)
+
+      cond do
+        visibility == :public ->
+          changeset
+          |> put_change(:connection_map, %{
+            c_name: name
+          })
+
+        true ->
+          {:ok, d_conn_key} =
+            Encrypted.Users.Utils.decrypt_user_attrs_key(
+              opts[:user].conn_key,
+              opts[:user],
+              opts[:key]
+            )
+
+          c_encrypted_name = Encrypted.Utils.encrypt(%{key: d_conn_key, payload: name})
+
+          changeset
+          |> put_change(:connection_map, %{
+            c_name: c_encrypted_name
+          })
+      end
+    end
+  end
+
   defp encrypt_connection_map_username_change(changeset, opts, username) do
     # decrypt the user connection key
     # and then encrypt the username change
     visibility = get_field(changeset, :visibility)
-    slug = build_slug(username)
 
     cond do
       visibility == :public ->
         changeset
         |> put_change(:connection_map, %{
           c_username: username,
-          c_username_hash: username,
-          c_slug: slug,
-          c_slug_hash: slug
+          c_username_hash: username
         })
 
       true ->
@@ -225,23 +270,36 @@ defmodule Metamorphic.Accounts.User do
           )
 
         c_encrypted_username = Encrypted.Utils.encrypt(%{key: d_conn_key, payload: username})
-        c_encrypted_slug = Encrypted.Utils.encrypt(%{key: d_conn_key, payload: slug})
 
         changeset
         |> put_change(:connection_map, %{
           c_username: c_encrypted_username,
-          c_username_hash: username,
-          c_slug: c_encrypted_slug,
-          c_slug_hash: slug
+          c_username_hash: username
         })
     end
   end
 
-  defp build_slug(username) do
-    if username do
-      Slug.slugify(username)
+  defp validate_name(changeset, opts) do
+    if opts[:key] && !is_nil(get_field(changeset, :name)) do
+      name = get_change(changeset, :name)
+
+      changeset
+      # |> validate_required([:name])
+      |> validate_length(:name, max: 160)
+      |> encrypt_name_change(opts, name)
     else
-      nil
+      changeset
+      # |> validate_required([:name])
+      |> validate_length(:name, max: 160)
+    end
+  end
+
+  defp add_username_hash(changeset) do
+    if Map.has_key?(changeset.changes, :username) do
+      changeset
+      |> put_change(:username_hash, String.downcase(get_field(changeset, :username)))
+    else
+      changeset
     end
   end
 
@@ -549,6 +607,26 @@ defmodule Metamorphic.Accounts.User do
   def delete_account_changeset(user, attrs, _opts \\ []) do
     user
     |> cast(attrs, [])
+  end
+
+  @doc """
+  A user changeset for changing the name.
+
+  It requires the name to change otherwise an error is added.
+
+  Since this is not generating encryption keys from scratch,
+  like new user registration does, but rather using the
+  current_user's existing keys, we use `encrypt_user_data/3`
+  to encrypt the name change.
+  """
+  def name_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:name])
+    |> validate_name(opts)
+    |> case do
+      %{changes: %{name: _}} = changeset -> changeset
+      %{} = changeset -> add_error(changeset, :name, "did not change")
+    end
   end
 
   @doc """

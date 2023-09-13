@@ -27,6 +27,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
     user = socket.assigns.current_user
     email_changeset = Accounts.change_user_email(user)
     password_changeset = Accounts.change_user_password(user)
+    name_changeset = Accounts.change_user_name(user)
     username_changeset = Accounts.change_user_username(user)
     visibility_changeset = Accounts.change_user_visibility(user)
     forgot_password_changeset = Accounts.change_user_forgot_password(user)
@@ -44,6 +45,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
       |> assign(:current_email, user.email)
       |> assign(:email_form, to_form(email_changeset))
       |> assign(:password_form, to_form(password_changeset))
+      |> assign(:name_form, to_form(name_changeset))
       |> assign(:username_form, to_form(username_changeset))
       |> assign(:visibility_form, to_form(visibility_changeset))
       |> assign(:forgot_password_form, to_form(forgot_password_changeset))
@@ -253,6 +255,44 @@ defmodule MetamorphicWeb.UserSettingsLive do
 
       {:error, changeset} ->
         {:noreply, assign(socket, password_form: to_form(changeset))}
+    end
+  end
+
+  def handle_event("validate_name", params, socket) do
+    %{"user" => user_params} = params
+
+    name_form =
+      socket.assigns.current_user
+      |> Accounts.change_user_name(user_params)
+      |> Map.put(:action, :validate)
+      |> to_form()
+
+    {:noreply, assign(socket, name_form: name_form)}
+  end
+
+  def handle_event("update_name", params, socket) do
+    %{"user" => user_params} = params
+    user = socket.assigns.current_user
+    key = socket.assigns.key
+
+    case Accounts.update_user_name(user, user_params,
+           change_name: true,
+           key: key,
+           user: user
+         ) do
+      {:ok, user} ->
+        name_form =
+          user
+          |> Accounts.change_user_name(user_params)
+          |> to_form()
+
+        info = "Your name has been updated successfully."
+
+        {:noreply,
+         socket
+         |> put_flash(:success, info)
+         |> assign(name_form: name_form)
+         |> redirect(to: ~p"/users/settings")}
     end
   end
 

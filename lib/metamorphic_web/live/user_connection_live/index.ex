@@ -167,6 +167,20 @@ defmodule MetamorphicWeb.UserConnectionLive.Index do
   end
 
   @impl true
+  def handle_info({:uconn_name_updated, uconn}, socket) do
+    cond do
+      uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->
+        {:noreply, stream_insert(socket, :user_connections, uconn, at: -1)}
+
+      uconn.user_id == socket.assigns.current_user.id ->
+        {:noreply, stream_insert(socket, :arrivals, uconn, at: -1)}
+
+      true ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
   def handle_info({:uconn_avatar_updated, uconn}, socket) do
     cond do
       uconn.user_id == socket.assigns.current_user.id && uconn.confirmed_at ->

@@ -78,6 +78,19 @@ defmodule MetamorphicWeb.PostLive.Show do
   end
 
   @impl true
+  def handle_info({:uconn_name_updated, uconn}, socket) do
+    user = socket.assigns.current_user
+
+    cond do
+      uconn.user_id == user.id || uconn.reverse_user_id == user.id ->
+        {:noreply, push_redirect(socket, to: ~p"/posts/#{socket.assigns.post}")}
+
+      true ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
   def handle_info({:uconn_visibility_updated, uconn}, socket) do
     user = socket.assigns.current_user
 
