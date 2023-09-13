@@ -1,4 +1,5 @@
 defmodule MetamorphicWeb.UserSettingsLive do
+  alias DBConnection.Connection
   use MetamorphicWeb, :live_view
 
   alias Metamorphic.Accounts
@@ -31,12 +32,15 @@ defmodule MetamorphicWeb.UserSettingsLive do
     forgot_password_changeset = Accounts.change_user_forgot_password(user)
     delete_account_changeset = Accounts.change_user_delete_account(user)
     avatar_changeset = Accounts.change_user_avatar(user)
+    profile_changeset = Accounts.change_user_profile(user.connection)
+    profile_about = maybe_decrypt_profile_about(user, socket.assigns.key)
 
     socket =
       socket
       |> assign(:page_title, "Settings")
       |> assign(:current_password, nil)
       |> assign(:email_form_current_password, nil)
+      |> assign(:profile_about, profile_about)
       |> assign(:current_email, user.email)
       |> assign(:email_form, to_form(email_changeset))
       |> assign(:password_form, to_form(password_changeset))
@@ -45,6 +49,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
       |> assign(:forgot_password_form, to_form(forgot_password_changeset))
       |> assign(:delete_account_form, to_form(delete_account_changeset))
       |> assign(:avatar_form, to_form(avatar_changeset))
+      |> assign(:profile_form, to_form(profile_changeset))
       |> assign(:trigger_submit, false)
       |> allow_upload(:avatar,
         accept: ~w(.png .jpeg .jpg),
@@ -357,7 +362,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
     user = socket.assigns.current_user
     key = socket.assigns.key
 
-    if user.confirmed_at do
+    if user && user.confirmed_at do
       case Accounts.update_user_forgot_password(user, user_params,
              change_forgot_password: true,
              key: key,
@@ -375,20 +380,6 @@ defmodule MetamorphicWeb.UserSettingsLive do
            socket
            |> put_flash(:success, info)
            |> assign(forgot_password_form: forgot_password_form)
-           |> redirect(to: ~p"/users/settings")}
-
-        {:error, changeset} ->
-          %{is_forgot_pwd?: [{info, []}]} =
-            Ecto.Changeset.traverse_errors(changeset, fn msg ->
-              msg
-            end)
-
-          info = "Woops, your forgot password setting " <> info <> "."
-
-          {:noreply,
-           socket
-           |> put_flash(:error, info)
-           |> assign(forgot_password_form: to_form(changeset))
            |> redirect(to: ~p"/users/settings")}
       end
     else
@@ -415,6 +406,177 @@ defmodule MetamorphicWeb.UserSettingsLive do
        delete_account_form: delete_account_form,
        delete_account_form_current_password: password
      )}
+  end
+
+  def handle_event("validate_profile", params, socket) do
+    %{"connection" => profile_params} = params
+    user = socket.assigns.current_user
+
+    if Map.get(user.connection, :profile) do
+      profile_params =
+        profile_params
+        |> Map.put(
+          "profile",
+          Map.put(profile_params["profile"], "opts_map", %{
+            user: socket.assigns.current_user,
+            key: socket.assigns.key,
+            update_profile: true
+          })
+        )
+
+      profile_form =
+        socket.assigns.current_user.connection
+        |> Accounts.change_user_profile(profile_params)
+        |> Map.put(:action, :validate)
+        |> to_form()
+
+      {:noreply,
+       socket
+       |> assign(profile_about: profile_params["profile"]["about"])
+       |> assign(profile_form: profile_form)}
+    else
+      profile_params =
+        profile_params
+        |> Map.put(
+          "profile",
+          Map.put(profile_params["profile"], "opts_map", %{
+            user: socket.assigns.current_user,
+            key: socket.assigns.key
+          })
+        )
+
+      profile_form =
+        socket.assigns.current_user.connection
+        |> Accounts.change_user_profile(profile_params)
+        |> Map.put(:action, :validate)
+        |> to_form()
+
+      {:noreply,
+       socket
+       |> assign(profile_about: profile_params["profile"]["about"])
+       |> assign(profile_form: profile_form)}
+    end
+  end
+
+  def handle_event("update_profile", params, socket) do
+    %{"connection" => profile_params} = params
+    user = socket.assigns.current_user
+    key = socket.assigns.key
+
+    profile_params =
+      profile_params
+      |> Map.put(
+        "profile",
+        Map.put(profile_params["profile"], "opts_map", %{
+          user: socket.assigns.current_user,
+          key: socket.assigns.key,
+          update_profile: true,
+          encrypt: true
+        })
+      )
+
+    if user && user.confirmed_at do
+      case Accounts.update_user_profile(user, profile_params,
+             key: key,
+             user: user,
+             update_profile: true,
+             encrypt: true
+           ) do
+        {:ok, connection} ->
+          profile_form =
+            connection
+            |> Accounts.change_user_profile(profile_params)
+            |> to_form()
+
+          info = "Your profile has been updated successfully."
+
+          {:noreply,
+           socket
+           |> put_flash(:success, info)
+           |> assign(profile_form: profile_form)
+           |> redirect(to: ~p"/users/settings")}
+      end
+    else
+      info = "Woops, you need to confirm your account first."
+
+      {:noreply,
+       socket
+       |> put_flash(:error, info)
+       |> redirect(to: ~p"/users/settings")}
+    end
+  end
+
+  def handle_event("create_profile", params, socket) do
+    %{"connection" => profile_params} = params
+    user = socket.assigns.current_user
+    key = socket.assigns.key
+
+    profile_params =
+      profile_params
+      |> Map.put(
+        "profile",
+        Map.put(profile_params["profile"], "opts_map", %{
+          user: socket.assigns.current_user,
+          key: socket.assigns.key,
+          encrypt: true
+        })
+      )
+
+    if user && user.confirmed_at do
+      case Accounts.create_user_profile(user, profile_params,
+             key: key,
+             user: user,
+             encrypt: true
+           ) do
+        {:ok, conn} ->
+          profile_form =
+            conn
+            |> Accounts.change_user_profile(profile_params)
+            |> to_form()
+
+          info = "Your profile has been created successfully."
+
+          {:noreply,
+           socket
+           |> put_flash(:success, info)
+           |> assign(profile_form: profile_form)
+           |> redirect(to: ~p"/users/settings")}
+      end
+    else
+      info = "Woops, you need to confirm your account first."
+
+      {:noreply,
+       socket
+       |> put_flash(:error, info)
+       |> redirect(to: ~p"/users/settings")}
+    end
+  end
+
+  def handle_event("delete_profile", %{"id" => id}, socket) do
+    conn = Accounts.get_connection!(id)
+    user = socket.assigns.current_user
+
+    if user.connection == conn do
+      case Accounts.delete_user_profile(user, conn) do
+        {:ok, conn} ->
+          profile_form =
+            conn
+            |> Accounts.change_user_profile()
+            |> to_form()
+
+          info = "Your profile has been deleted successfully."
+
+          {:noreply,
+           socket
+           |> put_flash(:success, info)
+           |> assign(profile_form: profile_form)
+           |> redirect(to: ~p"/users/settings")}
+      end
+    else
+      info = "You don't have permission to do this."
+
+      {:noreply, socket |> put_flash(:warning, info) |> push_navigate(to: "/users/settings")}
+    end
   end
 
   def handle_event("delete_account", params, socket) do
@@ -456,6 +618,36 @@ defmodule MetamorphicWeb.UserSettingsLive do
   end
 
   ## PRIVATE & AWS
+
+  defp maybe_decrypt_profile_about(user, key) do
+    profile = Map.get(user.connection, :profile)
+
+    cond do
+      profile && not is_nil(profile.about) ->
+        cond do
+          profile.visibility == :public ->
+            decr_public_item(profile.about, profile.profile_key)
+
+          profile.visibility == :private ->
+            decr_item(profile.about, user, profile.profile_key, key, profile)
+
+          profile.visibility == :connections ->
+            decr_item(
+              profile.about,
+              user,
+              profile.profile_key,
+              key,
+              profile
+            )
+
+          true ->
+            profile.about
+        end
+
+      true ->
+        nil
+    end
+  end
 
   defp file_ext(entry) do
     [ext | _] = MIME.extensions(entry.client_type)

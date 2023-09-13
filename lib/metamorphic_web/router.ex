@@ -33,6 +33,15 @@ defmodule MetamorphicWeb.Router do
       live "/public/posts", PostLive.Public, :index
       live "/public/posts/:id", PostLive.PublicShow, :show
     end
+
+    live_session :profile,
+      on_mount: [
+        {MetamorphicWeb.UserAuth, :mount_current_user},
+        {MetamorphicWeb.UserAuth, :mount_current_user_session_key},
+        {MetamorphicWeb.UserAuth, :ensure_session_key},
+      ] do
+        live "/users/profile/:id", UserProfileLive, :show
+      end
   end
 
   # Other scopes may use custom stacks.
@@ -88,9 +97,6 @@ defmodule MetamorphicWeb.Router do
         {MetamorphicWeb.UserAuth, :maybe_ensure_connection}
       ] do
       live "/users/dash", UserDashLive, :index
-
-      live "/users/profile/:id", UserProfileLive, :show
-
       live "/users/settings", UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
     end

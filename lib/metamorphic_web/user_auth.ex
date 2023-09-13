@@ -18,7 +18,7 @@ defmodule MetamorphicWeb.UserAuth do
 
   # Checking the route for public routes for the
   # ensure_session_key live_session mount
-  @public_list ["Public", "PublicShow", "About", "Privacy"]
+  @public_list ["Public", "PublicShow", "UserProfileLive", "About", "Privacy"]
 
   @doc """
   Logs the user in.

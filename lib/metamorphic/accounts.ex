@@ -443,6 +443,19 @@ defmodule Metamorphic.Accounts do
   end
 
   @doc """
+  Returns an `%Ecto.Changeset{}` for changing the user profile.
+
+  ## Examples
+
+      iex> change_user_profile(user)
+      %Ecto.Changeset{data: %User{}}
+
+  """
+  def change_user_profile(connection, attrs \\ %{}, opts \\ []) do
+    Connection.profile_changeset(connection, attrs, opts)
+  end
+
+  @doc """
   Returns an `%Ecto.Changeset{}` for changing the user visibility.
 
   ## Examples
@@ -477,6 +490,36 @@ defmodule Metamorphic.Accounts do
       end)
 
     {:ok, user}
+  end
+
+  def update_user_profile(user, attrs \\ %{}, opts \\ []) do
+    conn = get_connection!(user.connection.id)
+
+    {:ok, %{update_connection: conn}} =
+      Ecto.Multi.new()
+      |> Ecto.Multi.update(:update_connection, fn _ ->
+        Connection.profile_changeset(conn, attrs, opts)
+      end)
+      |> Repo.transaction_on_primary()
+
+    broadcast_connection(conn, :uconn_updated)
+
+    {:ok, conn}
+  end
+
+  def create_user_profile(user, attrs \\ %{}, opts \\ []) do
+    conn = get_connection!(user.connection.id)
+
+    {:ok, {:ok, conn}} =
+      Repo.transaction_on_primary(fn ->
+        conn
+        |> Connection.profile_changeset(attrs, opts)
+        |> Repo.update()
+      end)
+
+    broadcast_connection(conn, :uconn_updated)
+
+    {:ok, conn}
   end
 
   def update_user_username(user, attrs \\ %{}, opts \\ []) do
@@ -580,6 +623,31 @@ defmodule Metamorphic.Accounts do
         |> broadcast_public_user_connections(:public_uconn_deleted)
 
         {:ok, user}
+
+      {:error, :user, changeset, _} ->
+        {:error, changeset}
+    end
+  end
+
+  def delete_user_profile(user, conn) do
+    changeset =
+      conn
+      |> Connection.profile_changeset(%{profile: nil})
+
+    uconns = get_all_user_connections(user.id)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:conn, changeset)
+    |> Repo.transaction_on_primary()
+    |> case do
+      {:ok, %{conn: conn}} ->
+        uconns
+        |> broadcast_user_connections(:uconn_deleted)
+
+        uconns
+        |> broadcast_public_user_connections(:public_uconn_deleted)
+
+        {:ok, conn}
 
       {:error, :user, changeset, _} ->
         {:error, changeset}

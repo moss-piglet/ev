@@ -6,7 +6,7 @@ defmodule MetamorphicWeb.UserProfileLive do
   def render(%{live_action: :show} = assigns) do
     ~H"""
     <div :if={
-      @user.visibility == :public || @user.visibility == :connections || @user.id == @current_user.id
+      @current_user && (@user.visibility == :connections || @user.id == @current_user.id)
     }>
       <.header :if={@user.id != @current_user.id}>
         <div class="flex items-center gap-x-6">
@@ -96,11 +96,21 @@ defmodule MetamorphicWeb.UserProfileLive do
 
       <.back navigate={~p"/users/dash"}>Back to dash</.back>
     </div>
+
+    <div :if={is_nil(@current_user)}>
+      Public!
+    </div>
     """
   end
 
   def mount(%{"id" => id} = _params, _session, socket) do
-    if connected?(socket), do: Accounts.private_subscribe(socket.assigns.current_user)
+    if connected?(socket) do
+      if socket.assigns.current_user do
+        Accounts.private_subscribe(socket.assigns.current_user)
+      else
+        Accounts.subscribe()
+      end
+    end
 
     socket =
       socket
