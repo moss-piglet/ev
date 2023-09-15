@@ -64,13 +64,13 @@ defmodule Metamorphic.Memories do
     offset = Keyword.get(opts, :offset, 0)
 
     memory_list =
-      from(p in Memory,
-        join: up in UserMemory,
-        on: up.memory_id == p.id,
-        where: p.visibility == :private and p.user_id == ^user.id,
+      from(m in Memory,
+        join: um in UserMemory,
+        on: um.memory_id == m.id,
+        where: m.visibility == :private and m.user_id == ^user.id,
         offset: ^offset,
         limit: ^limit,
-        order_by: [desc: p.inserted_at],
+        order_by: [desc: m.inserted_at],
         preload: [:user_memories]
       )
       |> Repo.all()
@@ -80,7 +80,7 @@ defmodule Metamorphic.Memories do
          list_own_connection_memories(user, opts) ++ list_connection_memories(user, opts))
       |> Enum.filter(fn memory -> memory.__meta__ != :deleted end)
       |> Enum.uniq_by(fn memory -> memory end)
-      |> Enum.sort_by(fn p -> p.inserted_at end, {:desc, NaiveDateTime})
+      |> Enum.sort_by(fn m -> m.inserted_at end, {:desc, NaiveDateTime})
 
     memories
   end
@@ -89,15 +89,15 @@ defmodule Metamorphic.Memories do
     limit = Keyword.fetch!(opts, :limit)
     offset = Keyword.get(opts, :offset, 0)
 
-    from(p in Memory,
-      join: up in UserMemory,
-      on: up.memory_id == p.id,
+    from(m in Memory,
+      join: um in UserMemory,
+      on: um.memory_id == m.id,
       join: u in User,
-      on: up.user_id == u.id,
-      where: p.visibility == :connections and p.user_id == ^user.id,
+      on: um.user_id == u.id,
+      where: m.visibility == :connections and m.user_id == ^user.id,
       offset: ^offset,
       limit: ^limit,
-      order_by: [desc: p.inserted_at],
+      order_by: [desc: m.inserted_at],
       preload: [:user_memories]
     )
     |> Repo.all()
@@ -107,21 +107,21 @@ defmodule Metamorphic.Memories do
     limit = Keyword.fetch!(opts, :limit)
     offset = Keyword.get(opts, :offset, 0)
 
-    from(p in Memory,
-      join: up in UserMemory,
-      on: up.memory_id == p.id,
+    from(m in Memory,
+      join: um in UserMemory,
+      on: um.memory_id == m.id,
       join: u in User,
-      on: up.user_id == u.id,
+      on: um.user_id == u.id,
       join: c in Connection,
       on: c.user_id == u.id,
       join: uc in UserConnection,
       on: uc.connection_id == c.id,
       where: uc.user_id == ^user.id or uc.reverse_user_id == ^user.id,
       where: not is_nil(uc.confirmed_at),
-      where: p.visibility == :connections,
+      where: m.visibility == :connections,
       offset: ^offset,
       limit: ^limit,
-      order_by: [desc: p.inserted_at],
+      order_by: [desc: m.inserted_at],
       preload: [:user_memories]
     )
     |> Repo.all()
@@ -129,23 +129,32 @@ defmodule Metamorphic.Memories do
       Enum.empty?(memory.shared_users) ||
         Enum.any?(memory.shared_users, fn x -> x.user_id == user.id end)
     end)
-    |> Enum.sort_by(fn p -> p.inserted_at end, :desc)
+    |> Enum.sort_by(fn m -> m.inserted_at end, :desc)
   end
 
-  def list_public_memories(opts) do
+  def list_public_memories(user, opts) do
     limit = Keyword.fetch!(opts, :limit)
     offset = Keyword.get(opts, :offset, 0)
 
-    from(p in Memory,
-      where: p.visibility == :public,
-      offset: ^offset,
-      limit: ^limit,
-      order_by: [desc: p.inserted_at],
-      preload: [:user_memories]
-    )
-    |> Repo.all()
-    |> Enum.filter(fn memory -> memory.__meta__ != :deleted end)
-    |> Enum.uniq_by(fn memory -> memory end)
+    public_memory_list =
+      from(m in Memory,
+        join: um in UserMemory,
+        on: um.memory_id == m.id,
+        where: m.visibility == :public and m.user_id == ^user.id,
+        offset: ^offset,
+        limit: ^limit,
+        order_by: [desc: m.inserted_at],
+        preload: [:user_memories]
+      )
+      |> Repo.all()
+
+    public_memory_list =
+      public_memory_list
+      |> Enum.filter(fn memory -> memory.__meta__ != :deleted end)
+      |> Enum.uniq_by(fn memory -> memory end)
+      |> Enum.sort_by(fn m -> m.inserted_at end, {:desc, NaiveDateTime})
+
+    public_memory_list
   end
 
   @doc """

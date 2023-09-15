@@ -20,7 +20,7 @@
             Hi,
             <.link
               :if={Map.get(@current_user.connection, :profile)}
-              navigate={"/"}
+              navigate={"/profile/#{@current_user.connection.profile.slug}"}
               class="text-brand-600 font-bold"
               title="View profile"
             >

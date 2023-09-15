@@ -368,6 +368,72 @@ defmodule MetamorphicWeb.UserAuth do
     end
   end
 
+  def on_mount(:maybe_ensure_private_profile, params, session, socket) do
+    socket =
+      socket
+      |> mount_current_user(session)
+      |> mount_current_user_session_key(session)
+
+    info = "You do not have permission to view this page or it does not exist."
+
+    current_user = socket.assigns.current_user
+
+    if String.to_atom("Elixir.MetamorphicWeb.UserProfileLive") == socket.view do
+      with %Accounts.User{} = user <- Accounts.get_user_from_profile_slug(params["slug"]),
+           %Accounts.Connection.ConnectionProfile{} = profile <- Map.get(user.connection, :profile) do
+        cond do
+          current_user && profile.visibility == :connections &&
+              MetamorphicWeb.Helpers.get_uconn_for_users(user, current_user) ->
+            {:cont, socket}
+
+            current_user && profile.visibility == :connections && user.id == current_user.id ->
+          {:cont, socket}
+
+          current_user && profile.visibility == :private && user.id == current_user.id ->
+            {:cont, socket}
+
+          profile.visibility == :public ->
+            {:cont, socket}
+
+          true ->
+            socket =
+              socket
+              |> Phoenix.LiveView.put_flash(
+                :info,
+                info
+              )
+              |> Phoenix.LiveView.redirect(to: ~p"/")
+
+            {:halt, socket}
+        end
+      else
+        nil ->
+          socket =
+            socket
+            |> Phoenix.LiveView.put_flash(
+              :info,
+              info
+            )
+            |> Phoenix.LiveView.redirect(to: ~p"/")
+
+          {:halt, socket}
+
+        false ->
+          socket =
+            socket
+            |> Phoenix.LiveView.put_flash(
+              :info,
+              info
+            )
+            |> Phoenix.LiveView.redirect(to: ~p"/")
+
+          {:halt, socket}
+      end
+    else
+      {:cont, socket}
+    end
+  end
+
   def on_mount(:redirect_if_user_is_authenticated, _params, session, socket) do
     socket =
       socket

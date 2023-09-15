@@ -213,6 +213,12 @@ defmodule Metamorphic.Accounts do
     )
   end
 
+  def get_user_from_profile_slug(slug) do
+    Repo.one(
+      from u in User, where: u.username_hash == ^slug, preload: [:connection, :user_connections]
+    )
+  end
+
   def get_connection!(id), do: Repo.get!(Connection, id)
 
   def get_user_connection!(id),
@@ -526,10 +532,18 @@ defmodule Metamorphic.Accounts do
       end)
       |> Repo.transaction_on_primary()
 
-    broadcast_connection(conn, :uconn_updated)
-    broadcast_public_user_connections(uconns, :uconn_updated)
+    cond do
+      conn.profile.visibility == :public ->
+        broadcast_public_connection(conn, :uconn_updated)
+        broadcast_connection(conn, :uconn_updated)
+        broadcast_public_user_connections(uconns, :uconn_updated)
+        {:ok, conn}
 
-    {:ok, conn}
+      true ->
+        broadcast_connection(conn, :uconn_updated)
+        broadcast_public_user_connections(uconns, :uconn_updated)
+        {:ok, conn}
+    end
   end
 
   def create_user_profile(user, attrs \\ %{}, opts \\ []) do
@@ -699,6 +713,9 @@ defmodule Metamorphic.Accounts do
     |> Repo.transaction_on_primary()
     |> case do
       {:ok, %{conn: conn}} ->
+        conn
+        |> broadcast_public_connection(:user_profile_deleted)
+
         uconns
         |> broadcast_user_connections(:uconn_updated)
 
@@ -1240,6 +1257,10 @@ defmodule Metamorphic.Accounts do
         {:ok, uconn |> Repo.preload([:user, :connection])}
         |> broadcast(event)
     end)
+  end
+
+  defp broadcast_public_connection(conn, event) do
+    broadcast_public({:ok, conn}, event)
   end
 
   defp broadcast_public_user_connections(uconns, event) when is_list(uconns) do

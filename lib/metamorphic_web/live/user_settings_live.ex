@@ -352,7 +352,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
     key = socket.assigns.key
 
     case Accounts.update_user_username(user, user_params,
-           change_username: true,
+           validate_username: true,
            key: key,
            user: user
          ) do
@@ -653,17 +653,16 @@ defmodule MetamorphicWeb.UserSettingsLive do
                 user.conn_key,
                 key
               )
+            # Handle deleting the object storage avatar async.
+            make_async_aws_requests(avatars_bucket, avatar_url, nil, nil)
 
-            # Handle deleting the object storage avatar and memories async.
-            with {:ok, _resp} <- ex_aws_delete_request(avatars_bucket, avatar_url) do
-              info = "Your profile has been deleted successfully."
+            info =
+              "Your profile has been deleted successfully. Sit back and relax while we delete your profile avatar from the private cloud."
 
-              {:noreply,
-               socket
-               |> put_flash(:success, info)
-               |> assign(profile_form: profile_form)
-               |> redirect(to: ~p"/users/settings")}
-            end
+            {:noreply,
+              socket
+              |> put_flash(:info, info)
+              |> assign(profile_form: profile_form)}
           else
             info = "Your profile has been deleted successfully."
 
@@ -859,6 +858,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
       else
         _rest ->
           ex_aws_delete_request(avatars_bucket, url)
+          {:error, :make_async_aws_requests}
       end
     end)
   end

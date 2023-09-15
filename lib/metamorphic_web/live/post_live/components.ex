@@ -80,7 +80,7 @@ defmodule MetamorphicWeb.PostLive.Components do
       <.link navigate={~p"/posts/#{@post}"}>Show</.link>
     </div>
 
-    <div class="flex flex-col flex-shrink-0 space-y-1 items-center">
+    <div :if={not is_nil(@current_user)} class="flex flex-col flex-shrink-0 space-y-1 items-center">
       <.avatar
         :if={not is_nil(@current_user)}
         src={
@@ -100,11 +100,19 @@ defmodule MetamorphicWeb.PostLive.Components do
       </span>
     </div>
 
+    <div :if={is_nil(@current_user)} class="flex flex-col flex-shrink-0 space-y-1 items-center">
     <image
       :if={is_nil(@current_user)}
       src={~p"/images/logo.svg"}
       class="inline-block h-12 w-12 rounded-md bg-zinc-100"
     />
+    <span
+        :if={@post.repost}
+        class="inline-flex items-center rounded-md bg-purple-50 px-2 py-1 text-xs font-light text-purple-700 ring-1 ring-inset ring-purple-700/10"
+      >
+        repost
+      </span>
+    </div>
 
     <div class="relative flex-auto">
       <div class="flex items-baseline justify-between gap-x-4">
@@ -126,18 +134,7 @@ defmodule MetamorphicWeb.PostLive.Components do
             @post
           ) %>
         </p>
-        <p
-          :if={@post.visibility == :public && is_nil(@current_user)}
-          class="text-sm font-semibold leading-6 text-gray-900"
-        >
-          <%= decr_item(
-            get_item_connection(@post, @current_user).username,
-            @current_user,
-            get_post_key(@post, @current_user),
-            @key,
-            @post
-          ) %>
-        </p>
+
 
         <p
           :if={
@@ -209,12 +206,48 @@ defmodule MetamorphicWeb.PostLive.Components do
         <.link
           :if={
             post_user.visibility != :private && @post.visibility == :connections &&
+              get_shared_item_identity_atom(@post, @current_user) != :self &&
+              !Map.get(post_user.connection, :profile)
+          }
+
+          class={"text-sm font-semibold leading-6 #{username_link_text_color_no_hover(@color)}"}
+        >
+          <%= decr_item(
+            get_item_connection(@post, @current_user).username,
+            @current_user,
+            get_post_key(@post, @current_user),
+            @key,
+            @post
+          ) %>
+        </.link>
+
+
+        <.link
+          :if={
+            post_user.visibility != :private && @post.visibility == :connections &&
               get_shared_item_identity_atom(@post, @current_user) == :self &&
               Map.get(post_user.connection, :profile)
           }
           navigate={~p"/profile/#{post_user.connection.profile.slug}"}
           class={"text-sm font-semibold leading-6 #{username_link_text_color(:brand)}"}
           title="Click to view your profile"
+        >
+          <%= decr_item(
+            get_item_connection(@post, @current_user).username,
+            @current_user,
+            get_post_key(@post, @current_user),
+            @key,
+            @post
+          ) %>
+        </.link>
+        <.link
+          :if={
+            post_user.visibility != :private && @post.visibility == :connections &&
+              get_shared_item_identity_atom(@post, @current_user) == :self &&
+              !Map.get(post_user.connection, :profile)
+          }
+
+          class={"text-sm font-semibold leading-6 #{username_link_text_color_no_hover(:brand)}"}
         >
           <%= decr_item(
             get_item_connection(@post, @current_user).username,
@@ -244,6 +277,22 @@ defmodule MetamorphicWeb.PostLive.Components do
         </.link>
         <.link
           :if={
+            @post.visibility == :public && has_user_connection?(@post, @current_user) &&
+              post_user.visibility != :private && !Map.get(post_user.connection, :profile)
+          }
+
+          class={"text-sm font-semibold leading-6 #{username_link_text_color_no_hover(@color)}"}
+        >
+          <%= decr_item(
+            get_item_connection(@post, @current_user).username,
+            @current_user,
+            get_post_key(@post, @current_user),
+            @key,
+            @post
+          ) %>
+        </.link>
+        <.link
+          :if={
             @post.visibility == :public && is_my_post?(@post, @current_user) &&
               Map.get(post_user.connection, :profile)
           }
@@ -259,6 +308,65 @@ defmodule MetamorphicWeb.PostLive.Components do
             @post
           ) %>
         </.link>
+        <.link
+          :if={
+            @post.visibility == :public && is_my_post?(@post, @current_user) &&
+              !Map.get(post_user.connection, :profile)
+          }
+
+          class={"text-sm font-semibold leading-6 #{username_link_text_color_no_hover(:brand)}"}
+          title="Click to view your profile"
+        >
+          <%= decr_item(
+            get_item_connection(@post, @current_user).username,
+            @current_user,
+            get_post_key(@post, @current_user),
+            @key,
+            @post
+          ) %>
+        </.link>
+
+        <.link
+          :if={@post.visibility == :public && is_nil(@current_user) && (Map.get(post_user.connection, :profile) && post_user.connection.profile.visibility == :public)}
+          navigate={~p"/profile/#{post_user.connection.profile.slug}"}
+          class={"text-sm font-semibold leading-6 #{username_link_text_color(:brand)}"}
+          title="Click to view profile"
+        >
+          <%= decr_item(
+            get_item_connection(@post, @current_user).username,
+            @current_user,
+            get_post_key(@post, @current_user),
+            @key,
+            @post
+          ) %>
+        </.link>
+        <.link
+          :if={@post.visibility == :public && is_nil(@current_user) && (Map.get(post_user.connection, :profile) && post_user.connection.profile.visibility != :public)}
+
+          class={"text-sm font-semibold leading-6 #{username_link_text_color_no_hover(:brand)}"}
+        >
+          <%= decr_item(
+            get_item_connection(@post, @current_user).username,
+            @current_user,
+            get_post_key(@post, @current_user),
+            @key,
+            @post
+          ) %>
+        </.link>
+        <.link
+          :if={@post.visibility == :public && is_nil(@current_user) && !Map.get(post_user.connection, :profile)}
+
+          class={"text-sm font-semibold leading-6 #{username_link_text_color_no_hover(:brand)}"}
+        >
+          <%= decr_item(
+            get_item_connection(@post, @current_user).username,
+            @current_user,
+            get_post_key(@post, @current_user),
+            @key,
+            @post
+          ) %>
+        </.link>
+
         <!-- sharing with users badge -->
         <div
           :if={
@@ -279,7 +387,15 @@ defmodule MetamorphicWeb.PostLive.Components do
             >
               <circle cx="3" cy="3" r="3" />
             </svg>
-            <span class="hidden group-hover:flex">
+            <span :if={Map.get(uconn.connection, :profile)} class="hidden group-hover:flex">
+              <.link
+                navigate={~p"/profile/#{uconn.connection.profile.slug}"}
+                title={"Click to view #{get_username_for_uconn(uconn, @current_user, @key)}'s profile"}
+              >
+                <%= get_username_for_uconn(uconn, @current_user, @key) %>
+              </.link>
+            </span>
+            <span :if={!Map.get(uconn.connection, :profile)} class="hidden group-hover:flex">
               <%= get_username_for_uconn(uconn, @current_user, @key) %>
             </span>
           </span>

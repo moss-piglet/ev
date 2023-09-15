@@ -167,7 +167,6 @@ defmodule Metamorphic.Accounts.User do
   defp encrypt_name_change(changeset, opts, name) do
     if is_nil(name) do
       changeset
-      |> encrypt_connection_map_name_change(opts, name)
       |> put_change(:name, nil)
     else
       changeset
