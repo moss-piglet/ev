@@ -34,6 +34,8 @@ defmodule Metamorphic.Application do
       Metamorphic.Extensions.AvatarProcessor,
       # Start the ETS MemoryProcessor
       Metamorphic.Extensions.MemoryProcessor,
+      # Start the Storj Task Supervisor,
+      {Task.Supervisor, name: Metamorphic.StorjTask},
       # Start the Endpoint (http/https)
       MetamorphicWeb.Endpoint
       # Start a worker by calling: Metamorphic.Worker.start_link(arg)

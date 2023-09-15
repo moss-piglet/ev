@@ -38,10 +38,10 @@ defmodule MetamorphicWeb.Router do
       on_mount: [
         {MetamorphicWeb.UserAuth, :mount_current_user},
         {MetamorphicWeb.UserAuth, :mount_current_user_session_key},
-        {MetamorphicWeb.UserAuth, :ensure_session_key},
+        {MetamorphicWeb.UserAuth, :ensure_session_key}
       ] do
-        live "/users/profile/:id", UserProfileLive, :show
-      end
+      live "/profile/:slug", UserProfileLive, :show
+    end
   end
 
   # Other scopes may use custom stacks.

@@ -203,6 +203,16 @@ defmodule Metamorphic.Accounts do
   def get_user!(id), do: Repo.get!(User, id)
   def get_user(id), do: Repo.get(User, id)
 
+  def get_user_with_preloads(id) do
+    Repo.one(from u in User, where: u.id == ^id, preload: [:connection, :user_connections])
+  end
+
+  def get_user_from_profile_slug!(slug) do
+    Repo.one!(
+      from u in User, where: u.username_hash == ^slug, preload: [:connection, :user_connections]
+    )
+  end
+
   def get_connection!(id), do: Repo.get!(Connection, id)
 
   def get_user_connection!(id),
@@ -507,6 +517,7 @@ defmodule Metamorphic.Accounts do
 
   def update_user_profile(user, attrs \\ %{}, opts \\ []) do
     conn = get_connection!(user.connection.id)
+    uconns = get_all_user_connections(user.id)
 
     {:ok, %{update_connection: conn}} =
       Ecto.Multi.new()
@@ -516,6 +527,7 @@ defmodule Metamorphic.Accounts do
       |> Repo.transaction_on_primary()
 
     broadcast_connection(conn, :uconn_updated)
+    broadcast_public_user_connections(uconns, :uconn_updated)
 
     {:ok, conn}
   end
@@ -591,17 +603,23 @@ defmodule Metamorphic.Accounts do
   end
 
   def update_user_visibility(user, attrs \\ %{}, opts \\ []) do
-    {:ok, {:ok, user}} =
+    {:ok, return} =
       Repo.transaction_on_primary(fn ->
         user
         |> User.visibility_changeset(attrs, opts)
         |> Repo.update()
       end)
 
-    conn = get_connection!(user.connection.id)
-    broadcast_connection(conn, :uconn_visibility_updated)
+    case return do
+      {:ok, user} ->
+        conn = get_connection!(user.connection.id)
+        broadcast_connection(conn, :uconn_visibility_updated)
 
-    {:ok, user}
+        {:ok, user}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
@@ -682,10 +700,10 @@ defmodule Metamorphic.Accounts do
     |> case do
       {:ok, %{conn: conn}} ->
         uconns
-        |> broadcast_user_connections(:uconn_deleted)
+        |> broadcast_user_connections(:uconn_updated)
 
         uconns
-        |> broadcast_public_user_connections(:public_uconn_deleted)
+        |> broadcast_public_user_connections(:public_uconn_updated)
 
         {:ok, conn}
 

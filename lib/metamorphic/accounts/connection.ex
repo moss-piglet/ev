@@ -7,6 +7,7 @@ defmodule Metamorphic.Accounts.Connection do
 
   alias Metamorphic.Encrypted
   alias Metamorphic.Encrypted.Utils
+  alias Metamorphic.Extensions.AvatarProcessor
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -36,6 +37,7 @@ defmodule Metamorphic.Accounts.Connection do
       field :visibility, Ecto.Enum, values: [:public, :private, :connections], default: :private
 
       field :opts_map, :map, virtual: true
+      field :temp_username, :string, virtual: true
     end
 
     belongs_to :user, User
@@ -80,11 +82,12 @@ defmodule Metamorphic.Accounts.Connection do
       :slug,
       :visibility,
       :profile_key,
-      :opts_map
+      :opts_map,
+      :temp_username
     ])
     |> validate_length(:about, max: 500)
     |> build_slug()
-    |> encrypt_attrs(opts_map)
+    |> maybe_encrypt_attrs(opts_map)
   end
 
   def update_name_changeset(conn, attrs \\ %{}) do
@@ -155,25 +158,24 @@ defmodule Metamorphic.Accounts.Connection do
   end
 
   defp build_slug(changeset) do
-    if username = get_field(changeset, :username) do
-      slug = Slug.slugify(username)
+    if temp_username = get_field(changeset, :temp_username) do
+      slug = Slug.slugify(temp_username)
       put_change(changeset, :slug, slug)
     else
       changeset
     end
   end
 
-  defp encrypt_attrs(changeset, opts_map) do
-    if changeset.valid? && opts_map && Map.has_key?(opts_map, :encrypt) do
-      about = get_field(changeset, :about)
+  defp maybe_encrypt_attrs(changeset, opts_map) do
+    if changeset.valid? && opts_map && Map.get(opts_map, :encrypt) do
       username = get_field(changeset, :username)
       visibility = opts_map.user.visibility
-      profile_key = maybe_generate_key(opts_map, visibility)
+      profile_key = maybe_generate_key(opts_map)
 
       case visibility do
         :public ->
           changeset
-          |> put_change(:avatar_url, maybe_encrypt_avatar_url(changeset, profile_key))
+          |> put_change(:avatar_url, maybe_encrypt_avatar_url(changeset, profile_key, opts_map))
           |> put_change(:name, maybe_encrypt_name(changeset, profile_key))
           |> put_change(:email, maybe_encrypt_email(changeset, profile_key))
           |> put_change(:about, maybe_encrypt_about(changeset, profile_key))
@@ -187,10 +189,10 @@ defmodule Metamorphic.Accounts.Connection do
 
         :private ->
           changeset
-          |> put_change(:avatar_url, maybe_encrypt_avatar_url(changeset, profile_key))
+          |> put_change(:avatar_url, maybe_encrypt_avatar_url(changeset, profile_key, opts_map))
           |> put_change(:name, maybe_encrypt_name(changeset, profile_key))
           |> put_change(:email, maybe_encrypt_email(changeset, profile_key))
-          |> put_change(:about, Utils.encrypt(%{key: profile_key, payload: about}))
+          |> put_change(:about, maybe_encrypt_about(changeset, profile_key))
           |> put_change(:username, Utils.encrypt(%{key: profile_key, payload: username}))
           |> put_change(
             :profile_key,
@@ -201,10 +203,10 @@ defmodule Metamorphic.Accounts.Connection do
 
         :connections ->
           changeset
-          |> put_change(:avatar_url, maybe_encrypt_avatar_url(changeset, profile_key))
+          |> put_change(:avatar_url, maybe_encrypt_avatar_url(changeset, profile_key, opts_map))
           |> put_change(:name, maybe_encrypt_name(changeset, profile_key))
           |> put_change(:email, maybe_encrypt_email(changeset, profile_key))
-          |> put_change(:about, Utils.encrypt(%{key: profile_key, payload: about}))
+          |> put_change(:about, maybe_encrypt_about(changeset, profile_key))
           |> put_change(:username, Utils.encrypt(%{key: profile_key, payload: username}))
           |> put_change(
             :profile_key,
@@ -231,14 +233,97 @@ defmodule Metamorphic.Accounts.Connection do
     end
   end
 
-  defp maybe_encrypt_avatar_url(changeset, profile_key) do
+  defp maybe_encrypt_avatar_url(changeset, profile_key, opts_map) do
     cond do
-      get_field(changeset, :show_avatar?) ->
-        Utils.encrypt(%{key: profile_key, payload: get_field(changeset, :avatar_url)})
+      Map.get(opts_map.user.connection, :avatar_url) && get_field(changeset, :show_avatar?) ->
+        e_avatar_blob = AvatarProcessor.get_ets_avatar(opts_map.user.connection.id)
+
+        # We don't have to Base.encode64() because
+        # it is coming from the current user's ets
+        # which was previously pulled down from Storj
+        # and encoded.
+        d_avatar_blob =
+          Encrypted.Users.Utils.decrypt_user_item(
+            e_avatar_blob,
+            opts_map.user,
+            opts_map.user.conn_key,
+            opts_map.key
+          )
+
+        profile_id = get_field(changeset, :id)
+        ets_profile_id = "profile-#{profile_id}"
+        avatar_url = get_field(changeset, :avatar_url) |> String.replace("uploads/", "profile/")
+        e_avatar_url = prepare_encrypted_file_path(avatar_url, profile_key)
+        e_avatar_blob = prepare_encrypted_avatar_blob(d_avatar_blob, profile_key)
+        avatars_bucket = Encrypted.Session.avatars_bucket()
+
+        # ex_aws_put_request(avatars_bucket, avatar_url, e_avatar_blob)
+        # not currently async
+        make_async_aws_and_ets_requests(
+          avatars_bucket,
+          avatar_url,
+          e_avatar_blob,
+          ets_profile_id,
+          opts_map
+        )
+
+        e_avatar_url
 
       true ->
         nil
     end
+  end
+
+  defp prepare_encrypted_file_path(avatar_url, profile_key) do
+    Utils.encrypt(%{key: profile_key, payload: avatar_url})
+  end
+
+  defp prepare_encrypted_avatar_blob(d_avatar_blob, profile_key) do
+    Utils.encrypt(%{key: profile_key, payload: d_avatar_blob})
+  end
+
+  defp make_async_aws_and_ets_requests(
+         avatars_bucket,
+         avatar_url,
+         e_avatar_blob,
+         ets_profile_id,
+         opts_map
+       ) do
+    Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
+      if Map.get(opts_map, :update_profile) do
+        with {:ok, _resp} <- ex_aws_delete_request(avatars_bucket, avatar_url),
+             {:ok, _resp} <- ex_aws_put_request(avatars_bucket, avatar_url, e_avatar_blob),
+             true <- AvatarProcessor.put_ets_avatar(ets_profile_id, e_avatar_blob) do
+          {:ok, :profile_avatar_uploaded_to_storj,
+           "Profile avatar uploaded to the private cloud successfully."}
+        else
+          _rest ->
+            ex_aws_delete_request(avatars_bucket, avatar_url)
+            ex_aws_put_request(avatars_bucket, avatar_url, e_avatar_blob)
+            {:error, :make_async_aws_and_ets_requests}
+        end
+      else
+        with {:ok, _resp} <- ex_aws_put_request(avatars_bucket, avatar_url, e_avatar_blob),
+             true <- AvatarProcessor.put_ets_avatar(ets_profile_id, e_avatar_blob) do
+          {:ok, :profile_avatar_uploaded_to_storj,
+           "Profile avatar uploaded to the private cloud successfully."}
+        else
+          _rest ->
+            ex_aws_put_request(avatars_bucket, avatar_url, e_avatar_blob)
+            {:error, :make_async_aws_and_ets_requests}
+        end
+      end
+    end)
+  end
+
+  defp ex_aws_delete_request(avatars_bucket, avatar_url) do
+    ExAws.S3.delete_object(avatars_bucket, avatar_url)
+    |> ExAws.request()
+  end
+
+  defp ex_aws_put_request(avatars_bucket, avatar_url, e_avatar_blob) do
+    ExAws.S3.put_object(avatars_bucket, avatar_url, e_avatar_blob)
+    |> ExAws.request()
   end
 
   defp maybe_encrypt_name(changeset, profile_key) do
@@ -261,7 +346,7 @@ defmodule Metamorphic.Accounts.Connection do
     end
   end
 
-  defp maybe_generate_key(opts_map, visibility) do
+  defp maybe_generate_key(opts_map) do
     if Map.get(opts_map, :update_profile) do
       profile_viz = Map.get(opts_map.user.connection.profile, :visibility)
 
@@ -282,21 +367,14 @@ defmodule Metamorphic.Accounts.Connection do
           d_profile_key
       end
     else
-      case visibility do
-        :connections ->
-          {:ok, d_profile_key} =
-            Encrypted.Users.Utils.decrypt_user_attrs_key(
-              opts_map.user.conn_key,
-              opts_map.user,
-              opts_map.key
-            )
+      {:ok, d_profile_key} =
+        Encrypted.Users.Utils.decrypt_user_attrs_key(
+          opts_map.user.conn_key,
+          opts_map.user,
+          opts_map.key
+        )
 
-          d_profile_key
-
-        _rest ->
-          IO.puts("GENERATING NEW KEY")
-          Encrypted.Utils.generate_key()
-      end
+      d_profile_key
     end
   end
 end

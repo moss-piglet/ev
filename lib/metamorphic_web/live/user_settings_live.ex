@@ -1,5 +1,4 @@
 defmodule MetamorphicWeb.UserSettingsLive do
-  alias DBConnection.Connection
   use MetamorphicWeb, :live_view
 
   alias Metamorphic.Accounts
@@ -69,6 +68,18 @@ defmodule MetamorphicWeb.UserSettingsLive do
   end
 
   def handle_params(_params, _url, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_info(
+        {_ref, {:ok, :avatar_deleted_from_storj, info}},
+        socket
+      ) do
+    socket = put_flash(socket, :success, info)
+    {:noreply, redirect(socket, to: "/users/settings")}
+  end
+
+  def handle_info(_message, socket) do
     {:noreply, socket}
   end
 
@@ -160,25 +171,52 @@ defmodule MetamorphicWeb.UserSettingsLive do
   def handle_event("delete_avatar", %{"url" => url}, socket) do
     avatars_bucket = Encrypted.Session.avatars_bucket()
     user = socket.assigns.current_user
+    key = socket.assigns.key
 
-    with {:ok, _user, conn} <-
-           Accounts.update_user_avatar(user, %{avatar_url: nil}, delete_avatar: true),
-         true <- AvatarProcessor.delete_ets_avatar(conn.id) do
-      # Handle deleting the object storage avatar async.
-      with {:ok, _resp} <- ex_aws_delete_request(avatars_bucket, url) do
-        info = "Your avatar has been deleted successfully."
+    profile = Map.get(user.connection, :profile)
+
+    if profile && Map.get(profile, :avatar_url) do
+      profile_avatar_url = decr_avatar(profile.avatar_url, user, user.conn_key, key)
+
+      with {:ok, _user, conn} <-
+             Accounts.update_user_avatar(user, %{avatar_url: nil}, delete_avatar: true),
+           true <- AvatarProcessor.delete_ets_avatar(conn.id),
+           true <- AvatarProcessor.delete_ets_avatar("profile-#{conn.id}") do
+        make_async_aws_requests(avatars_bucket, url, profile_avatar_url, user, key)
+
+        info =
+          "Your avatar has been deleted successfully. Sit back and relax while we delete it from the private cloud."
+
+        socket =
+          socket
+          |> put_flash(:info, info)
+
+        {:noreply, push_patch(socket, to: "/users/settings")}
+      else
+        {:error, :make_async_aws_requests} ->
+          {:noreply, socket}
+
+        _rest ->
+          {:noreply, socket}
+      end
+    else
+      with {:ok, _user, conn} <-
+             Accounts.update_user_avatar(user, %{avatar_url: nil}, delete_avatar: true),
+           true <- AvatarProcessor.delete_ets_avatar(conn.id) do
+        make_async_aws_requests(avatars_bucket, url, user, key)
+
+        info =
+          "Your avatar has been deleted successfully. Sit back and relax while we delete it from the private cloud."
 
         socket =
           socket
           |> put_flash(:success, info)
 
-        {:noreply, push_navigate(socket, to: ~p"/users/settings")}
-      else
-        _rest -> ex_aws_delete_request(avatars_bucket, url)
-      end
-    else
-      _rest ->
         {:noreply, socket}
+      else
+        _rest ->
+          {:noreply, socket}
+      end
     end
   end
 
@@ -375,13 +413,13 @@ defmodule MetamorphicWeb.UserSettingsLive do
          |> redirect(to: ~p"/users/settings")}
 
       {:error, changeset} ->
-        info = "Woops, something went wrong."
+        info = "Visibility did not change."
 
         {:noreply,
          socket
-         |> put_flash(:error, info)
+         |> put_flash(:info, info)
          |> assign(visibility_form: to_form(changeset))
-         |> redirect(to: ~p"/users/settings")}
+         |> push_patch(to: ~p"/users/settings")}
     end
   end
 
@@ -595,8 +633,9 @@ defmodule MetamorphicWeb.UserSettingsLive do
   def handle_event("delete_profile", %{"id" => id}, socket) do
     conn = Accounts.get_connection!(id)
     user = socket.assigns.current_user
+    key = socket.assigns.key
 
-    if user.connection == conn do
+    if user.connection.id == conn.id do
       case Accounts.delete_user_profile(user, conn) do
         {:ok, conn} ->
           profile_form =
@@ -604,13 +643,36 @@ defmodule MetamorphicWeb.UserSettingsLive do
             |> Accounts.change_user_profile()
             |> to_form()
 
-          info = "Your profile has been deleted successfully."
+          if Map.get(user.connection.profile, :avatar_url) do
+            avatars_bucket = Encrypted.Session.avatars_bucket()
 
-          {:noreply,
-           socket
-           |> put_flash(:success, info)
-           |> assign(profile_form: profile_form)
-           |> redirect(to: ~p"/users/settings")}
+            avatar_url =
+              decr_avatar(
+                user.connection.profile.avatar_url,
+                user,
+                user.conn_key,
+                key
+              )
+
+            # Handle deleting the object storage avatar and memories async.
+            with {:ok, _resp} <- ex_aws_delete_request(avatars_bucket, avatar_url) do
+              info = "Your profile has been deleted successfully."
+
+              {:noreply,
+               socket
+               |> put_flash(:success, info)
+               |> assign(profile_form: profile_form)
+               |> redirect(to: ~p"/users/settings")}
+            end
+          else
+            info = "Your profile has been deleted successfully."
+
+            {:noreply,
+             socket
+             |> put_flash(:success, info)
+             |> assign(profile_form: profile_form)
+             |> redirect(to: ~p"/users/settings")}
+          end
       end
     else
       info = "You don't have permission to do this."
@@ -622,34 +684,66 @@ defmodule MetamorphicWeb.UserSettingsLive do
   def handle_event("delete_account", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
     user = socket.assigns.current_user
+    key = socket.assigns.key
 
     case Accounts.delete_user_account(user, password, user_params) do
       {:ok, _user} ->
         avatars_bucket = Encrypted.Session.avatars_bucket()
         memories_bucket = Encrypted.Session.memories_bucket()
+        d_url = decr_avatar(user.connection.avatar_url, user, user.conn_key, key)
+        profile = Map.get(user.connection, :profile)
 
         # Handle deleting the object storage avatar and memories async.
-        with {:ok, _resp} <-
-               ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories"),
-             {:ok, _resp} <-
-               ex_aws_delete_request(avatars_bucket, "uploads/user/#{user.id}/avatars") do
-          socket =
-            socket
-            |> put_flash(:success, "Account deleted successfully.")
-            |> redirect(to: ~p"/")
+        if profile do
+          profile_avatar_url = decr_avatar(profile.avatar_url, user, profile.profile_key, key)
 
-          {:noreply, socket}
-        else
-          _rest ->
-            ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories")
-            ex_aws_delete_request(avatars_bucket, "uploads/user/#{user.id}/avatars")
-
+          with {:ok, _resp} <-
+                 ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories/**"),
+               {:ok, _resp} <-
+                 ex_aws_delete_request(avatars_bucket, d_url),
+               {:ok, _resp} <- ex_aws_delete_request(avatars_bucket, profile_avatar_url) do
             socket =
               socket
               |> put_flash(:success, "Account deleted successfully.")
               |> redirect(to: ~p"/")
 
             {:noreply, socket}
+          else
+            _rest ->
+              ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories/**")
+              ex_aws_delete_request(avatars_bucket, d_url)
+              ex_aws_delete_request(avatars_bucket, profile_avatar_url)
+
+              socket =
+                socket
+                |> put_flash(:success, "Account deleted successfully.")
+                |> redirect(to: ~p"/")
+
+              {:noreply, socket}
+          end
+        else
+          with {:ok, _resp} <-
+                 ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories/**"),
+               {:ok, _resp} <-
+                 ex_aws_delete_request(avatars_bucket, d_url) do
+            socket =
+              socket
+              |> put_flash(:success, "Account deleted successfully.")
+              |> redirect(to: ~p"/")
+
+            {:noreply, socket}
+          else
+            _rest ->
+              ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories/**")
+              ex_aws_delete_request(avatars_bucket, d_url)
+
+              socket =
+                socket
+                |> put_flash(:success, "Account deleted successfully.")
+                |> redirect(to: ~p"/")
+
+              {:noreply, socket}
+          end
         end
 
       {:error, changeset} ->
@@ -754,5 +848,43 @@ defmodule MetamorphicWeb.UserSettingsLive do
           _rest -> ex_aws_delete_request(avatars_bucket, d_url)
         end
     end
+  end
+
+  defp make_async_aws_requests(avatars_bucket, url, _user, _key) do
+    # delete only the user avatar because the
+    # profile has already been deleted
+    Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
+      with {:ok, _resp} <- ex_aws_delete_request(avatars_bucket, url) do
+        {:ok, :avatar_deleted_from_storj, "Avatar successfully deleted from the private cloud."}
+      else
+        _rest ->
+          ex_aws_delete_request(avatars_bucket, url)
+      end
+    end)
+  end
+
+  defp make_async_aws_requests(avatars_bucket, url, profile_avatar_url, user, key) do
+    Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
+      profile_attrs =
+        %{
+          "profile" => %{
+            "avatar_url" => nil,
+            "show_avatar?" => false,
+            "opts_map" => %{"user" => user, "key" => key, "update_profile" => true}
+          }
+        }
+
+      # delete both the profile and the user avatar
+      with {:ok, _resp} <- ex_aws_delete_request(avatars_bucket, url),
+           {:ok, _resp} <- ex_aws_delete_request(avatars_bucket, profile_avatar_url),
+           {:ok, _user} <- Accounts.update_user_profile(user, profile_attrs) do
+        {:ok, :avatar_deleted_from_storj, "Avatar successfully deleted from the private cloud."}
+      else
+        _rest ->
+          ex_aws_delete_request(avatars_bucket, url)
+          ex_aws_delete_request(avatars_bucket, profile_avatar_url)
+          {:error, :make_async_aws_requests}
+      end
+    end)
   end
 end

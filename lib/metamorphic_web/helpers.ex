@@ -112,6 +112,7 @@ defmodule MetamorphicWeb.Helpers do
   end
 
   def get_user!(id), do: Accounts.get_user!(id)
+  def get_user_with_preloads(id), do: Accounts.get_user_with_preloads(id)
 
   def get_item_connection(item, current_user) do
     cond do
@@ -351,8 +352,10 @@ defmodule MetamorphicWeb.Helpers do
                  key
                ) do
           # Put the encrypted avatar binary in ets.
-          Task.async(fn ->
+          Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
             AvatarProcessor.put_ets_avatar(user.connection.id, obj)
+
+            {:ok, :encrypted_profile_avatar_put_in_ets}
           end)
 
           image = decrypted_obj |> Base.encode64()
@@ -399,8 +402,10 @@ defmodule MetamorphicWeb.Helpers do
                      key
                    ) do
               # Put the encrypted avatar binary in ets.
-              Task.async(fn ->
+              Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
                 AvatarProcessor.put_ets_avatar(uconn.connection.id, obj)
+
+                {:ok, :encrypted_profile_avatar_put_in_ets}
               end)
 
               image = decrypted_obj |> Base.encode64()
@@ -446,8 +451,10 @@ defmodule MetamorphicWeb.Helpers do
                      key
                    ) do
               # Put the encrypted avatar binary in ets.
-              Task.async(fn ->
+              Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
                 AvatarProcessor.put_ets_avatar(uconn.connection.id, obj)
+
+                {:ok, :encrypted_profile_avatar_put_in_ets}
               end)
 
               image = decrypted_obj |> Base.encode64()
@@ -481,8 +488,10 @@ defmodule MetamorphicWeb.Helpers do
                      key
                    ) do
               # Put the encrypted avatar binary in ets.
-              Task.async(fn ->
+              Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
                 AvatarProcessor.put_ets_avatar(uconn.connection.id, obj)
+
+                {:ok, :encrypted_profile_avatar_put_in_ets}
               end)
 
               image = decrypted_obj |> Base.encode64()
@@ -492,6 +501,72 @@ defmodule MetamorphicWeb.Helpers do
               {:error, _rest} ->
                 "error"
             end
+        end
+    end
+  end
+
+  ## TODO
+  # We need to figure out how to store/encrypt the public avatar url.
+  def get_public_user_avatar(user, profile) when is_map(profile) do
+    cond do
+      is_nil(profile.avatar_url) ->
+        ""
+
+      not is_nil(avatar_binary = AvatarProcessor.get_ets_avatar("profile-#{user.connection.id}")) ->
+        image = decr_public_item(avatar_binary, profile.profile_key)
+        "data:image/jpg;base64," <> image
+
+      is_nil(_avatar_binary = AvatarProcessor.get_ets_avatar("profile-#{user.connection.id}")) ->
+        avatars_bucket = Encrypted.Session.avatars_bucket()
+        d_url = decr_public_item(profile.avatar_url, profile.profile_key)
+        with {:ok, %{body: obj}} <-
+               ExAws.S3.get_object(
+                 avatars_bucket,
+                 d_url
+               )
+               |> ExAws.request(),
+             decrypted_obj <-
+               decr_public_item(
+                 obj,
+                 profile.profile_key
+               ) do
+          # Put the encrypted avatar binary in ets.
+          Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
+            AvatarProcessor.put_ets_avatar(profile.id, obj)
+
+            {:ok, :encrypted_profile_avatar_put_in_ets}
+          end)
+
+          image = decrypted_obj |> Base.encode64()
+          path = "data:image/jpg;base64," <> image
+          path
+        else
+          {:error, _rest} ->
+            with {:ok, %{body: obj}} <-
+              ExAws.S3.get_object(
+                avatars_bucket,
+                d_url
+              )
+              |> ExAws.request(),
+            decrypted_obj <-
+              decr_public_item(
+                obj,
+                profile.profile_key
+              ) do
+            # Put the encrypted avatar binary in ets.
+            Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
+              AvatarProcessor.put_ets_avatar(profile.id, obj)
+
+              {:ok, :encrypted_profile_avatar_put_in_ets}
+            end)
+
+            image = decrypted_obj |> Base.encode64()
+            path = "data:image/jpg;base64," <> image
+            path
+          else
+            {:error, _rest} ->
+              ""
+          end
         end
     end
   end

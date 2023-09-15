@@ -191,9 +191,10 @@ defmodule MetamorphicWeb.PostLive.Components do
         <.link
           :if={
             post_user.visibility != :private && @post.visibility == :connections &&
-              get_shared_item_identity_atom(@post, @current_user) != :self
+              get_shared_item_identity_atom(@post, @current_user) != :self &&
+              Map.get(post_user.connection, :profile)
           }
-          navigate={~p"/users/profile/#{post_user}"}
+          navigate={~p"/profile/#{post_user.connection.profile.slug}"}
           class={"text-sm font-semibold leading-6 #{username_link_text_color(@color)}"}
           title="Click to view profile"
         >
@@ -208,9 +209,10 @@ defmodule MetamorphicWeb.PostLive.Components do
         <.link
           :if={
             post_user.visibility != :private && @post.visibility == :connections &&
-              get_shared_item_identity_atom(@post, @current_user) == :self
+              get_shared_item_identity_atom(@post, @current_user) == :self &&
+              Map.get(post_user.connection, :profile)
           }
-          navigate={~p"/users/profile/#{post_user}"}
+          navigate={~p"/profile/#{post_user.connection.profile.slug}"}
           class={"text-sm font-semibold leading-6 #{username_link_text_color(:brand)}"}
           title="Click to view your profile"
         >
@@ -226,9 +228,9 @@ defmodule MetamorphicWeb.PostLive.Components do
         <.link
           :if={
             @post.visibility == :public && has_user_connection?(@post, @current_user) &&
-              post_user.visibility != :private
+              post_user.visibility != :private && Map.get(post_user.connection, :profile)
           }
-          navigate={~p"/users/profile/#{post_user}"}
+          navigate={~p"/profile/#{post_user.connection.profile.slug}"}
           class={"text-sm font-semibold leading-6 #{username_link_text_color(@color)}"}
           title="Click to view profile"
         >
@@ -241,8 +243,11 @@ defmodule MetamorphicWeb.PostLive.Components do
           ) %>
         </.link>
         <.link
-          :if={@post.visibility == :public && is_my_post?(@post, @current_user)}
-          navigate={~p"/users/profile/#{post_user}"}
+          :if={
+            @post.visibility == :public && is_my_post?(@post, @current_user) &&
+              Map.get(post_user.connection, :profile)
+          }
+          navigate={~p"/profile/#{post_user.connection.profile.slug}"}
           class={"text-sm font-semibold leading-6 #{username_link_text_color(:brand)}"}
           title="Click to view your profile"
         >

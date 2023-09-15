@@ -294,15 +294,6 @@ defmodule Metamorphic.Accounts.User do
     end
   end
 
-  defp add_username_hash(changeset) do
-    if Map.has_key?(changeset.changes, :username) do
-      changeset
-      |> put_change(:username_hash, String.downcase(get_field(changeset, :username)))
-    else
-      changeset
-    end
-  end
-
   # When registering, the email is used to
   # create the username.
   defp validate_username(changeset, opts) do
