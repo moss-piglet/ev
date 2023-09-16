@@ -208,7 +208,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
   def connection(assigns) do
     ~H"""
     <div class="relative">
-      <% uconn_user = get_user_with_preloads(@uconn.reverse_user_id) %>
+      <% uconn_user = if @uconn.user_id == @current_user.id, do: get_user_with_preloads(@uconn.reverse_user_id), else: get_user_with_preloads(@uconn.user_ids) %>
       <div class="flex flex-1 flex-col p-8">
         <.avatar
           class="mx-auto h-32 w-32 flex-shrink-0 rounded-full"
@@ -234,7 +234,7 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
         <.link
           :if={
             @current_user && @uconn.user_id == @current_user.id &&
-              Map.get(uconn_user.connection, :profile)
+              Map.get(uconn_user.connection, :profile) && uconn_user.connection.profile.visibility != :private
           }
           title="View profile"
           class="hover:text-brand-600"
