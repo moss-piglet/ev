@@ -193,7 +193,7 @@ defmodule MetamorphicWeb.UserAuth do
           :info,
           "Please check your email to confirm your account before accessing this page."
         )
-        |> Phoenix.LiveView.redirect(to: ~p"/users/log_in")
+        |> Phoenix.LiveView.redirect(to: ~p"/users/confirm")
 
       {:halt, socket}
     end
@@ -609,7 +609,7 @@ defmodule MetamorphicWeb.UserAuth do
         "Please check your email to confirm your account before accessing this page."
       )
       |> maybe_store_return_to()
-      |> redirect(to: ~p"/users/log_in")
+      |> redirect(to: ~p"/users/confirm")
       |> halt()
     end
   end

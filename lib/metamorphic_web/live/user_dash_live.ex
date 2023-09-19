@@ -22,7 +22,7 @@ defmodule MetamorphicWeb.UserDashLive do
             Hi! We're so happy that you're here!
           </p>
           <p>
-            Metamorphic is a place for you to connect and share easily with the people in your life (and the world), free from big tech — like a tiny, little island of peace and privacy.
+            Metamorphic is a place for you to connect and share easily with the people in your life (and the world), free from big tech 👀 — like a tiny, little island of peace and privacy.
           </p>
           <p>
             There's a lot underway, so stay tuned and feel free to use the little "envelope" button in the top banner to reach out with any requests for features that you'd like to see, issues you encounter, or simply to say "hi" and express your support.
@@ -32,12 +32,15 @@ defmodule MetamorphicWeb.UserDashLive do
           </p>
           <div class="mt-4">
             <.list>
-              <:item title="Connections">Go here to add or remove people to share with.</:item>
-              <:item title="Timeline">
-                Go here to read, write, and share posts with your self (private), your connections, or the world (public).
+              <:item title="Connections">
+                Go here to add new connections with people and edit or remove existing connections.
+              </:item>
+              <:item title="Memories">Go here to upload and share Memories.</:item>
+              <:item title="Posts">
+                Go here to read, write, and share Posts with your self, your connections, or the world.
               </:item>
               <:item title="Settings">
-                Go here to update your avatar, email, username (default is your email), password, visibility, and enable/disable the forgot password ability.
+                Go here to update your avatar, email, username (default is your email), password, visibility, profile, and enable/disable the forgot password ability.
               </:item>
             </.list>
           </div>
@@ -93,7 +96,7 @@ defmodule MetamorphicWeb.UserDashLive do
           <span class="absolute inset-0 rounded-2xl bg-zinc-50 transition group-hover:bg-zinc-100 sm:group-hover:scale-105">
           </span>
           <span class="relative flex items-center gap-4 sm:flex-col">
-            <.icon name="hero-chat-bubble-oval-left-ellipsis" class="h-6 w-6" /> Timeline
+            <.icon name="hero-chat-bubble-oval-left-ellipsis" class="h-6 w-6" /> Posts
           </span>
         </.link>
       </div>
