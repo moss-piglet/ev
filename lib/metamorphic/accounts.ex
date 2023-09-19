@@ -823,7 +823,7 @@ defmodule Metamorphic.Accounts do
 
     with {:ok, query} <- UserToken.verify_change_email_token_query(token, context),
          %UserToken{sent_to: email} <- Repo.one(query),
-         {:ok, %{user: user, tokens: _tokens, connection: conn}} <-
+         {:ok, %{user: _user, tokens: _tokens, connection: conn}} <-
            Repo.transaction_on_primary(user_email_multi(user, email, context, key)) do
       broadcast_connection(conn, :uconn_email_updated)
       :ok
