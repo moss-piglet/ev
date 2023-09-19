@@ -314,7 +314,8 @@ defmodule Metamorphic.Accounts do
   Counts all users.
   """
   def count_all_users() do
-    Repo.aggregate(User, :count)
+    query = from u in User, where: not u.is_admin?
+    Repo.aggregate(query, :count)
   end
 
   @doc """
@@ -330,6 +331,7 @@ defmodule Metamorphic.Accounts do
   def count_all_confirmed_users() do
     query =
       from u in User,
+        where: not u.is_admin?,
         where: not is_nil(u.confirmed_at)
 
     Repo.aggregate(query, :count)
