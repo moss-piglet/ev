@@ -238,6 +238,27 @@ defmodule MetamorphicWeb.UserAuth do
     end
   end
 
+  def on_mount(:ensure_admin_user, _params, session, socket) do
+    socket =
+      socket
+      |> mount_current_user(session)
+      |> mount_current_user_session_key(session)
+
+    if socket.assigns.current_user.is_admin? do
+      {:cont, socket}
+    else
+      socket =
+        socket
+        |> Phoenix.LiveView.put_flash(
+          :info,
+          "You are not authorized to access this page or it does not exist."
+        )
+        |> Phoenix.LiveView.redirect(to: ~p"/users/dash")
+
+      {:halt, socket}
+    end
+  end
+
   def on_mount(:maybe_ensure_connection, params, session, socket) do
     socket =
       socket
@@ -380,14 +401,15 @@ defmodule MetamorphicWeb.UserAuth do
 
     if String.to_atom("Elixir.MetamorphicWeb.UserProfileLive") == socket.view do
       with %Accounts.User{} = user <- Accounts.get_user_from_profile_slug(params["slug"]),
-           %Accounts.Connection.ConnectionProfile{} = profile <- Map.get(user.connection, :profile) do
+           %Accounts.Connection.ConnectionProfile{} = profile <-
+             Map.get(user.connection, :profile) do
         cond do
           current_user && profile.visibility == :connections &&
               MetamorphicWeb.Helpers.get_uconn_for_users(user, current_user) ->
             {:cont, socket}
 
-            current_user && profile.visibility == :connections && user.id == current_user.id ->
-          {:cont, socket}
+          current_user && profile.visibility == :connections && user.id == current_user.id ->
+            {:cont, socket}
 
           current_user && profile.visibility == :private && user.id == current_user.id ->
             {:cont, socket}
@@ -588,6 +610,21 @@ defmodule MetamorphicWeb.UserAuth do
       )
       |> maybe_store_return_to()
       |> redirect(to: ~p"/users/log_in")
+      |> halt()
+    end
+  end
+
+  def require_admin_user(conn, _opts) do
+    if conn.assigns[:current_user].is_admin? do
+      conn
+    else
+      conn
+      |> put_flash(
+        :info,
+        "You are not authorized to access this page or it does not exist."
+      )
+      |> maybe_store_return_to()
+      |> redirect(to: ~p"/users/dash")
       |> halt()
     end
   end

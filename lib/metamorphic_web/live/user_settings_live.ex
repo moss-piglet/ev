@@ -653,6 +653,7 @@ defmodule MetamorphicWeb.UserSettingsLive do
                 user.conn_key,
                 key
               )
+
             # Handle deleting the object storage avatar async.
             make_async_aws_requests(avatars_bucket, avatar_url, nil, nil)
 
@@ -660,9 +661,9 @@ defmodule MetamorphicWeb.UserSettingsLive do
               "Your profile has been deleted successfully. Sit back and relax while we delete your profile avatar from the private cloud."
 
             {:noreply,
-              socket
-              |> put_flash(:info, info)
-              |> assign(profile_form: profile_form)}
+             socket
+             |> put_flash(:info, info)
+             |> assign(profile_form: profile_form)}
           else
             info = "Your profile has been deleted successfully."
 
@@ -686,63 +687,73 @@ defmodule MetamorphicWeb.UserSettingsLive do
     key = socket.assigns.key
 
     case Accounts.delete_user_account(user, password, user_params) do
-      {:ok, _user} ->
-        avatars_bucket = Encrypted.Session.avatars_bucket()
-        memories_bucket = Encrypted.Session.memories_bucket()
-        d_url = decr_avatar(user.connection.avatar_url, user, user.conn_key, key)
-        profile = Map.get(user.connection, :profile)
+      {:ok, user} ->
+        if Map.get(user, :avatar_url) do
+          avatars_bucket = Encrypted.Session.avatars_bucket()
+          memories_bucket = Encrypted.Session.memories_bucket()
+          d_url = decr_avatar(user.connection.avatar_url, user, user.conn_key, key)
+          profile = Map.get(user.connection, :profile)
 
-        # Handle deleting the object storage avatar and memories async.
-        if profile do
-          profile_avatar_url = decr_avatar(profile.avatar_url, user, profile.profile_key, key)
+          # Handle deleting the object storage avatar and memories async.
+          if profile do
+            profile_avatar_url = decr_avatar(profile.avatar_url, user, profile.profile_key, key)
 
-          with {:ok, _resp} <-
-                 ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories/**"),
-               {:ok, _resp} <-
-                 ex_aws_delete_request(avatars_bucket, d_url),
-               {:ok, _resp} <- ex_aws_delete_request(avatars_bucket, profile_avatar_url) do
-            socket =
-              socket
-              |> put_flash(:success, "Account deleted successfully.")
-              |> redirect(to: ~p"/")
-
-            {:noreply, socket}
-          else
-            _rest ->
-              ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories/**")
-              ex_aws_delete_request(avatars_bucket, d_url)
-              ex_aws_delete_request(avatars_bucket, profile_avatar_url)
-
+            with {:ok, _resp} <-
+                   ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories/**"),
+                 {:ok, _resp} <-
+                   ex_aws_delete_request(avatars_bucket, d_url),
+                 {:ok, _resp} <- ex_aws_delete_request(avatars_bucket, profile_avatar_url) do
               socket =
                 socket
                 |> put_flash(:success, "Account deleted successfully.")
                 |> redirect(to: ~p"/")
 
               {:noreply, socket}
+            else
+              _rest ->
+                ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories/**")
+                ex_aws_delete_request(avatars_bucket, d_url)
+                ex_aws_delete_request(avatars_bucket, profile_avatar_url)
+
+                socket =
+                  socket
+                  |> put_flash(:success, "Account deleted successfully.")
+                  |> redirect(to: ~p"/")
+
+                {:noreply, socket}
+            end
+          else
+            with {:ok, _resp} <-
+                   ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories/**"),
+                 {:ok, _resp} <-
+                   ex_aws_delete_request(avatars_bucket, d_url) do
+              socket =
+                socket
+                |> put_flash(:success, "Account deleted successfully.")
+                |> redirect(to: ~p"/")
+
+              {:noreply, socket}
+            else
+              _rest ->
+                ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories/**")
+                ex_aws_delete_request(avatars_bucket, d_url)
+
+                socket =
+                  socket
+                  |> put_flash(:success, "Account deleted successfully.")
+                  |> redirect(to: ~p"/")
+
+                {:noreply, socket}
+            end
           end
         else
-          with {:ok, _resp} <-
-                 ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories/**"),
-               {:ok, _resp} <-
-                 ex_aws_delete_request(avatars_bucket, d_url) do
-            socket =
-              socket
-              |> put_flash(:success, "Account deleted successfully.")
-              |> redirect(to: ~p"/")
+          # No user avatar
+          socket =
+            socket
+            |> put_flash(:success, "Account deleted successfully.")
+            |> redirect(to: ~p"/")
 
-            {:noreply, socket}
-          else
-            _rest ->
-              ex_aws_delete_request(memories_bucket, "uploads/user/#{user.id}/memories/**")
-              ex_aws_delete_request(avatars_bucket, d_url)
-
-              socket =
-                socket
-                |> put_flash(:success, "Account deleted successfully.")
-                |> redirect(to: ~p"/")
-
-              {:noreply, socket}
-          end
+          {:noreply, socket}
         end
 
       {:error, changeset} ->

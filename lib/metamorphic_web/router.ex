@@ -2,6 +2,7 @@ defmodule MetamorphicWeb.Router do
   use MetamorphicWeb, :router
 
   import MetamorphicWeb.UserAuth
+  import Phoenix.LiveDashboard.Router
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -57,12 +58,11 @@ defmodule MetamorphicWeb.Router do
     # If your application does not have an admins-only section yet,
     # you can use Plug.BasicAuth to set up some basic authentication
     # as long as you are also using SSL (which you should anyway).
-    import Phoenix.LiveDashboard.Router
+    # import Phoenix.LiveDashboard.Router
 
     scope "/dev" do
       pipe_through :browser
 
-      live_dashboard "/dashboard", metrics: MetamorphicWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end
@@ -137,6 +137,28 @@ defmodule MetamorphicWeb.Router do
       live "/users/connections/:id/edit", UserConnectionLive.Index, :edit
       live "/users/connections/greet", UserConnectionLive.Index, :greet
       # live "/users/:id/profile", "UserConnectionLive.Show", :show
+    end
+  end
+
+  scope "/admin", MetamorphicWeb do
+    pipe_through [
+      :browser,
+      :require_authenticated_user,
+      :require_confirmed_user,
+      :require_session_key,
+      :require_admin_user
+    ]
+
+    live_dashboard "/metrics", metrics: MetamorphicWeb.Telemetry
+
+    live_session :require_admin_user,
+      on_mount: [
+        {MetamorphicWeb.UserAuth, :ensure_authenticated},
+        {MetamorphicWeb.UserAuth, :ensure_confirmed},
+        {MetamorphicWeb.UserAuth, :ensure_session_key},
+        {MetamorphicWeb.UserAuth, :ensure_admin_user}
+      ] do
+      live "/dash", AdminDashLive, :index
     end
   end
 

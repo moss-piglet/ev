@@ -7,4 +7,5 @@ defmodule Metamorphic.Encrypted.Session do
   def server_private_key, do: System.fetch_env!("SERVER_PRIVATE_KEY")
   def avatars_bucket, do: System.fetch_env!("AVATARS_BUCKET")
   def memories_bucket, do: System.fetch_env!("MEMORIES_BUCKET")
+  def admin_email, do: System.fetch_env!("ADMIN_EMAIL")
 end

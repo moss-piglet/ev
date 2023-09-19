@@ -717,6 +717,22 @@ defmodule Metamorphic.Accounts.User do
   end
 
   @doc """
+  Updates the user `is_admin?` setting. Toggles
+  the setting between `true` and `false`.
+  """
+  def admin_changeset(user) do
+    if not is_nil(user.confirmed_at) do
+      case user.is_admin? do
+        false ->
+          change(user, is_admin?: true)
+
+        true ->
+          change(user, is_admin?: false)
+      end
+    end
+  end
+
+  @doc """
   Verifies the password.
 
   If there is no user or the user doesn't have a password, we call

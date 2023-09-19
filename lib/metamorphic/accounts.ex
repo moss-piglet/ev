@@ -8,6 +8,7 @@ defmodule Metamorphic.Accounts do
   alias Metamorphic.Repo
 
   alias Metamorphic.Accounts.{Connection, User, UserConnection, UserToken, UserNotifier, UserTOTP}
+  alias Metamorphic.Encrypted
 
   ## Preloads
 
@@ -303,6 +304,38 @@ defmodule Metamorphic.Accounts do
   end
 
   @doc """
+  Lists all users.
+  """
+  def list_all_users() do
+    Repo.all(User)
+  end
+
+  @doc """
+  Counts all users.
+  """
+  def count_all_users() do
+    Repo.aggregate(User, :count)
+  end
+
+  @doc """
+  Lists all confirmed users.
+  """
+  def list_all_confirmed_users() do
+    Repo.all(from u in User, where: not is_nil(u.confirmed_at))
+  end
+
+  @doc """
+  Counts all confirmed users.
+  """
+  def count_all_confirmed_users() do
+    query =
+      from u in User,
+        where: not is_nil(u.confirmed_at)
+
+    Repo.aggregate(query, :count)
+  end
+
+  @doc """
   List user's user_connections. These are
   connections that have been confirmed.
   """
@@ -374,6 +407,9 @@ defmodule Metamorphic.Accounts do
 
         {:ok, user}
       end)
+
+    {:ok, user}
+    |> broadcast_admin(:account_registered)
 
     {:ok, user}
   end
@@ -636,6 +672,30 @@ defmodule Metamorphic.Accounts do
     end
   end
 
+  def update_user_admin(user, _attrs \\ %{}, _opts \\ []) do
+    admin_email = Encrypted.Session.admin_email()
+    admin = get_user_by_email(admin_email)
+
+    if user.id == admin.id do
+      {:ok, return} =
+        Repo.transaction_on_primary(fn ->
+          user
+          |> User.admin_changeset()
+          |> Repo.update()
+        end)
+
+      case return do
+        {:ok, user} ->
+          {:ok, user}
+
+        {:error, changeset} ->
+          {:error, changeset}
+      end
+    else
+      nil
+    end
+  end
+
   @doc """
   Returns an `%Ecto.Changeset{}` for changing the user email.
 
@@ -688,6 +748,9 @@ defmodule Metamorphic.Accounts do
     |> Repo.transaction_on_primary()
     |> case do
       {:ok, %{user: user}} ->
+        {:ok, user}
+        |> broadcast_admin(:account_deleted)
+
         uconns
         |> broadcast_user_connections(:uconn_deleted)
 
@@ -760,7 +823,7 @@ defmodule Metamorphic.Accounts do
 
     with {:ok, query} <- UserToken.verify_change_email_token_query(token, context),
          %UserToken{sent_to: email} <- Repo.one(query),
-         {:ok, %{user: _user, tokens: _tokens, connection: conn}} <-
+         {:ok, %{user: user, tokens: _tokens, connection: conn}} <-
            Repo.transaction_on_primary(user_email_multi(user, email, context, key)) do
       broadcast_connection(conn, :uconn_email_updated)
       :ok
@@ -1091,6 +1154,7 @@ defmodule Metamorphic.Accounts do
     with {:ok, query} <- UserToken.verify_email_token_query(token, "confirm"),
          %User{} = user <- Repo.one(query),
          {:ok, %{user: user}} <- Repo.transaction_on_primary(confirm_user_multi(user)) do
+      broadcast_admin({:ok, user}, :account_confirmed)
       {:ok, user}
     else
       _ -> :error
@@ -1236,6 +1300,11 @@ defmodule Metamorphic.Accounts do
     {:ok, uconn}
   end
 
+  defp broadcast_admin({:ok, struct}, event) do
+    Phoenix.PubSub.broadcast(Metamorphic.PubSub, "admin:accounts", {event, struct})
+    {:ok, struct}
+  end
+
   defp broadcast_public({:ok, struct}, event) do
     Phoenix.PubSub.broadcast(Metamorphic.PubSub, "accounts", {event, struct})
     {:ok, struct}
@@ -1277,5 +1346,11 @@ defmodule Metamorphic.Accounts do
 
   def subscribe() do
     Phoenix.PubSub.subscribe(Metamorphic.PubSub, "accounts")
+  end
+
+  def admin_subscribe(user) do
+    if user.is_admin? do
+      Phoenix.PubSub.subscribe(Metamorphic.PubSub, "admin:accounts")
+    end
   end
 end
