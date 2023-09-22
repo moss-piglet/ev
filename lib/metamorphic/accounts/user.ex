@@ -8,6 +8,7 @@ defmodule Metamorphic.Accounts.User do
 
   alias Metamorphic.Accounts.{Connection, UserConnection}
   alias Metamorphic.Encrypted
+  alias Metamorphic.Memories.{Memory, Remark, UserMemory}
   alias Metamorphic.Timeline.{Post, UserPost}
 
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -41,8 +42,11 @@ defmodule Metamorphic.Accounts.User do
     has_one :connection, Connection
 
     has_many :posts, Post
+    has_many :memories, Memory
     has_many :user_connections, UserConnection
     has_many :user_posts, UserPost
+    has_many :user_memories, UserMemory
+    has_many :remarks, Remark
 
     timestamps()
   end

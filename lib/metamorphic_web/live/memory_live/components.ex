@@ -5,6 +5,8 @@ defmodule MetamorphicWeb.MemoryLive.Components do
   use Phoenix.Component
   use MetamorphicWeb, :verified_routes
 
+  import MetamorphicWeb.CoreComponents, only: [avatar: 1, local_time_ago: 1]
+
   import MetamorphicWeb.Helpers
 
   attr :id, :string, required: true
@@ -163,6 +165,112 @@ defmodule MetamorphicWeb.MemoryLive.Components do
           <span class="sr-only">coming soon</span>
         </button>
       </div>
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :stream, :list, required: true
+  attr :page, :integer, required: true
+  attr :end_of_remarks?, :boolean, required: true
+  attr :user, :any, required: true, doc: "the user for the memory"
+  attr :current_user, :any, required: true, doc: "the current user of the session"
+  attr :key, :string, required: true
+  attr :card_click, :any, default: nil, doc: "the function for handling phx-click on each card"
+
+  def remarks(assigns) do
+    ~H"""
+    <span
+      :if={@page > 1}
+      class="text-3xl fixed bottom-2 right-2 bg-zinc-900 text-white rounded-lg p-3 text-center min-w-[65px] z-50 opacity-80"
+    >
+      <span class="text-sm">pg</span>
+      <%= @page %>
+    </span>
+
+    <ul
+      id={@id}
+      phx-update="stream"
+      phx-viewport-top={@page > 1 && "prev-page"}
+      phx-viewport-bottom={!@end_of_remarks? && "next-page"}
+      phx-page-loading
+      class={[
+        if(@end_of_remarks?, do: "pb-10", else: "pb-[calc(100vh)]"),
+        if(@page == 1, do: "pt-2", else: "pt-[calc(100vh)]")
+      ]}
+    >
+      <li
+        :for={{id, item} <- @stream}
+        id={id}
+        phx-click={@card_click.(item)}
+        class={[
+          "group relative flex gap-x-4 space-y-2",
+          @card_click &&
+            "transition sm:hover:rounded-2xl sm:hover:scale-105"
+        ]}
+      >
+        <.remark
+          :if={%Metamorphic.Memories.Remark{} = item}
+          remark={item}
+          current_user={@current_user}
+          user={@user}
+          key={@key}
+          color={get_uconn_color_for_shared_item(item, @user) || :purple}
+        />
+      </li>
+    </ul>
+    <div :if={@end_of_remarks?} class="mt-5 text-[50px] text-center font-thin">
+      🎉 You made it to the beginning of the conversation 🎉
+    </div>
+    """
+  end
+
+  def remark(assigns) do
+    ~H"""
+    <div class="absolute left-0 top-0 flex w-6 justify-center -bottom-6"></div>
+
+    <.avatar
+      :if={not is_nil(@current_user)}
+      src={
+        get_user_avatar(
+          get_uconn_for_shared_item(@remark, @current_user),
+          @key,
+          @remark,
+          @current_user
+        )
+      }
+      size="h-6 w-6"
+      class="relative mt-3 h-6 w-6 flex-none rounded-full bg-gray-50"
+    />
+    <div class="flex-auto rounded-md p-3 ring-1 ring-inset ring-gray-200">
+      <div class="flex justify-between gap-x-4">
+        <div class="py-0.5 text-xs leading-5 text-gray-500">
+          <span class="font-medium text-gray-900">
+            <%= maybe_show_remark_username(
+              decr_item(
+                get_item_connection(@remark, @current_user).username,
+                @current_user,
+                get_remark_key(@remark, @current_user),
+                @key,
+                @remark
+              )
+            ) %>
+          </span>
+          remarked
+        </div>
+        <time datetime="2023-01-23T15:56" class="flex-none py-0.5 text-xs leading-5 text-gray-500">
+          <.local_time_ago id={@remark.id <> "-created"} at={@remark.inserted_at} />
+        </time>
+      </div>
+      <p class="text-sm leading-6 text-gray-500">
+        <%= maybe_show_remark_body(decr_item(
+            @remark.body,
+            @current_user,
+            get_remark_key(@remark, @current_user),
+            @key,
+            @remark
+          )) %>
+      </p>
     </div>
     """
   end

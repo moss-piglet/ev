@@ -739,13 +739,16 @@ defmodule MetamorphicWeb.CoreComponents do
         <:item title="Views"><%= @post.views %></:item>
       </.list>
   """
+  attr :container_class, :any, default: nil
+  attr :id, :any, default: nil
+
   slot :item, required: true do
     attr :title, :string, required: true
   end
 
   def list(assigns) do
     ~H"""
-    <div class="mt-14">
+    <div id={@id} class={if @container_class, do: @container_class, else: "mt-14"}>
       <dl class="-my-4 divide-y divide-zinc-100">
         <div :for={item <- @item} class="flex gap-4 py-4 text-sm leading-6 sm:gap-8">
           <dt class="w-1/4 flex-none text-zinc-500"><%= item.title %></dt>
@@ -833,18 +836,11 @@ defmodule MetamorphicWeb.CoreComponents do
   def avatar(assigns) do
     ~H"""
     <%= if src_blank?(@src) && (!@name || @name == "") do %>
-      <span class={
-        if @class == "",
-          do:
-            "inline-flex #{@size} items-center justify-center overflow-hidden rounded-md bg-zinc-100",
-          else: @class
-      }>
-        <img
-          class={if @class == "", do: "inline-block #{@size} rounded-md bg-zinc-100", else: @class}
-          src={~p"/images/logo.svg"}
-          alt="Metamorphic egg logo"
-        />
-      </span>
+      <img
+        class={if @class == "", do: "inline-block #{@size} rounded-md bg-zinc-100", else: @class}
+        src={~p"/images/logo.svg"}
+        alt="Metamorphic egg logo"
+      />
     <% else %>
       <%= if src_blank?(@src) && @name do %>
         <span class={

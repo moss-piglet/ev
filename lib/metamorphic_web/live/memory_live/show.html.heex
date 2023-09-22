@@ -56,7 +56,127 @@
     class="pointer-events-none object-cover group-hover:opacity-75"
   />
 </div>
-<.list>
+
+<div class="flex justify-between">
+  <.button
+    id="memory-details-show"
+    phx-click={
+      JS.show(
+        to: "#memory-details-list",
+        transition: {"ease-in duration-300", "opacity-0", "opacity-100"}
+      )
+      |> JS.hide(to: "#memory-details-show")
+      |> JS.show(to: "#memory-details-hide")
+    }
+    class="block"
+  >
+    Show details
+  </.button>
+  <.button
+    id="memory-details-hide"
+    class="hidden"
+    phx-click={
+      JS.hide(
+        to: "#memory-details-list",
+        transition: {"ease-out duration-300", "opacity-100", "opacity-0"}
+      )
+      |> JS.hide(to: "#memory-details-hide")
+      |> JS.show(to: "#memory-details-show")
+    }
+  >
+    Hide details
+  </.button>
+  <!-- reaction count -->
+  <div id="mood-reactions" class="space-x-2">
+    <div :if={@excited_count > 0} class="inline-flex items-center">
+      <div class="bg-rose-500 flex h-7 w-7 items-center justify-center rounded-full">
+        <svg
+          class="text-white h-4 w-4 flex-shrink-0"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M13.5 4.938a7 7 0 11-9.006 1.737c.202-.257.59-.218.793.039.278.352.594.672.943.954.332.269.786-.049.773-.476a5.977 5.977 0 01.572-2.759 6.026 6.026 0 012.486-2.665c.247-.14.55-.016.677.238A6.967 6.967 0 0013.5 4.938zM14 12a4 4 0 01-4 4c-1.913 0-3.52-1.398-3.91-3.182-.093-.429.44-.643.814-.413a4.043 4.043 0 001.601.564c.303.038.531-.24.51-.544a5.975 5.975 0 011.315-4.192.447.447 0 01.431-.16A4.001 4.001 0 0114 12z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </div>
+      <span class="ml-1 block truncate font-medium text-rose-500"><%= @excited_count %></span>
+    </div>
+
+    <div :if={@loved_count > 0} class="inline-flex items-center">
+      <div class="bg-pink-400 flex h-7 w-7 items-center justify-center rounded-full">
+        <svg
+          class="text-white h-4 w-4 flex-shrink-0"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z" />
+        </svg>
+      </div>
+      <span class="ml-1 block truncate font-medium text-pink-400"><%= @loved_count %></span>
+    </div>
+    
+    <div :if={@happy_count > 0} class="inline-flex items-center">
+      <div class="bg-green-400 flex h-7 w-7 items-center justify-center rounded-full">
+        <svg
+          class="text-white h-4 w-4 flex-shrink-0"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.536-4.464a.75.75 0 10-1.061-1.061 3.5 3.5 0 01-4.95 0 .75.75 0 00-1.06 1.06 5 5 0 007.07 0zM9 8.5c0 .828-.448 1.5-1 1.5s-1-.672-1-1.5S7.448 7 8 7s1 .672 1 1.5zm3 1.5c.552 0 1-.672 1-1.5S12.552 7 12 7s-1 .672-1 1.5.448 1.5 1 1.5z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </div>
+      <span class="ml-1 block truncate font-medium text-green-400"><%= @happy_count %></span>
+    </div>
+
+    <div :if={@sad_count > 0} class="inline-flex items-center">
+      <div class="bg-yellow-400 flex h-7 w-7 items-center justify-center rounded-full">
+        <svg
+          class="text-white h-4 w-4 flex-shrink-0"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm-3.536-3.475a.75.75 0 001.061 0 3.5 3.5 0 014.95 0 .75.75 0 101.06-1.06 5 5 0 00-7.07 0 .75.75 0 000 1.06zM9 8.5c0 .828-.448 1.5-1 1.5s-1-.672-1-1.5S7.448 7 8 7s1 .672 1 1.5zm3 1.5c.552 0 1-.672 1-1.5S12.552 7 12 7s-1 .672-1 1.5.448 1.5 1 1.5z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </div>
+      <span class="ml-1 block truncate font-medium text-yellow-400"><%= @sad_count %></span>
+    </div>
+    
+    <div :if={@thumbsy_count > 0} class="inline-flex items-center">
+      <div class="bg-blue-500 flex h-7 w-7 items-center justify-center rounded-full">
+        <svg
+          class="text-white h-4 w-4 flex-shrink-0"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path d="M1 8.25a1.25 1.25 0 112.5 0v7.5a1.25 1.25 0 11-2.5 0v-7.5zM11 3V1.7c0-.268.14-.526.395-.607A2 2 0 0114 3c0 .995-.182 1.948-.514 2.826-.204.54.166 1.174.744 1.174h2.52c1.243 0 2.261 1.01 2.146 2.247a23.864 23.864 0 01-1.341 5.974C17.153 16.323 16.072 17 14.9 17h-3.192a3 3 0 01-1.341-.317l-2.734-1.366A3 3 0 006.292 15H5V8h.963c.685 0 1.258-.483 1.612-1.068a4.011 4.011 0 012.166-1.73c.432-.143.853-.386 1.011-.814.16-.432.248-.9.248-1.388z" />
+        </svg>
+      </div>
+      <span class="ml-1 block truncate font-medium text-blue-500"><%= @thumbsy_count %></span>
+    </div>
+  
+  </div>
+</div>
+
+<.list
+  id="memory-details-list"
+  container_class="hidden p-4 my-4 border border-brand-500 rounded-md shadow-md shadow-brand-500/50"
+>
   <:item title="Username">
     <%= decr_item(
       get_item_connection(@memory, @current_user).username,
@@ -121,6 +241,13 @@
           </span>
         </span>
       </div>
+      <!-- sharing with all connections -->
+      <div :if={
+        get_shared_item_identity_atom(@memory, @current_user) == :self &&
+          Enum.empty?(@memory.shared_users)
+      }>
+        You are sharing this Memory with all of your connections.
+      </div>
       <!-- label badge -->
       <p class="flex-none text-xs text-gray-600">
         <span class="inline-flex items-center space-x-1">
@@ -146,16 +273,60 @@
   <:item title="Created">
     <!-- timestamp && label badge -->
     <p class="flex-none text-xs text-gray-600">
-      <.local_time_ago id={@memory.id} at={@memory.inserted_at} />
+      <.local_time_ago id={@memory.id <> "-created"} at={@memory.inserted_at} />
     </p>
   </:item>
   <:item title="Updated">
     <!-- timestamp && label badge -->
     <p class="flex-none text-xs text-gray-600">
-      <.local_time_ago id={@memory.id} at={@memory.updated_at} />
+      <.local_time_ago id={@memory.id <> "-updated"} at={@memory.updated_at} />
     </p>
   </:item>
 </.list>
+
+<div class="pt-12"></div>
+<div class="border-b border-gray-200 pb-5 sm:flex sm:items-center sm:justify-between">
+  <h3 class="text-base font-semibold leading-6 text-gray-900">Remarks</h3>
+  <div :if={has_user_connection?(@memory, @current_user) || @memory.user_id == @current_user.id} class="mt-3 sm:ml-4 sm:mt-0">
+    <.link
+      id="new-remark-button"
+      type="button"
+      phx-click={
+        JS.toggle(
+          to: "#new-remark",
+          in: {"ease-in duration-300", "opacity-0", "opacity-100"},
+          out: {"ease-out duration-300", "opacity-100", "opacity-0"}
+        )
+      }
+      class="block"
+      title="Remark on this Memory"
+    >
+      <.icon name="hero-pencil-square" />
+    </.link>
+  </div>
+</div>
+
+<div id="new-remark" class="hidden py-4">
+  <.live_component
+    module={MetamorphicWeb.MemoryLive.RemarkFormComponent}
+    id={@remark.id || "new"}
+    memory={@memory}
+    remark={@remark}
+    current_user={@current_user}
+    key={@key}
+  />
+</div>
+
+<Components.remarks
+  id="remarks-list"
+  page={@page}
+  stream={@streams.remarks}
+  user={@user}
+  current_user={@current_user}
+  key={@key}
+  end_of_remarks?={@end_of_remarks?}
+  card_click={fn _remark -> nil end}
+/>
 
 <.back :if={@memory.visibility != :public} navigate={~p"/memories"}>Back to memories</.back>
 

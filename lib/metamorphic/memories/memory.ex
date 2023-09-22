@@ -7,7 +7,7 @@ defmodule Metamorphic.Memories.Memory do
   alias Metamorphic.Accounts.User
   alias Metamorphic.Encrypted
   alias Metamorphic.Encrypted.Utils
-  alias Metamorphic.Memories.UserMemory
+  alias Metamorphic.Memories.{Remark, UserMemory}
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -34,6 +34,7 @@ defmodule Metamorphic.Memories.Memory do
     belongs_to :user, User
 
     has_many :user_memories, UserMemory
+    has_many :remarks, Remark
 
     timestamps()
   end

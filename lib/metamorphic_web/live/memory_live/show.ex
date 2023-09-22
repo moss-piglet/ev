@@ -5,6 +5,8 @@ defmodule MetamorphicWeb.MemoryLive.Show do
   alias Metamorphic.Encrypted
   alias Metamorphic.Extensions.MemoryProcessor
   alias Metamorphic.Memories
+  alias Metamorphic.Memories.Remark
+  alias MetamorphicWeb.MemoryLive.Components
 
   @impl true
   def mount(_params, _session, socket) do
@@ -14,21 +16,33 @@ defmodule MetamorphicWeb.MemoryLive.Show do
       Memories.connections_subscribe(socket.assigns.current_user)
     end
 
-    {:ok, socket}
+    {:ok, socket |> assign(page: 1, per_page: 20)}
   end
 
   @impl true
   def handle_params(%{"id" => id}, _, socket) do
     memory = Memories.get_memory!(id)
 
+    socket =
+      socket
+      |> assign(:memory, memory)
+      |> assign(
+        :color,
+        get_uconn_color_for_shared_item(memory, socket.assigns.current_user) || :purple
+      )
+      |> assign(:page_title, page_title(socket.assigns.live_action))
+      |> assign(:memory, memory)
+      |> assign(:user, memory.user)
+      |> assign(:excited_count, Memories.get_remarks_excited_count(memory))
+      |> assign(:loved_count, Memories.get_remarks_loved_count(memory))
+      |> assign(:happy_count, Memories.get_remarks_happy_count(memory))
+      |> assign(:sad_count, Memories.get_remarks_sad_count(memory))
+      |> assign(:thumbsy_count, Memories.get_remarks_thumbsy_count(memory))
+      |> assign(:remark, %Remark{})
+
     {:noreply,
      socket
-     |> assign(
-       :color,
-       get_uconn_color_for_shared_item(memory, socket.assigns.current_user) || :purple
-     )
-     |> assign(:page_title, page_title(socket.assigns.live_action))
-     |> assign(:memory, memory)}
+     |> paginate_remarks(socket.assigns.page)}
   end
 
   @impl true
@@ -155,6 +169,21 @@ defmodule MetamorphicWeb.MemoryLive.Show do
   end
 
   @impl true
+  def handle_info({:remark_created, remark}, socket) do
+    user = socket.assigns.current_user
+    uconn = get_uconn_for_shared_item(remark, user)
+    socket = update_remark_reaction_count(socket, remark)
+
+    cond do
+      uconn.user_id == user.id || uconn.reverse_user_id == user.id ->
+        {:noreply, socket |> stream_insert(:remarks, remark, at: 0)}
+
+      true ->
+        {:noreply, socket}
+    end
+  end
+
+  @impl true
   def handle_info(_message, socket) do
     {:noreply, socket}
   end
@@ -236,8 +265,52 @@ defmodule MetamorphicWeb.MemoryLive.Show do
     end
   end
 
+  @impl true
+  def handle_event("next-page", _, socket) do
+    {:noreply, paginate_remarks(socket, socket.assigns.page + 1)}
+  end
+
+  @impl true
+  def handle_event("prev-page", %{"_overran" => true}, socket) do
+    {:noreply, paginate_remarks(socket, 1)}
+  end
+
+  @impl true
+  def handle_event("prev-page", _, socket) do
+    if socket.assigns.page > 1 do
+      {:noreply, paginate_remarks(socket, socket.assigns.page - 1)}
+    else
+      {:noreply, socket}
+    end
+  end
+
   defp page_title(:show), do: "Show Memory"
   defp page_title(:edit), do: "Edit Memory"
+
+  defp update_remark_reaction_count(socket, remark) do
+    socket =
+      cond do
+        remark.mood == :excited ->
+          assign(socket, :excited_count, socket.assigns.excited_count + 1)
+
+        remark.mood == :loved ->
+          assign(socket, :loved_count, socket.assigns.loved_count + 1)
+
+        remark.mood == :happy ->
+          assign(socket, :happy_count, socket.assigns.happy_count + 1)
+
+        remark.mood == :sad ->
+          assign(socket, :sad_count, socket.assigns.sad_count + 1)
+
+        remark.mood == :thumbsy ->
+          assign(socket, :thumbsy_count, socket.assigns.thumbsy_count + 1)
+
+        true ->
+          socket
+      end
+
+    socket
+  end
 
   defp ex_aws_delete_request(memories_bucket, url) do
     ExAws.S3.delete_object(memories_bucket, url)
@@ -245,4 +318,30 @@ defmodule MetamorphicWeb.MemoryLive.Show do
   end
 
   defp notify_self(msg), do: send(self(), {__MODULE__, msg})
+
+  defp paginate_remarks(socket, new_page, reset \\ false) when new_page >= 1 do
+    %{per_page: per_page, page: cur_page} = socket.assigns
+    memory = socket.assigns.memory
+    remarks = Memories.list_remarks(memory, offset: (new_page - 1) * per_page, limit: per_page)
+
+    {remarks, at, limit} =
+      if new_page >= cur_page do
+        {remarks, -1, per_page * 3 * -1}
+      else
+        {Enum.reverse(remarks), 0, per_page * 3}
+      end
+
+    case remarks do
+      [] ->
+        socket
+        |> assign(end_of_remarks?: at == -1)
+        |> stream(:remarks, [])
+
+      [_ | _] = remarks ->
+        socket
+        |> assign(end_of_remarks?: false)
+        |> assign(page: new_page)
+        |> stream(:remarks, remarks, at: at, limit: limit, reset: reset)
+    end
+  end
 end

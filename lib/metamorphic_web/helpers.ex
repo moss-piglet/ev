@@ -5,7 +5,8 @@ defmodule MetamorphicWeb.Helpers do
   alias Metamorphic.Accounts.{User, UserConnection}
   alias Metamorphic.Encrypted
   alias Metamorphic.Extensions.{AvatarProcessor, MemoryProcessor}
-  alias Metamorphic.Memories.Memory
+  alias Metamorphic.Memories
+  alias Metamorphic.Memories.{Memory, Remark}
   alias Metamorphic.Timeline.Post
 
   ## Encryption
@@ -50,10 +51,42 @@ defmodule MetamorphicWeb.Helpers do
 
       item && item.visibility == :connections && item.user_id != user.id ->
         uconn = get_uconn_for_shared_item(item, user)
-        Encrypted.Users.Utils.decrypt_user_item(payload, user, uconn.key, key)
+        maybe_decrypt_item_with_uconn(payload, uconn, item, user, key)
 
       true ->
         "did not work"
+    end
+  end
+
+  def maybe_show_remark_username(data) do
+    case data do
+      :failed_verification ->
+        "mystery"
+
+      _rest ->
+        data
+    end
+  end
+
+  def maybe_show_remark_body(data) do
+    case data do
+      :failed_verification ->
+        "You are not connected to this person."
+
+      _rest ->
+        data
+    end
+  end
+
+  defp maybe_decrypt_item_with_uconn(payload, uconn, item, user, key) do
+    case uconn do
+      nil ->
+        if item do
+          Encrypted.Users.Utils.decrypt_user_item(payload, user, get_remark_key(item, user), key)
+        end
+
+      _rest ->
+        Encrypted.Users.Utils.decrypt_user_item(payload, user, uconn.key, key)
     end
   end
 
@@ -139,6 +172,46 @@ defmodule MetamorphicWeb.Helpers do
 
       true ->
         Enum.at(memory.user_memories, 0).key
+    end
+  end
+
+  def get_remark_key(remark, current_user) do
+    memory = Memories.preload(remark.memory)
+
+    cond do
+      memory.visibility == :connections &&
+          (current_user.id != memory.user_id &&
+             remark.user_id != current_user.id) ->
+        uconn = get_uconn_for_shared_item(remark, current_user)
+        maybe_get_uconn_key(uconn, memory)
+
+      memory.visibility == :connections &&
+          (current_user.id == memory.user_id &&
+             remark.user_id == current_user.id) ->
+        current_user.conn_key
+
+      memory.visibility == :connections &&
+          (current_user.id != memory.user_id &&
+             remark.user_id == current_user.id) ->
+        current_user.conn_key
+
+      memory.visibility == :connections &&
+          (current_user.id == memory.user_id &&
+             memory.visibility == :private) ->
+        current_user.conn_key
+
+      true ->
+        Enum.at(memory.user_memories, 0).key
+    end
+  end
+
+  defp maybe_get_uconn_key(uconn, %Memory{} = item) do
+    case uconn do
+      nil ->
+        Enum.at(item.user_memories, 0).key
+
+      _rest ->
+        uconn.key
     end
   end
 
@@ -368,8 +441,8 @@ defmodule MetamorphicWeb.Helpers do
     end
   end
 
-  def get_user_avatar(%UserConnection{} = uconn, key, post, current_user) do
-    case post do
+  def get_user_avatar(%UserConnection{} = uconn, key, item, current_user) do
+    case item do
       nil ->
         # Handle decrypting the avatar for the user connection.
         cond do
@@ -502,9 +575,55 @@ defmodule MetamorphicWeb.Helpers do
                 "error"
             end
         end
+
+      %Remark{} = _remark ->
+        # Handle decrypting the avatar for the user connection.
+        cond do
+          is_nil(uconn.connection.avatar_url) ->
+            ""
+
+          not is_nil(avatar_binary = AvatarProcessor.get_ets_avatar(uconn.connection.id)) ->
+            image = decrypt_user_or_uconn_binary(avatar_binary, uconn, nil, key, nil)
+            "data:image/jpg;base64," <> image
+
+          is_nil(_avatar_binary = AvatarProcessor.get_ets_avatar(uconn.connection.id)) ->
+            avatars_bucket = Encrypted.Session.avatars_bucket()
+
+            with {:ok, %{body: obj}} <-
+                   ExAws.S3.get_object(
+                     avatars_bucket,
+                     decr_avatar(
+                       uconn.connection.avatar_url,
+                       uconn.user,
+                       uconn.key,
+                       key
+                     )
+                   )
+                   |> ExAws.request(),
+                 decrypted_obj <-
+                   decr_avatar(
+                     obj,
+                     uconn.user,
+                     uconn.key,
+                     key
+                   ) do
+              # Put the encrypted avatar binary in ets.
+              Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
+                AvatarProcessor.put_ets_avatar(uconn.connection.id, obj)
+
+                {:ok, :encrypted_profile_avatar_put_in_ets}
+              end)
+
+              image = decrypted_obj |> Base.encode64()
+              path = "data:image/jpg;base64," <> image
+              path
+            else
+              {:error, _rest} ->
+                "error"
+            end
+        end
     end
   end
-
 
   def get_public_user_avatar(user, profile) when is_map(profile) do
     cond do
@@ -519,6 +638,7 @@ defmodule MetamorphicWeb.Helpers do
       is_nil(_avatar_binary = AvatarProcessor.get_ets_avatar("profile-#{user.connection.id}")) ->
         avatars_bucket = Encrypted.Session.avatars_bucket()
         d_url = decr_public_item(profile.avatar_url, profile.profile_key)
+
         with {:ok, %{body: obj}} <-
                ExAws.S3.get_object(
                  avatars_bucket,
@@ -543,30 +663,30 @@ defmodule MetamorphicWeb.Helpers do
         else
           {:error, _rest} ->
             with {:ok, %{body: obj}} <-
-              ExAws.S3.get_object(
-                avatars_bucket,
-                d_url
-              )
-              |> ExAws.request(),
-            decrypted_obj <-
-              decr_public_item(
-                obj,
-                profile.profile_key
-              ) do
-            # Put the encrypted avatar binary in ets.
-            Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
-              AvatarProcessor.put_ets_avatar("profile-#{user.connection.id}", obj)
+                   ExAws.S3.get_object(
+                     avatars_bucket,
+                     d_url
+                   )
+                   |> ExAws.request(),
+                 decrypted_obj <-
+                   decr_public_item(
+                     obj,
+                     profile.profile_key
+                   ) do
+              # Put the encrypted avatar binary in ets.
+              Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
+                AvatarProcessor.put_ets_avatar("profile-#{user.connection.id}", obj)
 
-              {:ok, :encrypted_profile_avatar_put_in_ets}
-            end)
+                {:ok, :encrypted_profile_avatar_put_in_ets}
+              end)
 
-            image = decrypted_obj |> Base.encode64()
-            path = "data:image/jpg;base64," <> image
-            path
-          else
-            {:error, _rest} ->
-              ""
-          end
+              image = decrypted_obj |> Base.encode64()
+              path = "data:image/jpg;base64," <> image
+              path
+            else
+              {:error, _rest} ->
+                ""
+            end
         end
     end
   end
@@ -767,27 +887,41 @@ defmodule MetamorphicWeb.Helpers do
       is_nil(memory.memory_url) ->
         ""
 
-      not is_nil(memory_binary = MemoryProcessor.get_ets_memory("profile-user:#{user.id}-memory:#{memory.id}-key:#{user.connection.id}")) ->
+      not is_nil(
+        memory_binary =
+            MemoryProcessor.get_ets_memory(
+              "profile-user:#{user.id}-memory:#{memory.id}-key:#{user.connection.id}"
+            )
+      ) ->
         image = decr_public_item(memory_binary, get_memory_key(memory))
         "data:image/jpg;base64," <> image
 
-      is_nil(_memory_binary = MemoryProcessor.get_ets_memory("profile-user:#{user.id}-memory:#{memory.id}-key:#{user.connection.id}")) ->
+      is_nil(
+        _memory_binary =
+            MemoryProcessor.get_ets_memory(
+              "profile-user:#{user.id}-memory:#{memory.id}-key:#{user.connection.id}"
+            )
+      ) ->
         memories_bucket = Encrypted.Session.memories_bucket()
         d_url = decr_public_item(memory.memory_url, get_memory_key(memory))
+
         with {:ok, %{body: obj}} <-
-              ExAws.S3.get_object(
-                memories_bucket,
-                d_url
-              )
-              |> ExAws.request(),
-            decrypted_obj <-
-              decr_public_item(
-                obj,
-                get_memory_key(memory)
-              ) do
+               ExAws.S3.get_object(
+                 memories_bucket,
+                 d_url
+               )
+               |> ExAws.request(),
+             decrypted_obj <-
+               decr_public_item(
+                 obj,
+                 get_memory_key(memory)
+               ) do
           # Put the encrypted memory binary in ets.
           Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
-            MemoryProcessor.put_ets_memory("profile-user:#{user.id}-memory:#{memory.id}-key:#{user.connection.id}", obj)
+            MemoryProcessor.put_ets_memory(
+              "profile-user:#{user.id}-memory:#{memory.id}-key:#{user.connection.id}",
+              obj
+            )
 
             {:ok, :encrypted_profile_memory_put_in_ets}
           end)
@@ -798,30 +932,33 @@ defmodule MetamorphicWeb.Helpers do
         else
           {:error, _rest} ->
             with {:ok, %{body: obj}} <-
-              ExAws.S3.get_object(
-                memories_bucket,
-                d_url
-              )
-              |> ExAws.request(),
-            decrypted_obj <-
-              decr_public_item(
-                obj,
-                get_memory_key(memory)
-              ) do
-            # Put the encrypted memory binary in ets.
-            Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
-              MemoryProcessor.put_ets_memory("profile-user:#{user.id}-memory:#{memory.id}-key:#{user.connection.id}", obj)
+                   ExAws.S3.get_object(
+                     memories_bucket,
+                     d_url
+                   )
+                   |> ExAws.request(),
+                 decrypted_obj <-
+                   decr_public_item(
+                     obj,
+                     get_memory_key(memory)
+                   ) do
+              # Put the encrypted memory binary in ets.
+              Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
+                MemoryProcessor.put_ets_memory(
+                  "profile-user:#{user.id}-memory:#{memory.id}-key:#{user.connection.id}",
+                  obj
+                )
 
-              {:ok, :encrypted_profile_memory_put_in_ets}
-            end)
+                {:ok, :encrypted_profile_memory_put_in_ets}
+              end)
 
-            image = decrypted_obj |> Base.encode64()
-            path = "data:image/jpg;base64," <> image
-            path
-          else
-            {:error, _rest} ->
-              ""
-          end
+              image = decrypted_obj |> Base.encode64()
+              path = "data:image/jpg;base64," <> image
+              path
+            else
+              {:error, _rest} ->
+                ""
+            end
         end
     end
   end

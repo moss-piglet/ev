@@ -8,7 +8,7 @@ defmodule Metamorphic.Memories do
 
   alias Metamorphic.Accounts
   alias Metamorphic.Accounts.{Connection, User, UserConnection}
-  alias Metamorphic.Memories.{Memory, UserMemory}
+  alias Metamorphic.Memories.{Memory, Remark, UserMemory}
 
   @doc """
   Gets a single memory.
@@ -24,13 +24,13 @@ defmodule Metamorphic.Memories do
       ** (Ecto.NoResultsError)
 
   """
-  def get_memory!(id), do: Repo.get!(Memory, id) |> Repo.preload([:user_memories])
+  def get_memory!(id), do: Repo.get!(Memory, id) |> Repo.preload([:user_memories, :user])
 
   def get_memory(id) do
     if :new == id || "new" == id do
       nil
     else
-      Repo.get(Memory, id) |> Repo.preload([:user_memories])
+      Repo.get(Memory, id) |> Repo.preload([:user_memories, :user])
     end
   end
 
@@ -40,6 +40,7 @@ defmodule Metamorphic.Memories do
   def get_total_storage(user) do
     query = from m in Memory, where: m.user_id == ^user.id
     sum = Repo.aggregate(query, :sum, :size)
+
     case sum do
       nil ->
         0
@@ -47,6 +48,58 @@ defmodule Metamorphic.Memories do
       sum ->
         sum
     end
+  end
+
+  @doc """
+  Returns the count of a memory's remark loved reactions.
+  """
+  def get_remarks_loved_count(memory) do
+    query = from r in Remark, where: r.memory_id == ^memory.id, where: r.mood == :loved
+
+    Repo.aggregate(query, :count, :mood)
+  end
+
+  @doc """
+  Returns the count of a memory's remark excited reactions.
+  """
+  def get_remarks_excited_count(memory) do
+    query = from r in Remark, where: r.memory_id == ^memory.id, where: r.mood == :excited
+
+    Repo.aggregate(query, :count, :mood)
+  end
+
+  @doc """
+  Returns the count of a memory's remark happy reactions.
+  """
+  def get_remarks_happy_count(memory) do
+    query = from r in Remark, where: r.memory_id == ^memory.id, where: r.mood == :happy
+
+    Repo.aggregate(query, :count, :mood)
+  end
+
+  @doc """
+  Returns the count of a memory's remark sad reactions.
+  """
+  def get_remarks_sad_count(memory) do
+    query = from r in Remark, where: r.memory_id == ^memory.id, where: r.mood == :sad
+
+    Repo.aggregate(query, :count, :mood)
+  end
+
+  @doc """
+  Returns the count of a memory's remark thumbsy reactions.
+  """
+  def get_remarks_thumbsy_count(memory) do
+    query = from r in Remark, where: r.memory_id == ^memory.id, where: r.mood == :thumbsy
+
+    Repo.aggregate(query, :count, :mood)
+  end
+
+  @doc """
+  Preloads the Memory.
+  """
+  def preload(memory) do
+    Repo.preload(memory, [:user, :user_memories, :remarks])
   end
 
   @doc """
@@ -158,6 +211,33 @@ defmodule Metamorphic.Memories do
   end
 
   @doc """
+  Returns the list of remarks for
+  a memory.
+
+  ## Examples
+
+      iex> list_memories(memory, opts)
+      [%Memory{}, ...]
+
+  """
+  def list_remarks(memory, opts) do
+    limit = Keyword.fetch!(opts, :limit)
+    offset = Keyword.get(opts, :offset, 0)
+
+    remark_list =
+      from(r in Remark,
+        where: r.memory_id == ^memory.id,
+        offset: ^offset,
+        limit: ^limit,
+        order_by: [desc: r.inserted_at],
+        preload: [:user, :memory]
+      )
+      |> Repo.all()
+
+    remark_list
+  end
+
+  @doc """
   Creates a memory.
 
   ## Examples
@@ -225,6 +305,40 @@ defmodule Metamorphic.Memories do
 
     {:ok, conn, memory |> Repo.preload([:user_memories])}
     |> broadcast(:memory_updated)
+  end
+
+  @doc """
+  Creates a remark.
+
+  ## Examples
+
+      iex> create_remark(%{field: value})
+      {:ok, %Memory{}}
+
+      iex> create_remark(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_remark(attrs \\ %{}, opts \\ []) do
+    remark = Remark.changeset(%Remark{}, attrs, opts)
+    user = Accounts.get_user!(opts[:user].id)
+
+    {:ok, return} =
+      Repo.transaction_on_primary(fn ->
+        remark
+        |> Repo.insert()
+      end)
+
+    case return do
+      {:ok, remark} ->
+        conn = Accounts.get_connection_from_item(remark, user)
+
+        {:ok, conn, remark |> Repo.preload([:memory, :user])}
+        |> broadcast(:remark_created)
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
@@ -304,6 +418,19 @@ defmodule Metamorphic.Memories do
     Memory.changeset(memory, attrs, opts)
   end
 
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking remark changes.
+
+  ## Examples
+
+      iex> change_remark(remark)
+      %Ecto.Changeset{data: %Remark{}}
+
+  """
+  def change_remark(%Remark{} = remark, attrs \\ %{}, opts \\ []) do
+    Remark.changeset(remark, attrs, opts)
+  end
+
   def subscribe do
     Phoenix.PubSub.subscribe(Metamorphic.PubSub, "memories")
   end
@@ -321,11 +448,11 @@ defmodule Metamorphic.Memories do
     |> Repo.preload([:memory, :user])
   end
 
-  defp broadcast({:ok, conn, memory}, event, _user_conn \\ %{}) do
-    case memory.visibility do
-      :public -> public_broadcast({:ok, memory}, event)
-      :private -> private_broadcast({:ok, memory}, event)
-      :connections -> connections_broadcast({:ok, conn, memory}, event)
+  defp broadcast({:ok, conn, struct}, event, _user_conn \\ %{}) do
+    case struct.visibility do
+      :public -> public_broadcast({:ok, struct}, event)
+      :private -> private_broadcast({:ok, struct}, event)
+      :connections -> connections_broadcast({:ok, conn, struct}, event)
     end
   end
 
@@ -344,7 +471,51 @@ defmodule Metamorphic.Memories do
     {:ok, memory}
   end
 
-  defp connections_broadcast({:ok, conn, memory}, event) do
+  defp connections_broadcast({:ok, conn, %Remark{} = remark}, event) do
+    if Enum.empty?(remark.memory.shared_users) do
+      Enum.each(conn.user_connections, fn uconn ->
+        Phoenix.PubSub.broadcast(
+          Metamorphic.PubSub,
+          "conn_memories:#{uconn.user_id}",
+          {event, remark}
+        )
+
+        Phoenix.PubSub.broadcast(
+          Metamorphic.PubSub,
+          "conn_memories:#{uconn.reverse_user_id}",
+          {event, remark}
+        )
+      end)
+
+      {:ok, remark}
+    else
+      Enum.each(conn.user_connections, fn uconn ->
+        Enum.each(remark.memory.shared_users, fn shared_user ->
+          cond do
+            uconn.user_id == shared_user.user_id || uconn.reverse_user_id == shared_user.user_id ->
+              Phoenix.PubSub.broadcast(
+                Metamorphic.PubSub,
+                "conn_memories:#{uconn.user_id}",
+                {event, remark}
+              )
+
+              Phoenix.PubSub.broadcast(
+                Metamorphic.PubSub,
+                "conn_memories:#{uconn.reverse_user_id}",
+                {event, remark}
+              )
+
+            true ->
+              nil
+          end
+        end)
+      end)
+
+      {:ok, remark}
+    end
+  end
+
+  defp connections_broadcast({:ok, conn, %Memory{} = memory}, event) do
     if Enum.empty?(memory.shared_users) do
       Enum.each(conn.user_connections, fn uconn ->
         Phoenix.PubSub.broadcast(
