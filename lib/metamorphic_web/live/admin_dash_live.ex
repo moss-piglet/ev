@@ -3,6 +3,7 @@ defmodule MetamorphicWeb.AdminDashLive do
 
   alias Metamorphic.Accounts
   alias Metamorphic.Memories
+  alias Metamorphic.Timeline
 
   def render(assigns) do
     ~H"""
@@ -29,6 +30,12 @@ defmodule MetamorphicWeb.AdminDashLive do
             <%= @memory_count %>
           </dd>
         </div>
+        <div class="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+          <dt class="truncate text-sm font-medium text-gray-500">Total Posts</dt>
+          <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900">
+            <%= @post_count %>
+          </dd>
+        </div>
       </dl>
     </div>
     """
@@ -38,6 +45,7 @@ defmodule MetamorphicWeb.AdminDashLive do
     if connected?(socket) do
       Accounts.admin_subscribe(socket.assigns.current_user)
       Memories.admin_subscribe(socket.assigns.current_user)
+      Timeline.admin_subscribe(socket.assigns.current_user)
     end
 
     socket =
@@ -45,6 +53,7 @@ defmodule MetamorphicWeb.AdminDashLive do
       |> assign(:user_count, Accounts.count_all_users())
       |> assign(:confirmed_user_count, Accounts.count_all_confirmed_users())
       |> assign(:memory_count, Memories.count_all_memories())
+      |> assign(:post_count, Timeline.count_all_posts())
 
     {:ok, socket |> assign(:page_title, "Admin Dashboard")}
   end
@@ -70,5 +79,13 @@ defmodule MetamorphicWeb.AdminDashLive do
 
   def handle_info({:memory_deleted, _memory}, socket) do
     {:noreply, assign(socket, :memory_count, socket.assigns.memory_count - 1)}
+  end
+
+  def handle_info({:post_created, _post}, socket) do
+    {:noreply, assign(socket, :post_count, socket.assigns.post_count + 1)}
+  end
+
+  def handle_info({:post_deleted, _post}, socket) do
+    {:noreply, assign(socket, :post_count, socket.assigns.post_count - 1)}
   end
 end

@@ -11,6 +11,14 @@ defmodule Metamorphic.Timeline do
   alias Metamorphic.Timeline.{Post, UserPost}
 
   @doc """
+  Counts all posts.
+  """
+  def count_all_posts() do
+    query = from(p in Post)
+    Repo.aggregate(query, :count)
+  end
+
+  @doc """
   Returns the list of non-public posts for
   the user.
 
@@ -200,6 +208,9 @@ defmodule Metamorphic.Timeline do
 
     conn = Accounts.get_connection_from_item(post, user)
 
+    {:ok, post}
+    |> broadcast_admin(:post_created)
+
     {:ok, conn, post |> Repo.preload([:user_posts])}
     |> broadcast(:post_created)
   end
@@ -331,6 +342,9 @@ defmodule Metamorphic.Timeline do
         Repo.delete(post)
       end)
 
+    {:ok, post}
+    |> broadcast_admin(:post_deleted)
+
     {:ok, conn, post}
     |> broadcast(:post_deleted)
   end
@@ -360,12 +374,23 @@ defmodule Metamorphic.Timeline do
     Phoenix.PubSub.subscribe(Metamorphic.PubSub, "conn_posts:#{user.id}")
   end
 
+  def admin_subscribe(user) do
+    if user.is_admin? do
+      Phoenix.PubSub.subscribe(Metamorphic.PubSub, "admin:posts")
+    end
+  end
+
   defp broadcast({:ok, conn, post}, event, _user_conn \\ %{}) do
     case post.visibility do
       :public -> public_broadcast({:ok, post}, event)
       :private -> private_broadcast({:ok, post}, event)
       :connections -> connections_broadcast({:ok, conn, post}, event)
     end
+  end
+
+  defp broadcast_admin({:ok, struct}, event) do
+    Phoenix.PubSub.broadcast(Metamorphic.PubSub, "admin:posts", {event, struct})
+    {:ok, struct}
   end
 
   defp public_broadcast({:ok, post}, event) do
