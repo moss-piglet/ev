@@ -62,6 +62,7 @@ defmodule Metamorphic.MixProject do
       {:plug_canonical_host, "~> 2.0"},
       {:plug_cowboy, "~> 2.5"},
       {:postgrex, ">= 0.0.0"},
+      {:sentry, "~> 8.0"},
       {:slugify, "~> 1.3"},
       {:sweet_xml, "~> 0.6"},
       {:swoosh, "~> 1.3"},

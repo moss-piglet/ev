@@ -97,6 +97,12 @@ config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 
 config :ex_aws, :retries, max_attempts: 3
 
+# Configure Sentry error monitoring
+config :sentry,
+  dsn: System.get_env("SENTRY_DSN"),
+  included_environments: ~w(production staging),
+  environment_name: System.get_env("RELEASE_LEVEL") || "development"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
