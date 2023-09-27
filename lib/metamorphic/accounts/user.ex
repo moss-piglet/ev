@@ -224,62 +224,39 @@ defmodule Metamorphic.Accounts.User do
         c_name: nil
       })
     else
-      visibility = get_field(changeset, :visibility)
+      {:ok, d_conn_key} =
+        Encrypted.Users.Utils.decrypt_user_attrs_key(
+          opts[:user].conn_key,
+          opts[:user],
+          opts[:key]
+        )
 
-      cond do
-        visibility == :public ->
-          changeset
-          |> put_change(:connection_map, %{
-            c_name: name
-          })
+      c_encrypted_name = Encrypted.Utils.encrypt(%{key: d_conn_key, payload: name})
 
-        true ->
-          {:ok, d_conn_key} =
-            Encrypted.Users.Utils.decrypt_user_attrs_key(
-              opts[:user].conn_key,
-              opts[:user],
-              opts[:key]
-            )
-
-          c_encrypted_name = Encrypted.Utils.encrypt(%{key: d_conn_key, payload: name})
-
-          changeset
-          |> put_change(:connection_map, %{
-            c_name: c_encrypted_name
-          })
-      end
+      changeset
+      |> put_change(:connection_map, %{
+        c_name: c_encrypted_name
+      })
     end
   end
 
   defp encrypt_connection_map_username_change(changeset, opts, username) do
     # decrypt the user connection key
     # and then encrypt the username change
-    visibility = get_field(changeset, :visibility)
+    {:ok, d_conn_key} =
+      Encrypted.Users.Utils.decrypt_user_attrs_key(
+        opts[:user].conn_key,
+        opts[:user],
+        opts[:key]
+      )
 
-    cond do
-      visibility == :public ->
-        changeset
-        |> put_change(:connection_map, %{
-          c_username: username,
-          c_username_hash: username
-        })
+    c_encrypted_username = Encrypted.Utils.encrypt(%{key: d_conn_key, payload: username})
 
-      true ->
-        {:ok, d_conn_key} =
-          Encrypted.Users.Utils.decrypt_user_attrs_key(
-            opts[:user].conn_key,
-            opts[:user],
-            opts[:key]
-          )
-
-        c_encrypted_username = Encrypted.Utils.encrypt(%{key: d_conn_key, payload: username})
-
-        changeset
-        |> put_change(:connection_map, %{
-          c_username: c_encrypted_username,
-          c_username_hash: username
-        })
-    end
+    changeset
+    |> put_change(:connection_map, %{
+      c_username: c_encrypted_username,
+      c_username_hash: username
+    })
   end
 
   defp validate_name(changeset, opts) do
