@@ -36,8 +36,8 @@ defmodule MetamorphicWeb.MemoryLive.Components do
       phx-page-loading
       class={[
         if(@end_of_memories?, do: "pb-10", else: "pb-[calc(200vh)]"),
-        if(@page == 1, do: "pt-10", else: "pt-[calc(200vh)]") &&
-          "grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-4 xl:gap-x-8"
+        if(@page == 1, do: "pt-10", else: "pt-[calc(200vh)]") <>
+          " grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-4 xl:gap-x-8"
       ]}
     >
       <li :for={{id, item} <- @stream} class="relative" id={id} phx-click={@card_click.(item)}>
@@ -84,8 +84,8 @@ defmodule MetamorphicWeb.MemoryLive.Components do
       phx-page-loading
       class={[
         if(@end_of_memories?, do: "pb-10", else: "pb-[calc(200vh)]"),
-        if(@page == 1, do: "pt-10", else: "pt-[calc(200vh)]") &&
-          "grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-4 xl:gap-x-8"
+        if(@page == 1, do: "pt-10", else: "pt-[calc(200vh)]") <>
+          " grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-4 xl:gap-x-8"
       ]}
     >
       <li :for={{id, item} <- @stream} class="relative" id={id} phx-click={@card_click.(item)}>
@@ -263,13 +263,15 @@ defmodule MetamorphicWeb.MemoryLive.Components do
         </time>
       </div>
       <p class="text-sm leading-6 text-gray-500">
-        <%= maybe_show_remark_body(decr_item(
+        <%= maybe_show_remark_body(
+          decr_item(
             @remark.body,
             @current_user,
             get_remark_key(@remark, @current_user),
             @key,
             @remark
-          )) %>
+          )
+        ) %>
       </p>
     </div>
     """

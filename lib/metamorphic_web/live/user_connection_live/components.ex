@@ -39,8 +39,8 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
       phx-page-loading
       class={[
         if(@end_of_arrivals_timeline?, do: "pb-10", else: "pb-[calc(25vh)]"),
-        if(@page == 1, do: "pt-10", else: "pt-[calc(25vh)]") &&
-          "grid grid-cols-1 gap-6 divide-y divide-brand-100"
+        if(@page == 1, do: "pt-10", else: "pt-[calc(25vh)]") <>
+          " grid grid-cols-1 gap-6 divide-y divide-brand-100"
       ]}
     >
       <div
@@ -163,8 +163,8 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
       phx-page-loading
       class={[
         if(@end_of_connections_timeline?, do: "pb-10", else: "pb-[calc(25vh)]"),
-        if(@page == 1, do: "pt-10", else: "pt-[calc(25vh)]") &&
-          "grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 divide-y divide-brand-100"
+        if(@page == 1, do: "pt-10", else: "pt-[calc(25vh)]") <>
+          " grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 divide-y divide-brand-100"
       ]}
     >
       <li
@@ -208,7 +208,10 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
   def connection(assigns) do
     ~H"""
     <div class="relative">
-      <% uconn_user = if @uconn.user_id == @current_user.id, do: get_user_with_preloads(@uconn.reverse_user_id), else: get_user_with_preloads(@uconn.user_ids) %>
+      <% uconn_user =
+        if @uconn.user_id == @current_user.id,
+          do: get_user_with_preloads(@uconn.reverse_user_id),
+          else: get_user_with_preloads(@uconn.user_ids) %>
       <div class="flex flex-1 flex-col p-8">
         <.avatar
           class="mx-auto h-32 w-32 flex-shrink-0 rounded-full"
@@ -234,7 +237,8 @@ defmodule MetamorphicWeb.UserConnectionLive.Components do
         <.link
           :if={
             @current_user && @uconn.user_id == @current_user.id &&
-              Map.get(uconn_user.connection, :profile) && uconn_user.connection.profile.visibility != :private
+              Map.get(uconn_user.connection, :profile) &&
+              uconn_user.connection.profile.visibility != :private
           }
           title="View profile"
           class="hover:text-brand-600"
