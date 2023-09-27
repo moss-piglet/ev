@@ -51,6 +51,14 @@ defmodule Metamorphic.Memories do
   end
 
   @doc """
+  Counts all Memories.
+  """
+  def count_all_memories() do
+    query = from(m in Memory)
+    Repo.aggregate(query, :count)
+  end
+
+  @doc """
   Returns the count of a memory's remark loved reactions.
   """
   def get_remarks_loved_count(memory) do
@@ -268,6 +276,9 @@ defmodule Metamorphic.Memories do
 
     conn = Accounts.get_connection_from_item(memory, user)
 
+    {:ok, memory}
+    |> broadcast_admin(:memory_created)
+
     {:ok, conn, memory |> Repo.preload([:user_memories])}
     |> broadcast(:memory_created)
   end
@@ -401,6 +412,9 @@ defmodule Metamorphic.Memories do
         Repo.delete(memory)
       end)
 
+    {:ok, memory}
+    |> broadcast_admin(:memory_deleted)
+
     {:ok, conn, memory}
     |> broadcast(:memory_deleted)
   end
@@ -443,6 +457,12 @@ defmodule Metamorphic.Memories do
     Phoenix.PubSub.subscribe(Metamorphic.PubSub, "conn_memories:#{user.id}")
   end
 
+  def admin_subscribe(user) do
+    if user.is_admin? do
+      Phoenix.PubSub.subscribe(Metamorphic.PubSub, "admin:memories")
+    end
+  end
+
   defp get_user_memory(memory) do
     Enum.at(memory.user_memories, 0)
     |> Repo.preload([:memory, :user])
@@ -454,6 +474,11 @@ defmodule Metamorphic.Memories do
       :private -> private_broadcast({:ok, struct}, event)
       :connections -> connections_broadcast({:ok, conn, struct}, event)
     end
+  end
+
+  defp broadcast_admin({:ok, struct}, event) do
+    Phoenix.PubSub.broadcast(Metamorphic.PubSub, "admin:memories", {event, struct})
+    {:ok, struct}
   end
 
   defp public_broadcast({:ok, memory}, event) do
