@@ -282,7 +282,7 @@ defmodule MetamorphicWeb.MemoryLive.FormComponent do
           |> Map.put("type", entry.client_type)
 
         case Memories.create_memory(memory_params, user: user, key: key) do
-          {:ok, _user, conn} ->
+          {:ok, conn, memory} ->
             # Put the encrypted memory blob in ets under the
             # user's connection id.
             MemoryProcessor.put_ets_memory(
@@ -290,10 +290,12 @@ defmodule MetamorphicWeb.MemoryLive.FormComponent do
               e_blob
             )
 
+            notify_parent({:saved, memory})
+
             info = "Your memory has been created successfully."
 
             memory_form =
-              user
+              memory
               |> Memories.change_memory(memory_params)
               |> to_form()
 
@@ -326,7 +328,7 @@ defmodule MetamorphicWeb.MemoryLive.FormComponent do
           {:noreply,
            socket
            |> put_flash(:success, "Memory updated successfully")
-           |> push_patch(to: socket.assigns.patch)}
+           |> push_navigate(to: socket.assigns.patch)}
       end
     else
       {:noreply, socket}

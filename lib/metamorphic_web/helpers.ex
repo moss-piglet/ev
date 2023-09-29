@@ -751,7 +751,7 @@ defmodule MetamorphicWeb.Helpers do
                  memory
                ) do
           # Put the encrypted memory binary in ets.
-          Task.async(fn ->
+          Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
             MemoryProcessor.put_ets_memory(
               "user:#{user.id}-memory:#{memory.id}-key:#{user.connection.id}",
               obj
@@ -816,7 +816,7 @@ defmodule MetamorphicWeb.Helpers do
                      memory
                    ) do
               # Put the encrypted memory binary in ets.
-              Task.async(fn ->
+              Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
                 MemoryProcessor.put_ets_memory(
                   "user:#{memory.user_id}-memory:#{memory.id}-key:#{uconn.connection.id}",
                   obj
@@ -861,7 +861,7 @@ defmodule MetamorphicWeb.Helpers do
                      memory
                    ) do
               # Put the encrypted memory binary in ets.
-              Task.async(fn ->
+              Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
                 MemoryProcessor.put_ets_memory(
                   "user:#{memory.user_id}-memory:#{memory.id}-key:#{uconn.connection.id}",
                   obj

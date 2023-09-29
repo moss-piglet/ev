@@ -25,7 +25,13 @@ defmodule MetamorphicWeb.MemoryLive.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
-    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+    case Map.get(socket.assigns.flash, "success") do
+      "Your memory has been deleted successfully. Sit back and relax while we delete your memory from the private cloud." ->
+        {:noreply, socket}
+
+      _rest ->
+        {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+    end
   end
 
   @impl true
@@ -158,6 +164,15 @@ defmodule MetamorphicWeb.MemoryLive.Index do
       true ->
         {:noreply, socket}
     end
+  end
+
+  @impl true
+  def handle_info(
+        {_ref, {:ok, :memory_deleted_from_storj, info}},
+        socket
+      ) do
+    socket = put_flash(socket, :success, info)
+    {:noreply, redirect(socket, to: "/memories")}
   end
 
   @impl true

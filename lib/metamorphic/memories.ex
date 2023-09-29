@@ -470,8 +470,8 @@ defmodule Metamorphic.Memories do
 
   defp broadcast({:ok, conn, struct}, event, _user_conn \\ %{}) do
     case struct.visibility do
-      :public -> public_broadcast({:ok, struct}, event)
-      :private -> private_broadcast({:ok, struct}, event)
+      :public -> public_broadcast({:ok, conn, struct}, event)
+      :private -> private_broadcast({:ok, conn, struct}, event)
       :connections -> connections_broadcast({:ok, conn, struct}, event)
     end
   end
@@ -481,19 +481,19 @@ defmodule Metamorphic.Memories do
     {:ok, struct}
   end
 
-  defp public_broadcast({:ok, memory}, event) do
+  defp public_broadcast({:ok, conn, memory}, event) do
     Phoenix.PubSub.broadcast(Metamorphic.PubSub, "memories", {event, memory})
-    {:ok, memory}
+    {:ok, conn, memory}
   end
 
-  defp private_broadcast({:ok, memory}, event) do
+  defp private_broadcast({:ok, conn, memory}, event) do
     Phoenix.PubSub.broadcast(
       Metamorphic.PubSub,
       "priv_memories:#{memory.user_id}",
       {event, memory}
     )
 
-    {:ok, memory}
+    {:ok, conn, memory}
   end
 
   defp connections_broadcast({:ok, conn, %Remark{} = remark}, event) do
@@ -556,7 +556,7 @@ defmodule Metamorphic.Memories do
         )
       end)
 
-      {:ok, memory}
+      {:ok, conn, memory}
     else
       Enum.each(conn.user_connections, fn uconn ->
         Enum.each(memory.shared_users, fn shared_user ->
@@ -580,7 +580,7 @@ defmodule Metamorphic.Memories do
         end)
       end)
 
-      {:ok, memory}
+      {:ok, conn, memory}
     end
   end
 end

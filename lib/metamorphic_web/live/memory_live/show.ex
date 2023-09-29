@@ -74,7 +74,11 @@ defmodule MetamorphicWeb.MemoryLive.Show do
 
   @impl true
   def handle_info({:memory_deleted, memory}, socket) do
-    {:noreply, push_redirect(socket, to: ~p"/memories/#{memory}")}
+    if socket.assigns.current_user.id == memory.user_id do
+      {:noreply, socket}
+    else
+      {:noreply, push_redirect(socket, to: ~p"/memories")}
+    end
   end
 
   @impl true
@@ -184,6 +188,15 @@ defmodule MetamorphicWeb.MemoryLive.Show do
   end
 
   @impl true
+  def handle_info(
+        {_ref, {:ok, :memory_deleted_from_storj, info}},
+        socket
+      ) do
+    socket = put_flash(socket, :success, info)
+    {:noreply, redirect(socket, to: "/memories")}
+  end
+
+  @impl true
   def handle_info(_message, socket) do
     {:noreply, socket}
   end
@@ -227,7 +240,7 @@ defmodule MetamorphicWeb.MemoryLive.Show do
   end
 
   @doc """
-  Deletes the avatar in ETS and object storage.
+  Deletes the memory in ETS and object storage.
   """
   @impl true
   def handle_event("delete", %{"id" => id, "url" => url}, socket) do
@@ -236,27 +249,26 @@ defmodule MetamorphicWeb.MemoryLive.Show do
     user = socket.assigns.current_user
 
     if memory.user_id == user.id do
-      conn = Accounts.get_connection_from_item(memory, user)
+      case Memories.delete_memory(memory, user: user) do
+        {:ok, conn, memory} ->
+          MemoryProcessor.delete_ets_memory(
+            "user:#{memory.user_id}-memory:#{memory.id}-key:#{conn.id}"
+          )
 
-      with {:ok, memory} <- Memories.delete_memory(memory, user: user),
-           true <-
-             MemoryProcessor.delete_ets_memory(
-               "user:#{memory.user_id}-memory:#{memory.id}-key:#{conn.id}"
-             ) do
-        # Handle deleting the object storage avatar async.
-        with {:ok, _resp} <- ex_aws_delete_request(memories_bucket, url) do
-          info = "Your memory has been deleted successfully."
+          # Handle deleting the object storage memory async.
+          make_async_aws_requests(memories_bucket, url)
+
+          info =
+            "Your memory has been deleted successfully. Sit back and relax while we delete your memory from the private cloud."
+
           notify_self({:deleted, memory})
 
           socket =
             socket
             |> put_flash(:success, info)
 
-          {:noreply, push_navigate(socket, to: ~p"/memories")}
-        else
-          _rest -> ex_aws_delete_request(memories_bucket, url)
-        end
-      else
+          {:noreply, push_redirect(socket, to: ~p"/memories")}
+
         _rest ->
           {:noreply, socket}
       end
@@ -310,6 +322,18 @@ defmodule MetamorphicWeb.MemoryLive.Show do
       end
 
     socket
+  end
+
+  defp make_async_aws_requests(memories_bucket, url) do
+    Task.Supervisor.async_nolink(Metamorphic.StorjTask, fn ->
+      with {:ok, _resp} <- ex_aws_delete_request(memories_bucket, url) do
+        {:ok, :memory_deleted_from_storj, "Memory successfully deleted from the private cloud."}
+      else
+        _rest ->
+          ex_aws_delete_request(memories_bucket, url)
+          {:error, :make_async_aws_requests}
+      end
+    end)
   end
 
   defp ex_aws_delete_request(memories_bucket, url) do
