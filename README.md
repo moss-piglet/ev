@@ -1,6 +1,6 @@
-# Everest
+# Ev
 
-Under development by Moss Piglet.
+Under development by Moss Piglet. This is an early, public version of Metamorphic. We wanted to keep this available for anyone curious to see early iterations of our service. This codebase is no longer in production.
 
 ## Peace of mind from your life to the web
 
